@@ -203,23 +203,27 @@ class TileSpec():
     def __init__(self,
         tileId=None,z=None,width=None,height=None,imageUrl=None,frameId=None,
         maskUrl=None,minint=0,maxint=65000,layout=Layout(),
-                tforms = [],inputfilters=[],scale3Url=None,scale2Url=None,scale1Url=None):
-        self.tileId = tileId
-        self.z = z
-        self.width = width
-        self.height = height
-        self.layout = layout
-        self.imageUrl = imageUrl
-        self.maskUrl = maskUrl
-        self.minint= minint
-        self.maxint = maxint
-        self.tforms = tforms
-        self.frameId = frameId
-        self.layout=layout
-        self.inputfilters = inputfilters
-        self.scale3Url = scale3Url
-        self.scale2Url = scale2Url
-        self.scale1Url = scale1Url
+                tforms = [],inputfilters=[],scale3Url=None,scale2Url=None,scale1Url=None,json=None):
+
+        if json is not None:
+            self.from_dict(json)
+        else:    
+            self.tileId = tileId
+            self.z = z
+            self.width = width
+            self.height = height
+            self.layout = layout
+            self.imageUrl = imageUrl
+            self.maskUrl = maskUrl
+            self.minint= minint
+            self.maxint = maxint
+            self.tforms = tforms
+            self.frameId = frameId
+            self.layout=layout
+            self.inputfilters = inputfilters
+            self.scale3Url = scale3Url
+            self.scale2Url = scale2Url
+            self.scale1Url = scale1Url
 
 
     def to_dict(self):
