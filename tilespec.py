@@ -74,21 +74,26 @@ class Filter():
         self.params = d['params']
 
 class Transform():
-    def __init__(self,className,dataString,transformId):
+    def __init__(self,className=None,dataString=None,transformId=None,json=None):
         
-        self.className = className
-        self.dataString = dataString
-        self.transformId = transformId
+        if json is not None:
+            self.from_dict(json)
+        else:
+            self.className = className
+            self.dataString = dataString
+            self.transformId = transformId
     def to_dict(self):
         d ={}
+        d['type']='leaf'
         d['className']=self.className
         d['dataString']=self.dataString
-        d['transformId']=self.transformId
+        if self.transformId is not None:
+            d['transformId']=self.transformId
         return d
     def from_dict(self,d):
         self.dataString = d['dataString']
         self.className  = d['className']
-        self.transformId = d['transformId']
+        self.transformId = d.get('transformId',None)
         
     def __str__(self):
         return 'className:%s\ndataString:%s'%(self.className,self.dataString)
@@ -97,6 +102,7 @@ class Transform():
     
                            
 class AffineModel(Transform):
+    className='mpicbg.trakem2.transform.AffineModel2D'
     def __init__(self,M00=1.0,M01=0.0,M10=0.0,M11=1.0,B0=0.0,B1=0.0):
         self.M00= M00
         self.M01= M01
@@ -104,6 +110,7 @@ class AffineModel(Transform):
         self.M11 = M11
         self.B0 = B0
         self.B1 = B1
+        self.className = 'mpicbg.trakem2.transform.AffineModel2D'
         self.load_M()
         
     def load_M(self):
@@ -117,14 +124,19 @@ class AffineModel(Transform):
         
     def to_dict(self):
         d = {}
-        d['className']='mpicbg.trakem2.transform.AffineModel2D'
-        d['dataString']="%f %f %f %f %f %f"%(self.M00,self.M01,self.M10,self.M11,self.B0,self.B1)
+        d['className']=self.className
+        d['dataString']="%f %f %f %f %f %f"%(self.M[0,0],self.M[0,1],self.M[1,0],self.M[1,1],self.M[0,3],self.M[1,3])
         return d
         
     def from_dict(self,d):
         ds = d['dataString'].split()
         (self.M00,self.M01,self.M10,self.M11,self.B0,self.B1)=map(float,ds)
         self.load_M()
+    
+    def invert(self):
+        Ai = AffineModel()
+        Ai.M=np.linalg.inv(self.M)
+        return Ai
     
     def convert_to_point_vector(self,points):
         Np = points.shape[0]
@@ -157,7 +169,7 @@ class AffineModel(Transform):
         return self.convert_points_vector_to_array(pt,Nd)   
         
     def __str__(self):
-        return "M=[[%f,%f],[%f,%f]] B=[%f,%f]"%(self.M00,self.M01,self.M10,self.M11,self.B0,self.B1)
+        return "M=[[%f,%f],[%f,%f]] B=[%f,%f]"%(self.M[0,0],self.M[0,1],self.M[1,0],self.M[1,1],self.M[0,3],self.M[1,3])
 
     
         
@@ -276,22 +288,33 @@ class TileSpec():
         self.maskUrl = d['mipmapLevels']['0'].get('maskUrl',None)
         if d['mipmapLevels'].get('2',None) is not None:
             self.scale2Url = d['mipmapLevels']['2'].get('imageUrl',None)
+        else:
+            self.scale2Url = None
         if d['mipmapLevels'].get('1',None) is not None:
             self.scale1Url = d['mipmapLevels']['1'].get('imageUrl',None)
+        else:
+            self.scale1Url = None
         if d['mipmapLevels'].get('3',None) is not None:
             self.scale3Url = d['mipmapLevels']['3'].get('imageUrl',None)
+        else:
+            self.scale3Url = None
+
         self.tforms = []
         for t in d['transforms']['specList']:
-            tf = AffineModel()
-            tf.from_dict(t)
+            if t['className']==AffineModel.className:
+                tf = AffineModel()
+                tf.from_dict(t)
+            else:
+                tf = Transform(json=t)
             self.tforms.append(tf)
-        self.filters = []
-        if d.get('inputfilters') is not None:
+        self.inputfilters = []
+        if d.get('inputfilters',None) is not None:
             for f in d['inputfilters']['specList']:
                 f['type']
                 f = Filter()
                 f.from_dict(f)
                 self.inputfilters.append(f)
+   
             
          
         
