@@ -77,13 +77,20 @@ class Render(object):
         stack_params= project_params + ['--stack', stack]
         return stack_params
 
+    def delete_stack(self,stack,host=None,port=None,owner=None,project=None,session=requests.session()):
+        (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
+        request_url = self.format_preamble(host,port,owner,project,stack)
+        r=session.delete(request_url)
+        print r.text           
+        return r
+
     def create_stack(self,stack,cycleNumber=1,cycleStepNumber=1,
                     client_scripts = None,host = None,port = None,owner = None,
                     project = None,verbose=False):
         import subprocess
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project,client_scripts)
         my_env = os.environ.copy()
-        stack_params = make_stack_params(host,port,owner,project,stack)
+        stack_params = self.make_stack_params(host,port,owner,project,stack)
         cmd = [os.path.join(client_scripts, 'manage_stacks.sh')] + \
         stack_params + \
         ['--action', 'CREATE', '--cycleNumber', '%d'%cycleNumber, '--cycleStepNumber', '%d'%cycleStepNumber]
@@ -98,11 +105,11 @@ class Render(object):
                      host = None,port = None,owner = None,project = None,verbose=False):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project,client_scripts)
 
-        set_stack_state(stack,'LOADING',host,port,owner,project)
+        self.set_stack_state(stack,'LOADING',host,port,owner,project)
       
         import subprocess
         my_env = os.environ.copy()
-        stack_params = make_stack_params(host,port,owner,project,stack)
+        stack_params = self.make_stack_params(host,port,owner,project,stack)
         cmd = [os.path.join(client_scripts, 'import_json.sh')] + \
         stack_params + \
         jsonfiles
@@ -112,7 +119,7 @@ class Render(object):
         proc.wait()
         if verbose:
             print proc.stdout.read()
-        set_stack_state(stack,'COMPLETE',host,port,owner,project)
+        self.set_stack_state(stack,'COMPLETE',host,port,owner,project)
         
             
     def world_to_local_coordinates(self,stack, z, x, y, host = None, port = None, owner = None, project = None, session=requests.session()):
