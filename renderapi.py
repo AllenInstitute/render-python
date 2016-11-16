@@ -15,7 +15,7 @@ import subprocess
 import sys
 import requests
 import numpy as np
-from tilespec import TileSpec
+from tilespec import TileSpec,StackVersion
 this = sys.modules[__name__]  
 from io import BytesIO
 import numpy as np
@@ -86,20 +86,33 @@ class Render(object):
 
     def create_stack(self,stack,cycleNumber=1,cycleStepNumber=1,
                     client_scripts = None,host = None,port = None,owner = None,
-                    project = None,verbose=False):
-        import subprocess
+                    project = None,verbose=False,session=requests.session()):
+
+
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project,client_scripts)
-        my_env = os.environ.copy()
-        stack_params = self.make_stack_params(host,port,owner,project,stack)
-        cmd = [os.path.join(client_scripts, 'manage_stacks.sh')] + \
-        stack_params + \
-        ['--action', 'CREATE', '--cycleNumber', '%d'%cycleNumber, '--cycleStepNumber', '%d'%cycleStepNumber]
-        if verbose:
-            print cmd
-        proc = subprocess.Popen(cmd, env=my_env, stdout=subprocess.PIPE)
-        proc.wait()
-        if verbose:
-            print proc.stdout.read()
+        sv = StackVersion(cycleNumber=cycleNumber,cycleStepNumber=cycleStepNumber)
+        request_url = self.format_preamble(host,port,owner,project,stack)
+        print "stack version2",request_url,sv.to_dict()
+        payload = json.dumps(sv.to_dict())
+        r = session.post(request_url,data=payload,headers={"content-type":"application/json","Accept":"application/json"})
+        try:
+            return r
+        except:
+            print r.text
+            return None
+
+        # import subprocess
+        # my_env = os.environ.copy()
+        # stack_params = self.make_stack_params(host,port,owner,project,stack)
+        # cmd = [os.path.join(client_scripts, 'manage_stacks.sh')] + \
+        # stack_params + \
+        # ['--action', 'CREATE', '--cycleNumber', '%d'%cycleNumber, '--cycleStepNumber', '%d'%cycleStepNumber]
+        # if verbose:
+        #     print cmd
+        # proc = subprocess.Popen(cmd, env=my_env, stdout=subprocess.PIPE)
+        # proc.wait()
+        # if verbose:
+        #     print proc.stdout.read()
             
     def import_jsonfiles(self,stack,jsonfiles,client_scripts=DEFAULT_CLIENT_SCRIPTS,
                      host = None,port = None,owner = None,project = None,verbose=False):
@@ -344,8 +357,9 @@ class Render(object):
                                session=requests.session()):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         request_url = self.format_preamble(host,port,owner,project,stack)+"/resolvedTiles"
-        #print request_url
-        r = session.put(request_url, data=data, headers={"content-type":"application/json"})
+        print 'new',request_url
+        
+        r = session.put(request_url, data=data, headers={"content-type":"application/json","Accept":"text/plain"})
         return r
 
         
