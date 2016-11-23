@@ -105,6 +105,25 @@ class Filter():
         self.classname = d['className']
         self.params = d['params']
 
+class ReferenceTransform():
+    def __init__(self,refId=None,json=None):
+        if json is not None:
+            self.from_dict(json)
+        else:
+            self.refId = refId
+    def to_dict(self):
+        d={}
+        d['type']='ref'
+        d['refId']=self.refId
+        return d
+    def from_dict(self,d):
+        self.refId = d['refId']
+    
+    def __str__(self):
+        return 'ReferenceTransform(%s)'%self.refId
+    def __repr__(self):
+        return self.__str__()
+    
 class Transform():
     def __init__(self,className=None,dataString=None,transformId=None,json=None):
         
@@ -156,6 +175,7 @@ class AffineModel(Transform):
         
     def to_dict(self):
         d = {}
+        d['type']='leaf'
         d['className']=self.className
         d['dataString']="%f %f %f %f %f %f"%(self.M[0,0],self.M[0,1],self.M[1,0],self.M[1,1],self.M[0,3],self.M[1,3])
         return d
@@ -336,12 +356,15 @@ class TileSpec():
 
         self.tforms = []
         for t in d['transforms']['specList']:
-            if t['className']==AffineModel.className:
-                tf = AffineModel()
-                tf.from_dict(t)
-            else:
-                tf = Transform(json=t)
-            self.tforms.append(tf)
+            if t['type']=='ref':
+                tf = ReferenceTransform(refId=t['refId'])
+            elif t['type']=='leaf':    
+                if t['className']==AffineModel.className:
+                    tf = AffineModel()
+                    tf.from_dict(t)
+                else:
+                    tf = Transform(json=t)
+                self.tforms.append(tf)
         self.inputfilters = []
         if d.get('inputfilters',None) is not None:
             for f in d['inputfilters']['specList']:
