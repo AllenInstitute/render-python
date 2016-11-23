@@ -114,17 +114,24 @@ class Render(object):
         # if verbose:
         #     print proc.stdout.read()
             
-    def import_jsonfiles(self,stack,jsonfiles,client_scripts=DEFAULT_CLIENT_SCRIPTS,
-                     host = None,port = None,owner = None,project = None,verbose=False):
-        (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project,client_scripts)
+    def import_jsonfiles(self,stack,jsonfiles,transformFile = None,
+                         client_scripts=DEFAULT_CLIENT_SCRIPTS,host = None,port = None,
+                         owner = None,project = None,verbose=False):
+        (host,port,owner,project,client_scripts)=\
+        self.process_defaults(host,port,owner,project,client_scripts)
 
         self.set_stack_state(stack,'LOADING',host,port,owner,project)
       
+        if transformFile is None:
+            transform_params = []
+        else:
+            transform_params = ['--transformFile',transformFile]
         import subprocess
         my_env = os.environ.copy()
         stack_params = self.make_stack_params(host,port,owner,project,stack)
         cmd = [os.path.join(client_scripts, 'import_json.sh')] + \
         stack_params + \
+        transform_params + \
         jsonfiles
         if verbose:
             print cmd
@@ -368,8 +375,9 @@ class Render(object):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         request_url = self.format_preamble(host,port,owner,project,stack)+"/tile/%s"%(tile)
 
-        tilespecs_json= self.process_simple_url_request(request_url,session)
-        return [TileSpec(json=tilespec_json) for tilespec_json in tilespecs_json]
+        tilespec_json= self.process_simple_url_request(request_url,session)
+        
+        return TileSpec(json=tilespec_json)
 
 
     def get_tile_specs_from_z(self,stack,z,host = None,port = None,owner=None,project=None,
