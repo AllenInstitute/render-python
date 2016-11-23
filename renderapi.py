@@ -373,11 +373,11 @@ class Render(object):
     # http://renderer.int.janelia.org:8080/render-ws/v1/owner/flyTEM/project/fly_pilot/stack/20141107_863/tile/140422184419060139
     def get_tile_spec(self,stack, tile, host = None, port = None, owner = None, project = None, session=requests.session()):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
-        request_url = self.format_preamble(host,port,owner,project,stack)+"/tile/%s"%(tile)
+        request_url = self.format_preamble(host,port,owner,project,stack)+"/tile/%s/render-parameters"%(tile)
 
         tilespec_json= self.process_simple_url_request(request_url,session)
         
-        return TileSpec(json=tilespec_json)
+        return TileSpec(json=tilespec_json['tileSpecs'][0])
 
 
     def get_tile_specs_from_z(self,stack,z,host = None,port = None,owner=None,project=None,
