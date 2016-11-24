@@ -29,17 +29,17 @@ if __name__ == '__main__':
      a jdk in ./deploy/jdk* and the converter in a jar in \
      ./render-app/target/render-app*jar-with-dependencies.jar \
      and the import_json script in ./render-ws-java-client/src/main/scripts/ ")
-    p.add_argument('--TEM2file',           help="Name of TEM2 file with alignment")
+    p.add_argument('--TEM2file',           help="Name of TEM2 file with alignment",required=True)
     p.add_argument('--Owner',          help="name of render project owner stacks should exist in",default = DEFAULT_OWNER)
-    p.add_argument('--Project',        help="name of render project stacks should exist in")
-    p.add_argument('--prealignedStack',help='name of render stack used to create TEM2 alignment')
-    p.add_argument('--jsonDirectory',         help='directory to store json outputs')
+    p.add_argument('--Project',        help="name of render project stacks should exist in",required=True)
+    p.add_argument('--prealignedStack',help='name of render stack used to create TEM2 alignment',required=True)
+    p.add_argument('--jsonDirectory',         help='directory to store json outputs',default='.')
     p.add_argument('--inputStack',           help="name of stack to apply alignment stack (will default to prealigned stack)", default=None)
-    p.add_argument('--outputStack',         help='name of output stack to save alignment to')
+    p.add_argument('--outputStack',         help='name of output stack to save alignment to',required=True)
     p.add_argument('--host',                help="host name of the render server",default=DEFAULT_RENDER_HOST)
     p.add_argument('--port',                help="port for render server",default=DEFAULT_RENDER_PORT)
     p.add_argument('--renderHome',           help="directory to find render installation",default=DEFAULT_RENDER_HOME)
-    p.add_argument('--verbose',             help="verbose output",default=False)
+    p.add_argument('--verbose',             help="verbose output",action='store_true')
     a = p.parse_args()
 
     #PRESTEPS
@@ -94,25 +94,25 @@ if __name__ == '__main__':
     zvalues = render.get_z_values_for_stack(a.inputStack)
     finaltilespecs =[]
     ztransforms=[]
-    print 'zvalues',zvalues
+    
     for z in zvalues:
         #get the first tilespec from the trackem2 file
         tem2ts=[ts for ts in tem2json if ts['z']==z][0]
-        print z,tem2ts['tileId']
+        #print z,tem2ts['tileId']
 
         #make a list of transform objects for its transforms, this takes this tile from raw space to aligned space
         tform_W_to_A = [Transform(json=tf) for tf in tem2ts['transforms']['specList']]
 
         #pull down the tilespecs for this z from render
         origts=render.get_tile_spec(a.prealignedStack,tem2ts['tileId'])
-        print 'origts',origts.tforms
+        #print 'origts',origts.tforms
         #invert the original transformations (assumes they are Affine)
         tform_W_to_R = origts.tforms
         tform_R_to_W = list(tform_W_to_R)
         tform_R_to_W.reverse()
         tform_R_to_W = [tf.invert() for tf in tform_R_to_W]
         
-        print 'tform_R_to_W',tform_R_to_W
+        #print 'tform_R_to_W',tform_R_to_W
         #create a transform list that takes you from registered space to aligned space
         #this can now be appended to all the transforms in the original input stack
         #that share the same Z
@@ -120,7 +120,7 @@ if __name__ == '__main__':
         
         #create a reference transform json, this might be more efficent in the future
         tfd = {}
-        tfd['id'] = '%s_z_%f_alignment'%(a.prealignedStack,z)
+        tfd['id'] = '%s_to_%s_z_%f_alignment'%(a.prealignedStack,a.outputStack,z)
         tfd['type'] = 'list'
         tfd['specList'] = [tf.to_dict() for tf in tform_R_to_A]
         ztransforms.append(tfd)
@@ -134,11 +134,11 @@ if __name__ == '__main__':
     #upload the altered tilespecs and the tranform tilespec to render under the outputStack
 
     #write out the transforms to disk
-    transformFileOut = os.path.join(a.jsonDirectory,'%s_%s_%s_Transforms.json'%(a.Owner,a.Project,a.prealignedStack))
+    transformFileOut = os.path.join(a.jsonDirectory,'%s_%s_%s_to_%s_Transforms.json'%(a.Owner,a.Project,a.prealignedStack,a.outputStack))
     json.dump(ztransforms,open(transformFileOut,'w'),indent=4)
 
     #write out the tilespecs to disk
-    tilespecFileOut = os.path.join(a.jsonDirectory,'%s_%s_%s_AlignedTilespecs.json'%(a.Owner,a.Project,a.inputStack))
+    tilespecFileOut = os.path.join(a.jsonDirectory,'%s_%s_%s_AlignedTilespecs.json'%(a.Owner,a.Project,a.outputStack))
     json.dump([ts.to_dict() for ts in finaltilespecs],open(tilespecFileOut,'w'),indent=4)
 
     #upload them to render
