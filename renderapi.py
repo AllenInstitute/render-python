@@ -384,7 +384,7 @@ class Render(object):
                               session=requests.session()):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         request_url = self.format_preamble(host,port,owner,project,stack)+'/z/%f/tile-specs'%(z)
-        #print request_url
+        print request_url
         tilespecs_json=self.process_simple_url_request(request_url,session)
         return [TileSpec(json=tilespec_json) for tilespec_json in tilespecs_json]
 

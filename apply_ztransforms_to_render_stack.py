@@ -42,9 +42,6 @@ if __name__ == '__main__':
     p.add_argument('--verbose',             help="verbose output",default=False,action='store_true')
     a = p.parse_args()
 
-
-
-    
     #STEP 1: read in the tilespecs from the inputStack from render, and append the appropriate reference
     #transform for each z value
     client_scripts = os.path.join(a.renderHome,'render-ws-java-client','src','main','scripts')
