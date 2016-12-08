@@ -337,8 +337,8 @@ class TileSpec():
         self.layout.from_dict(d['layout'])
         self.minX = d.get('minX',None)
         self.maxX = d.get('maxX',None)
-        self.maxY = d.get('minY',None)
-        self.minY = d.get('maxY',None)
+        self.maxY = d.get('maxY',None)
+        self.minY = d.get('minY',None)
         self.imageUrl = d['mipmapLevels']['0']['imageUrl']
         self.maskUrl = d['mipmapLevels']['0'].get('maskUrl',None)
         if d['mipmapLevels'].get('2',None) is not None:
