@@ -50,7 +50,7 @@ if __name__ == '__main__':
     render = Render(a.host,a.port,a.Owner,a.Project,client_scripts)
 
     #query the z values in this stack
-    zvalues = render.get_z_values_for_stack(a.inputStack)
+    zvalues = render.get_z_values_for_stack(a.postalignedStack)
     finaltilespecs =[]
 
     for z in zvalues:
