@@ -380,6 +380,25 @@ class Render(object):
         return TileSpec(json=tilespec_json['tileSpecs'][0])
 
 
+    def get_tile_specs_from_minmax_box(self,stack,z,xmin,xmax,ymin,ymax,scale=1.0,host=None,port=None,owner=None,
+        project=None,session=requests.session(),verbose=False):
+        (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
+        x = xmin
+        y = ymin
+        width = xmax-xmin
+        height = ymax -ymin
+        return self.get_tile_specs_from_box(stack, z, x, y, width, height,host,port,owner,project,session,verbose)
+        
+    def get_tile_specs_from_box(self,stack,z,x,y,width,height,scale=1.0,host=None, port=None,owner=None,project=None,
+                                session=requests.session(),verbose=False):
+        (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
+        request_url = self.format_preamble(host,port,owner,project,stack)+"/z/%d/box/%d,%d,%d,%d,%3.2f/render-parameters"%(z,x,y,width,height,scale)
+        if verbose:
+            print request_url
+        tilespecs_json=self.process_simple_url_request(request_url,session)
+        return [TileSpec(json=tilespec_json) for tilespec_json in tilespecs_json]
+
+
     def get_tile_specs_from_z(self,stack,z,host = None,port = None,owner=None,project=None,
                               session=requests.session()):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
@@ -443,6 +462,20 @@ class Render(object):
 
         return outdata
 
+    def get_png_tile(self,stack,z,x,y,width,height,scale=1.0,host=None,port=None,owner=None,project=None,session=requests.session()):
+        (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
+        request_url = self.format_preamble(host,port,owner,project,stack)+"/z/%d/box/%d,%d,%d,%d,%3.2f/png-image"%(z,x,y,width,height,scale)
+        #print request_url
+        r = session.get(request_url)
+        import io
+        from PIL import Image
+        from array import array
+        try:
+            image = np.asarray(Image.open(io.BytesIO(r.content)))
+        except:
+            print r.text
+        return image
+        
     def world_to_local_coordinates_batch_local(self,stack, z, data, host = None, port = None, owner = None, project = None):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         return batch_local_work(stack, z, data, host, port, owner, project, localToWorld=False)
