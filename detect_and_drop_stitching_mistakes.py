@@ -44,7 +44,6 @@ if __name__ == '__main__':
 
     #STEP 2: get z values of stitched stack
     zvalues=render.get_z_values_for_stack(a.prestitchedStack)
-
     #STEP 3: loop over z values
     jsonfiles = []
     for z in zvalues:
