@@ -34,7 +34,10 @@ def process_section(z,renderObj=None):
     tfd['id'] = '%s_to_%s_z_%f_alignment'%(a.prealignedStack,a.postalignedStack,z)
     tfd['type'] = 'list'
     tfd['specList'] = [tf.to_dict() for tf in tform_R_to_A]
-    
+    transformFileOut = os.path.join(a.jsonDirectory,
+        '%s_to_%s_z_%d_alignment.json'%(a.prealignedStack,a.postalignedStack,z))
+    json.dump([tfd],open(transformFileOut,'w'),indent=4)
+
     
     #collect all the tilespecs
     totts=[]
@@ -47,7 +50,7 @@ def process_section(z,renderObj=None):
         '%s_%s_%s_z_%d_AlignedTilespecs.json'%(a.Owner,a.Project,a.outputStack,z))
     json.dump([ts.to_dict() for ts in totts],open(tilespecFileOut,'w'),indent=4)
     
-    return (tilespecFileOut,tfd)
+    return (tilespecFileOut,transformFileOut)
 
 
 if __name__ == '__main__':
@@ -114,22 +117,18 @@ if __name__ == '__main__':
 
     #define a partial function that takes in a single z
     partial_process = partial(process_section,renderObj=render)
-
+    partial_process(0)
     #parallel process all sections
     res = pool.amap(partial_process,zvalues)
     
     #wait for results to finish and collect the resulting json file paths
     res.wait()
     results = res.get()
-    ztransforms=[zt for jsonfile,zt in results]
+    ztransform_files=[zt for jsonfile,zt in results]
     final_json_files=[jsonfile for jsonfile,zt in results]
 
     #step 3
     #upload the altered tilespecs and the tranform tilespec to render under the outputStack
-
-    #write out the transforms to disk
-    transformFileOut = os.path.join(a.jsonDirectory,'%s_%s_%s_to_%s_Transforms.json'%(a.Owner,a.Project,a.prealignedStack,a.postalignedStack))
-    json.dump(ztransforms,open(transformFileOut,'w'),indent=4)
 
     #write out the tilespecs to disk
     #tilespecFileOut = os.path.join(a.jsonDirectory,'%s_%s_%s_AlignedTilespecs.json'%(a.Owner,a.Project,a.outputStack))
@@ -137,4 +136,4 @@ if __name__ == '__main__':
 
     #upload them to render using parallel upload
     render.create_stack(a.outputStack)
-    render.import_jsonfiles_parallel(a.outputStack,final_json_files,poolsize=a.poolSize,transformFile=transformFileOut,verbose=a.verbose)
+    render.import_jsonfiles_and_transforms_parallel_by_z(a.outputStack,final_json_files,ztransform_files,poolsize=a.poolSize,verbose=a.verbose)
