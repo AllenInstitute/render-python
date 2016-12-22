@@ -20,7 +20,9 @@ this = sys.modules[__name__]
 from io import BytesIO
 import numpy as np
 from PIL import Image
-
+import pathos.multiprocessing as mp
+import time
+from functools import partial
 
 
 # DEFAULT_HOST = "renderer.int.janelia.org"
@@ -44,6 +46,10 @@ this.DEFAULT_CLIENT_SCRIPTS = "/pipeline/render/render-ws-java-client/src/main/s
 #     ]
 #   }
 # ]
+
+
+
+
 class Render(object):
     DEFAULT_HOST = "ibs-forrestc-ux1.corp.alleninstitute.org"
     DEFAULT_PORT = 8080
@@ -92,7 +98,8 @@ class Render(object):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project,client_scripts)
         sv = StackVersion(cycleNumber=cycleNumber,cycleStepNumber=cycleStepNumber)
         request_url = self.format_preamble(host,port,owner,project,stack)
-        print "stack version2",request_url,sv.to_dict()
+        if verbose:
+           print "stack version2",request_url,sv.to_dict()
         payload = json.dumps(sv.to_dict())
         r = session.post(request_url,data=payload,headers={"content-type":"application/json","Accept":"application/json"})
         try:
@@ -113,10 +120,73 @@ class Render(object):
         # proc.wait()
         # if verbose:
         #     print proc.stdout.read()
-            
+    
+    def import_single_json_file(self,stack,jsonfile,transformFile=None,
+        client_scripts=DEFAULT_CLIENT_SCRIPTS,host=None,port=None,owner=None,project=None,verbose=False):
+        
+        (host,port,owner,project,client_scripts)=\
+        self.process_defaults(host,port,owner,project,client_scripts)
+
+        if transformFile is None:
+            transform_params =[]
+        else:
+            transform_params = ['--transformFile',transformFile]
+        import subprocess
+        my_env= os.environ.copy()
+        stack_params = self.make_stack_params(host,port,owner,project,stack)
+        cmd = [os.path.join(client_scripts, 'import_json.sh')] + \
+        stack_params + \
+        transform_params + \
+        [jsonfile]
+        if verbose:
+            print cmd
+        proc = subprocess.Popen(cmd, env=my_env, stdout=subprocess.PIPE)
+        proc.wait()
+        if verbose:
+            print proc.stdout.read()
+
+    def import_jsonfiles_and_transforms_parallel_by_z(self,stack,jsonfiles,transformfiles,poolsize=20,client_scripts=DEFAULT_CLIENT_SCRIPTS,
+        host=None,port=None,owner=None,project=None,close_stack=True,verbose=False):
+
+        (host,port,owner,project,client_scripts)=\
+        self.process_defaults(host,port,owner,project,client_scripts)
+        self.set_stack_state(stack,'LOADING',host,port,owner,project)
+
+
+        pool = mp.ProcessingPool(poolsize)
+    
+        partial_import = partial(self.import_single_json_file,stack,
+            client_scripts=client_scripts,host=host,port=port,owner=owner,project=project,verbose=verbose)
+        
+        rs = pool.amap(partial_import, jsonfiles,transformfiles)
+        rs.wait()
+
+        if close_stack:
+            self.set_stack_state(stack,'COMPLETE',host,port,owner,project)
+
+    def import_jsonfiles_parallel(self,stack,jsonfiles,poolsize=20,transformFile=None,client_scripts=DEFAULT_CLIENT_SCRIPTS,
+        host=None,port=None,owner=None,project=None,close_stack=True,verbose=False):
+        
+        (host,port,owner,project,client_scripts)=\
+        self.process_defaults(host,port,owner,project,client_scripts)
+        self.set_stack_state(stack,'LOADING',host,port,owner,project)
+
+
+        pool = mp.ProcessingPool(poolsize)
+    
+        partial_import = partial(self.import_single_json_file,stack,transformFile=transformFile,
+            client_scripts=client_scripts,host=host,port=port,owner=owner,project=project,verbose=verbose)
+        partial_import(jsonfiles[0])
+        rs = pool.amap(partial_import, jsonfiles)
+        rs.wait()
+
+        if close_stack:
+            self.set_stack_state(stack,'COMPLETE',host,port,owner,project)
+
+
     def import_jsonfiles(self,stack,jsonfiles,transformFile = None,
                          client_scripts=DEFAULT_CLIENT_SCRIPTS,host = None,port = None,
-                         owner = None,project = None,verbose=False):
+                         owner = None,project = None,close_stack=True,verbose=False):
         (host,port,owner,project,client_scripts)=\
         self.process_defaults(host,port,owner,project,client_scripts)
 
@@ -139,7 +209,8 @@ class Render(object):
         proc.wait()
         if verbose:
             print proc.stdout.read()
-        self.set_stack_state(stack,'COMPLETE',host,port,owner,project)
+        if close_stack:
+            self.set_stack_state(stack,'COMPLETE',host,port,owner,project)
         
             
     def world_to_local_coordinates(self,stack, z, x, y, host = None, port = None, owner = None, project = None, session=requests.session()):
@@ -196,10 +267,11 @@ class Render(object):
         stacks =([m['stackId']['stack'] for m in metadata if m['stackId']['project']==project])
         return stacks
 
-    def get_stack_metadata_by_owner(self,owner=None,host=None,port=None,session=requests.session()):
+    def get_stack_metadata_by_owner(self,owner=None,host=None,port=None,session=requests.session(),verbose=False):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,None)
         request_url =  "%s/owner/%s/stacks/"%(self.format_baseurl(host,port),owner)
-        print request_url
+        if verbose:
+            request_url
         return self.process_simple_url_request(request_url,session)
 
     # PUT http://{host}:{port}/render-ws/v1/owner/{owner}/project/{project}/stack/{stack}/z/{z}/local-to-world-coordinates
@@ -239,10 +311,11 @@ class Render(object):
     #   ]
     # ]
     def get_z_values_for_stack(self,stack,project = None,
-    host = None,port = None,owner = None,session=requests.session()):
+    host = None,port = None,owner = None,session=requests.session(),verbose=False):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         request_url = self.format_preamble(host,port,owner,project,stack)+"/zValues/"
-        print request_url
+        if verbose:
+            request_url
         r = session.get(request_url)
         try:
             return r.json()
@@ -361,10 +434,11 @@ class Render(object):
             print(r.text)
             return None
     def put_resolved_tilespecs(self,stack,data,host = None,port = None,owner = None,project = None,
-                               session=requests.session()):
+                               session=requests.session(),verbose=False):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         request_url = self.format_preamble(host,port,owner,project,stack)+"/resolvedTiles"
-        print 'new',request_url
+        if verbose:
+            print request_url
         
         r = session.put(request_url, data=data, headers={"content-type":"application/json","Accept":"text/plain"})
         return r
@@ -387,25 +461,30 @@ class Render(object):
         y = ymin
         width = xmax-xmin
         height = ymax -ymin
-        return self.get_tile_specs_from_box(stack, z, x, y, width, height,host,port,owner,project,session,verbose)
-        
+        return self.get_tile_specs_from_box(stack, z, x, y, width, height,scale,host,port,owner,project,session,verbose)
+
     def get_tile_specs_from_box(self,stack,z,x,y,width,height,scale=1.0,host=None, port=None,owner=None,project=None,
                                 session=requests.session(),verbose=False):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         request_url = self.format_preamble(host,port,owner,project,stack)+"/z/%d/box/%d,%d,%d,%d,%3.2f/render-parameters"%(z,x,y,width,height,scale)
         if verbose:
             print request_url
-        tilespecs_json=self.process_simple_url_request(request_url,session)
+        tilespecs_json=self.process_simple_url_request(request_url,session)['tileSpecs']
+        #return tilespecs_json
         return [TileSpec(json=tilespec_json) for tilespec_json in tilespecs_json]
 
 
     def get_tile_specs_from_z(self,stack,z,host = None,port = None,owner=None,project=None,
-                              session=requests.session()):
+                              session=requests.session(),verbose=False):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         request_url = self.format_preamble(host,port,owner,project,stack)+'/z/%f/tile-specs'%(z)
-        print request_url
+        if verbose:
+            print request_url
         tilespecs_json=self.process_simple_url_request(request_url,session)
-        return [TileSpec(json=tilespec_json) for tilespec_json in tilespecs_json]
+        if len(tilespecs_json)==0:
+            return None
+        else:
+            return [TileSpec(json=tilespec_json) for tilespec_json in tilespecs_json]
 
     def get_bounds_from_z(self,stack,z,host = None,port = None,owner = None,project = None,
                               session=requests.session()):
@@ -421,11 +500,12 @@ class Render(object):
     MAP_COORD_SCRIPT = "/groups/flyTEM/flyTEM/render/bin/map-coord.sh"
 
     def set_stack_state(self,stack,state='LOADING',host = None,port = None,owner = None,project = None,
-                              session=requests.session()):
+                              session=requests.session(),verbose=False):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         assert state in ['LOADING','COMPLETE','OFFLINE']
         request_url = self.format_preamble(host,port,owner,project,stack)+"/state/%s"%state
-        print request_url
+        if verbose:
+            request_url
         r=session.put(request_url,data=None,headers={"content-type":"application/json"})
         return r                 
         
@@ -483,3 +563,4 @@ class Render(object):
     def local_to_world_coordinates_batch_local(self,stack, z, data, host = None, port = None, owner = None, project = None):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         return batch_local_work(stack, z, data, host, port, owner, project, localToWorld=True)
+
