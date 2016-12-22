@@ -5,6 +5,50 @@ import os
 import json
 import argparse
 import subprocess
+import pathos.multiprocessing as mp
+from functools import partial
+
+def process_section(z,renderObj=None):
+    #get the first tilespec
+    post_ts = render.get_tile_specs_from_z(a.postalignedStack, z)[0]
+    origts  = render.get_tile_spec(a.prealignedStack, post_ts.tileId)
+
+    #make a list of transform objects for its transforms, this takes this tile from raw space to aligned space
+    tform_W_to_A = post_ts.tforms
+
+    #print 'origts',origts.tforms
+    #invert the original transformations (assumes they are Affine)
+    tform_W_to_R = origts.tforms
+    tform_R_to_W = list(tform_W_to_R)
+    tform_R_to_W.reverse()
+    tform_R_to_W = [tf.invert() for tf in tform_R_to_W]
+    
+    #print 'tform_R_to_W',tform_R_to_W
+    #create a transform list that takes you from registered space to aligned space
+    #this can now be appended to all the transforms in the original input stack
+    #that share the same Z
+    tform_R_to_A = tform_R_to_W + tform_W_to_A
+    
+    #create a reference transform json, this might be more efficent in the future
+    tfd = {}
+    tfd['id'] = '%s_to_%s_z_%f_alignment'%(a.prealignedStack,a.postalignedStack,z)
+    tfd['type'] = 'list'
+    tfd['specList'] = [tf.to_dict() for tf in tform_R_to_A]
+    
+    
+    #collect all the tilespecs
+    totts=[]
+    original_tilespecs=render.get_tile_specs_from_z(a.inputStack,z)
+    for ts in original_tilespecs:
+        ts.tforms+=[ReferenceTransform(refId=tfd['id'])]    
+        totts.append(ts)
+    #dump them to a file and collect the filepaths
+    tilespecFileOut = os.path.join(a.jsonDirectory,
+        '%s_%s_%s_z_%d_AlignedTilespecs.json'%(a.Owner,a.Project,a.outputStack,z))
+    json.dump([ts.to_dict() for ts in totts],open(tilespecFileOut,'w'),indent=4)
+    
+    return (tilespecFileOut,tfd)
+
 
 if __name__ == '__main__':
 
@@ -40,6 +84,8 @@ if __name__ == '__main__':
     p.add_argument('--port',                help="port for render server",default=DEFAULT_RENDER_PORT)
     p.add_argument('--renderHome',           help="directory to find render installation",default=DEFAULT_RENDER_HOME)
     p.add_argument('--verbose',             help="verbose output",action='store_true')
+    p.add_argument('--poolSize',            help='number of parallel z sections to process', default=20)
+
     a = p.parse_args()
 
     client_scripts = os.path.join(a.renderHome,'render-ws-java-client','src','main','scripts')
@@ -61,41 +107,22 @@ if __name__ == '__main__':
     render = Render(a.host,a.port,a.Owner,a.Project,client_scripts)
 
     zvalues = render.get_z_values_for_stack(a.postalignedStack)
-    finaltilespecs =[]
-    ztransforms=[]
     
-    for z in zvalues:
-        #get the first tilespec
-        post_ts = render.get_tile_specs_from_z(a.postalignedStack, z)[0]
-        origts  = render.get_tile_spec(a.prealignedStack, post_ts.tileId)
+    print 'processing %d sections'%len(zvalues)
+    #SETUP a processing pool to process each section
+    pool =mp.ProcessingPool(a.poolSize)
 
-        #make a list of transform objects for its transforms, this takes this tile from raw space to aligned space
-        tform_W_to_A = post_ts.tforms
+    #define a partial function that takes in a single z
+    partial_process = partial(process_section,renderObj=render)
 
-        #print 'origts',origts.tforms
-        #invert the original transformations (assumes they are Affine)
-        tform_W_to_R = origts.tforms
-        tform_R_to_W = list(tform_W_to_R)
-        tform_R_to_W.reverse()
-        tform_R_to_W = [tf.invert() for tf in tform_R_to_W]
-        
-        #print 'tform_R_to_W',tform_R_to_W
-        #create a transform list that takes you from registered space to aligned space
-        #this can now be appended to all the transforms in the original input stack
-        #that share the same Z
-        tform_R_to_A = tform_R_to_W + tform_W_to_A
-        
-        #create a reference transform json, this might be more efficent in the future
-        tfd = {}
-        tfd['id'] = '%s_to_%s_z_%f_alignment'%(a.prealignedStack,a.postalignedStack,z)
-        tfd['type'] = 'list'
-        tfd['specList'] = [tf.to_dict() for tf in tform_R_to_A]
-        ztransforms.append(tfd)
-        
-        original_tilespecs=render.get_tile_specs_from_z(a.inputStack,z)
-        for ts in original_tilespecs:
-            ts.tforms+=[ReferenceTransform(refId=tfd['id'])]    
-            finaltilespecs.append(ts)
+    #parallel process all sections
+    res = pool.amap(partial_process,zvalues)
+    
+    #wait for results to finish and collect the resulting json file paths
+    res.wait()
+    results = res.get()
+    ztransforms=[zt for jsonfile,zt in results]
+    final_json_files=[jsonfile for jsonfile,zt in results]
 
     #step 3
     #upload the altered tilespecs and the tranform tilespec to render under the outputStack
@@ -105,9 +132,9 @@ if __name__ == '__main__':
     json.dump(ztransforms,open(transformFileOut,'w'),indent=4)
 
     #write out the tilespecs to disk
-    tilespecFileOut = os.path.join(a.jsonDirectory,'%s_%s_%s_AlignedTilespecs.json'%(a.Owner,a.Project,a.outputStack))
-    json.dump([ts.to_dict() for ts in finaltilespecs],open(tilespecFileOut,'w'),indent=4)
+    #tilespecFileOut = os.path.join(a.jsonDirectory,'%s_%s_%s_AlignedTilespecs.json'%(a.Owner,a.Project,a.outputStack))
+    #json.dump([ts.to_dict() for ts in finaltilespecs],open(tilespecFileOut,'w'),indent=4)
 
-    #upload them to render
+    #upload them to render using parallel upload
     render.create_stack(a.outputStack)
-    render.import_jsonfiles(a.outputStack,[tilespecFileOut],transformFile=transformFileOut,verbose=a.verbose)
+    render.import_jsonfiles_parallel(a.outputStack,final_json_files,poolsize=a.poolSize,transformFile=transformFileOut,verbose=a.verbose)
