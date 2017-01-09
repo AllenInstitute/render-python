@@ -559,7 +559,67 @@ class Render(object):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         return batch_local_work(stack, z, data, host, port, owner, project, localToWorld=True)
 
-    def get_matchcollection_owners(self,host=None,port=None,verbose=False):
+    def get_matchcollection_owners(self,host=None,port=None,verbose=False,session=requests.session()):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,None,None)
-        request_url=self.format_baseurl(host,port)+"matchCollectionOwners"
-        return self.process_simple_request(request_url)
+        request_url=self.format_baseurl(host,port)+"/matchCollectionOwners"
+        return self.process_simple_url_request(request_url, session)
+
+    def get_matchcollections(self,owner=None,host=None,port=None,verbose=False,session=requests.session()):
+        (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,None)
+        request_url = self.format_baseurl(host, port)+"/owner/%s/matchCollections"%owner
+        return self.process_simple_url_request(request_url, session)
+
+    def get_match_groupIds(self,matchCollection,owner=None,host=None,port=None,verbose=False,session=requests.session()):
+        (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,None)
+        request_url = self.format_baseurl(host, port)+"/owner/%s/matchCollection/%s/groupIds"%(owner,matchCollection)
+        return self.process_simple_url_request(request_url, session)
+
+    def get_section_z_value(self,stack,sectionId,host=None,port=None,owner=None,project=None,verbose=False,session=requests.session()):
+        (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
+        request_url = self.format_preamble(host, port, owner, project, stack)+"/section/%s/z"%sectionId
+        return float(self.process_simple_url_request(request_url, session))
+
+    def get_matches_outside_group(self,matchCollection,groupId,owner=None,host=None,port=None,verbose=False,session=requests.session()):
+        (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,None)
+        request_url = self.format_baseurl(host, port)+"/owner/%s/matchCollection/%s/group/%s/matchesOutsideGroup"%\
+        (owner,matchCollection,groupId)
+        return self.process_simple_url_request(request_url, session)
+
+    def get_matches_within_group(self,matchCollection,groupId,owner=None,host=None,port=None,verbose=False,session=requests.session()):
+        (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,None)
+        request_url = self.format_baseurl(host, port)+"/owner/%s/matchCollection/%s/group/%s/matchesWithinGroup"%\
+        (owner,matchCollection,groupId)
+        return self.process_simple_url_request(request_url, session)
+
+    def get_matches_from_group_to_group(self,matchCollection,pgroup,qgroup,owner=None,host=None,port=None,verbose=False,session=requests.session()):
+        (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,None)
+        request_url = self.format_baseurl(host, port)+"/owner/%s/matchCollection/%s/group/%s/matchesWith/%s"%\
+        (owner,matchCollection,pgroup,qgroup)
+        return self.process_simple_url_request(request_url, session)
+
+    def get_matches_from_tile_to_tile(self,matchCollection,pgroup,pid,qgroup,qid,owner=None,host=None,port=None,verbose=False,session=requests.session()):
+        (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,None)
+        request_url = self.format_baseurl(host, port)+"/owner/%s/matchCollection/%s/group/%s/id/%s/matchesWith/%s/id/%s"%\
+        (owner,matchCollection,pgroup,pid,qgroup,qid)
+        return self.process_simple_url_request(request_url, session)
+
+    def get_matches_with_group(self,matchCollection,pgroup,owner=None,host=None,port=None,verbose=False,session=requests.session()):
+        (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,None)
+        request_url = self.format_baseurl(host, port)+"/owner/%s/matchCollection/%s/pGroup/%s/matches/"%\
+        (owner,matchCollection,pgroup)
+        return self.process_simple_url_request(request_url, session)
+ 
+    def get_match_groupIds_from_only(self,matchCollection,owner=None,host=None,port=None,verbose=False,session=requests.session()):
+        (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,None)
+        request_url = self.format_baseurl(host, port)+"/owner/%s/matchCollection/%s/pGroupIds"%\
+        (owner,matchCollection)
+        return self.process_simple_url_request(request_url, session)
+
+    def get_match_groupIds_to_only(self,matchCollection,owner=None,host=None,port=None,verbose=False,session=requests.session()):
+        (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,None)
+        request_url = self.format_baseurl(host, port)+"/owner/%s/matchCollection/%s/qGroupIds"%\
+        (owner,matchCollection)
+        return self.process_simple_url_request(request_url, session)
+
+
+
