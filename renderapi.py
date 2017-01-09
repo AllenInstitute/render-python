@@ -1,13 +1,3 @@
-
-#
-# Quick kludge to call the Render serice API for point requests.
-#
-
-#
-# TODO: Make a nice clean Pythonic API for these & other calls to the renderer.
-#
-
-
 import tempfile
 import os
 import json
@@ -47,9 +37,6 @@ this.DEFAULT_CLIENT_SCRIPTS = "/pipeline/render/render-ws-java-client/src/main/s
 #   }
 # ]
 
-
-
-
 class Render(object):
     DEFAULT_HOST = "ibs-forrestc-ux1.corp.alleninstitute.org"
     DEFAULT_PORT = 8080
@@ -65,6 +52,11 @@ class Render(object):
         self.DEFAULT_CLIENT_SCRIPTS = default_client_scripts
 
     def process_defaults(self,host,port,owner,project,client_scripts=DEFAULT_CLIENT_SCRIPTS):
+    #def process_defaults(self,host,port,owner,project,client_scripts=DEFAULT_CLIENT_SCRIPTS):
+    #utility function which will convert arguments to default arguments if they are None
+    #allows Render object to be used with defaults if lazy, but allows projects/hosts/owners to be changed
+    #from call to call if desired.
+    #used by many functions convert default None arguments to default values.
         if host is None:
             host=self.DEFAULT_HOST
         if port is None:
@@ -78,6 +70,9 @@ class Render(object):
         return (host,port,owner,project,client_scripts)
 
     def make_stack_params(self,host,port,owner,project,stack):
+    #utility function to turn host,port,owner,project,stack combinations
+    #to java CLI based argument list for subprocess calling
+    #returns [--baseDataUrl,self.format_baseurl(host,port),--owner
         baseurl = self.format_baseurl(host,port)
         project_params = ['--baseDataUrl', baseurl, '--owner', owner, '--project', project]
         stack_params= project_params + ['--stack', stack]
@@ -315,7 +310,7 @@ class Render(object):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         request_url = self.format_preamble(host,port,owner,project,stack)+"/zValues/"
         if verbose:
-            request_url
+            print request_url
         r = session.get(request_url)
         try:
             return r.json()
@@ -564,3 +559,7 @@ class Render(object):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         return batch_local_work(stack, z, data, host, port, owner, project, localToWorld=True)
 
+    def get_matchcollection_owners(self,host=None,port=None,verbose=False):
+        (host,port,owner,project,client_scripts)=self.process_defaults(host,port,None,None)
+        request_url=self.format_baseurl(host,port)+"matchCollectionOwners"
+        return self.process_simple_request(request_url)
