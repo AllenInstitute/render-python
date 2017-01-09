@@ -318,7 +318,20 @@ class TileSpec():
         thedict['mipmapLevels']=mipmapdict
         thedict['transforms']={}
         thedict['transforms']['type']='list'
-        thedict['transforms']['specList']=[t.to_dict() for t in self.tforms]
+        #thedict['transforms']['specList']=[t.to_dict() for t in self.tforms]
+	thedict['transforms']['specList'] = []
+	for t in self.tforms:
+		strlist = {}
+		#added by sharmi - if your speclist contains a speclist (can happen if you run the optimization more than once)
+		if isinstance(t,list):
+			strlist['type'] = 'list'
+			strlist['specList'] = [tt.to_dict() for tt in t]
+			thedict['transforms']['specList'].append(strlist)
+		else:
+			thedict['transforms']['specList'].append(t.to_dict())
+		############################################################################################################
+
+
         thedict['inputfilters']={}
         thedict['inputfilters']['type']='list'
         thedict['inputfilters']['specList']=[f.to_dict() for f in self.inputfilters]
