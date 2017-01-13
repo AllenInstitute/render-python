@@ -1,26 +1,26 @@
-import tempfile
+import logging
 import os
 import json
 import subprocess
 import sys
+from functools import partial
+import tempfile
+from io import BytesIO
+import time
 import requests
 import numpy as np
-from tilespec import TileSpec,StackVersion
-this = sys.modules[__name__]  
-from io import BytesIO
-import numpy as np
 from PIL import Image
-import pathos.multiprocessing as mp
-import time
-from functools import partial
+from tilespec import TileSpec,StackVersion
 
+# import pathos.multiprocessing as mp
+try:
+    from pathos.multiprocessing import ProcessingPool as Pool
+    has_pathos = True
+except ImportError as e:
+    logging.warning(e)
+    has_pathos = False
+    from multiprocessing import Pool
 
-# DEFAULT_HOST = "renderer.int.janelia.org"
-this.DEFAULT_HOST = "ibs-forrestc-ux1.corp.alleninstitute.org"
-this.DEFAULT_PORT = 8080
-this.DEFAULT_OWNER = "Forrest"
-this.DEFAULT_PROJECT = "M246930_Scnn1a_4"
-this.DEFAULT_CLIENT_SCRIPTS = "/pipeline/render/render-ws-java-client/src/main/scripts"
 
 # GET http://{host}:{port}/render-ws/v1/owner/{owner}/project/{project}/stack/{stack}/z/{z}/world-to-local-coordinates/{x},{y}
 # curl "http://renderer.int.janelia.org:8080/render-ws/v1/owner/flyTEM/project/fly_pilot/stack/20141107_863/z/2239/world-to-local-coordinates/40000,40000"
@@ -38,18 +38,71 @@ this.DEFAULT_CLIENT_SCRIPTS = "/pipeline/render/render-ws-java-client/src/main/s
 # ]
 
 class Render(object):
-    DEFAULT_HOST = "ibs-forrestc-ux1.corp.alleninstitute.org"
-    DEFAULT_PORT = 8080
-    DEFAULT_OWNER = "Forrest"
-    DEFAULT_PROJECT = "M246930_Scnn1a_4"
-    DEFAULT_CLIENT_SCRIPTS = "/pipeline/render/render-ws-java-client/src/main/scripts"
-    
-    def __init__(self,default_host,default_port,default_owner,default_project,default_client_scripts=this.DEFAULT_CLIENT_SCRIPTS):
-        self.DEFAULT_HOST = default_host
-        self.DEFAULT_PORT = default_port
-        self.DEFAULT_PROJECT = default_project
-        self.DEFAULT_OWNER = default_owner
-        self.DEFAULT_CLIENT_SCRIPTS = default_client_scripts
+    def __init__(self, host=None, port=None, owner=None, project=None,
+                 client_scripts=None):
+
+        # FIXME: combine port and host into server
+        # FIXME port handling might have weird casting requirements
+        # TODO maybe pull this out to a separate renderapi.connect() function?
+        if host is None:
+            if 'RENDER_HOST' not in os.environ:
+                host = str(raw_input("Enter Render Host: "))
+                if host == '':
+                    logging.critical('Render Host must not be empty!')
+                    raise ValueError('Render Host must not be empty!')
+                host = (host if host.startswith('http')
+                        else 'http://{}'.format(host))
+            else:
+                host = os.environ['RENDER_HOST']
+        self.DEFAULT_HOST = host
+
+        if port is None:
+            if 'RENDER_PORT' not in os.environ:
+                port = str(int(raw_input("Enter Render Port: ")))
+                if port == '':
+                    # TODO better (no) port handling
+                    logging.critical('Render Port must not be empty!')
+                    raise ValueError('Render Port must not be empty!')
+            else:
+                port = str(int(os.environ['RENDER_PORT']))
+        self.DEFAULT_PORT = port
+
+        if project is None:
+            if 'RENDER_PROJECT' not in os.environ:
+                project = str(raw_input("Enter Render Project: "))
+                if project == '':
+                    logging.critical('Render Project must not be empty!')
+                    raise ValueError('Render Project must not be empty!')
+            else:
+                project = str(os.environ['RENDER_PROJECT'])
+        self.DEFAULT_PROJECT = project
+
+        if owner is None:
+            if 'RENDER_OWNER' not in os.environ:
+                owner = str(raw_input("Enter Render Owner: "))
+                if owner == '':
+                    logging.critical('Render Owner must not be empty!')
+                    raise ValueError('Render Owner must not be empty!')
+            else:
+                owner = str(os.environ['RENDER_OWNER'])
+        self.DEFAULT_OWNER = owner
+
+        if client_scripts is None:
+            if 'RENDER_CLIENT_SCRIPTS' not in os.environ:
+                client_scripts = str(raw_input(
+                    "Enter Render Client Scripts location: "))
+                if client_scripts == '':
+                    logging.critical('Render Client Scripts must not be empty!')
+                    raise ValueError('Render Client Scripts must not be empty!')
+            else:
+                client_scripts = str(os.environ['RENDER_CLIENT_SCRIPTS'])
+        self.DEFAULT_CLIENT_SCRIPTS = client_scripts
+
+        logging.debug('Render object created with '
+                      'host={h}, port={p}, project={pr}, '
+                      'owner={o}, scripts={s}'.format(
+            h=self.DEFAULT_HOST, p=self.DEFAULT_PORT, pr=self.DEFAULT_PROJECT,
+            o=self.DEFAULT_OWNER, s=self.DEFAULT_CLIENT_SCRIPTS))
 
     def process_defaults(self,host,port,owner,project,client_scripts=DEFAULT_CLIENT_SCRIPTS):
     #def process_defaults(self,host,port,owner,project,client_scripts=DEFAULT_CLIENT_SCRIPTS):
@@ -82,7 +135,7 @@ class Render(object):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         request_url = self.format_preamble(host,port,owner,project,stack)
         r=session.delete(request_url)
-        print r.text           
+        print r.text
         return r
 
     def create_stack(self,stack,cycleNumber=1,cycleStepNumber=1,
@@ -115,10 +168,10 @@ class Render(object):
         # proc.wait()
         # if verbose:
         #     print proc.stdout.read()
-    
+
     def import_single_json_file(self,stack,jsonfile,transformFile=None,
         client_scripts=DEFAULT_CLIENT_SCRIPTS,host=None,port=None,owner=None,project=None,verbose=False):
-        
+
         (host,port,owner,project,client_scripts)=\
         self.process_defaults(host,port,owner,project,client_scripts)
 
@@ -147,12 +200,11 @@ class Render(object):
         self.process_defaults(host,port,owner,project,client_scripts)
         self.set_stack_state(stack,'LOADING',host,port,owner,project)
 
+        pool = Pool(poolsize)
 
-        pool = mp.ProcessingPool(poolsize)
-    
         partial_import = partial(self.import_single_json_file,stack,
             client_scripts=client_scripts,host=host,port=port,owner=owner,project=project,verbose=verbose)
-        
+
         rs = pool.amap(partial_import, jsonfiles,transformfiles)
         rs.wait()
 
@@ -161,14 +213,13 @@ class Render(object):
 
     def import_jsonfiles_parallel(self,stack,jsonfiles,poolsize=20,transformFile=None,client_scripts=DEFAULT_CLIENT_SCRIPTS,
         host=None,port=None,owner=None,project=None,close_stack=True,verbose=False):
-        
+
         (host,port,owner,project,client_scripts)=\
         self.process_defaults(host,port,owner,project,client_scripts)
         self.set_stack_state(stack,'LOADING',host,port,owner,project)
 
+        pool = Pool(poolsize)
 
-        pool = mp.ProcessingPool(poolsize)
-    
         partial_import = partial(self.import_single_json_file,stack,transformFile=transformFile,
             client_scripts=client_scripts,host=host,port=port,owner=owner,project=project,verbose=verbose)
         partial_import(jsonfiles[0])
@@ -186,7 +237,7 @@ class Render(object):
         self.process_defaults(host,port,owner,project,client_scripts)
 
         self.set_stack_state(stack,'LOADING',host,port,owner,project)
-      
+
         if transformFile is None:
             transform_params = []
         else:
@@ -206,8 +257,8 @@ class Render(object):
             print proc.stdout.read()
         if close_stack:
             self.set_stack_state(stack,'COMPLETE',host,port,owner,project)
-        
-            
+
+
     def world_to_local_coordinates(self,stack, z, x, y, host = None, port = None, owner = None, project = None, session=requests.session()):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
 
@@ -271,7 +322,7 @@ class Render(object):
 
     # PUT http://{host}:{port}/render-ws/v1/owner/{owner}/project/{project}/stack/{stack}/z/{z}/local-to-world-coordinates
     # with request body containing JSON array of local coordinate elements
-    # curl -H "Content-Type: application/json" -X PUT --data @coordinate-local.json "http://renderer.int.janelia.org:8080/render-ws/v1/owner/flyTEM/project/fly_pilot/stack/20141107_863/z/2239/local-to-world-coordinates" 
+    # curl -H "Content-Type: application/json" -X PUT --data @coordinate-local.json "http://renderer.int.janelia.org:8080/render-ws/v1/owner/flyTEM/project/fly_pilot/stack/20141107_863/z/2239/local-to-world-coordinates"
     # [
     #   {
     #     "tileId": "140422184419063136",
@@ -291,7 +342,7 @@ class Render(object):
         #print r.text
         return r.json()
 
-    # curl -H "Content-Type: application/json" -X PUT --data @coordinate-world.json "http://renderer.int.janelia.org:8080/render-ws/v1/owner/flyTEM/project/fly_pilot/stack/20141107_863/z/2239/world-to-local-coordinates" 
+    # curl -H "Content-Type: application/json" -X PUT --data @coordinate-world.json "http://renderer.int.janelia.org:8080/render-ws/v1/owner/flyTEM/project/fly_pilot/stack/20141107_863/z/2239/world-to-local-coordinates"
     # [
     #   [
     #     {
@@ -317,7 +368,7 @@ class Render(object):
         except:
             print(r.text)
             return None
-        
+
     def get_z_value_for_section(self,stack,sectionId,project = None,
     host = None,port = None,owner = None,session=requests.session()):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
@@ -328,7 +379,7 @@ class Render(object):
             return r.json()
         except:
             print(r.text)
-            return None                        
+            return None
     def get_tile_image_data(self,stack,tileId,host=None,port=None,owner=None,project=None,session=requests.session(),verbose=False):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         request_url = self.format_preamble(host,port,owner,project,stack)+"/tile/%s/png-image" % (tileId)
@@ -340,7 +391,7 @@ class Render(object):
             array = np.asarray(img)
             return array
         except:
-            print (r.text)    
+            print (r.text)
             return None
 
     def world_to_local_coordinates_array(self,stack, dataarray, tileId, z=0,host = None, port = None, owner = None, project = None, session=requests.session()):
@@ -353,7 +404,7 @@ class Render(object):
             d['world']=[dataarray[i,0],dataarray[i,1]]
             dlist.append(d)
         jsondata=json.dumps(dlist)
-        
+
         r = session.put(request_url, data=jsondata, headers={"content-type":"application/json"})
 
         json_answer = r.json()
@@ -371,7 +422,7 @@ class Render(object):
         except:
             print json_answer
             return None
-        
+
     def local_to_world_coordinates_array(self,stack, dataarray, tileId, z=0,host = None, port = None, owner = None, project = None, session=requests.session()):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         request_url = self.format_preamble(host,port,owner,project,stack)+"/z/%d/local-to-world-coordinates" % (z)
@@ -382,7 +433,7 @@ class Render(object):
             d['local']=[dataarray[i,0],dataarray[i,1]]
             dlist.append(d)
         jsondata=json.dumps(dlist)
-        
+
         r = session.put(request_url, data=jsondata, headers={"content-type":"application/json"})
 
         json_answer = r.json()
@@ -401,12 +452,12 @@ class Render(object):
             print json_answer
             return None
 
-                                        
+
     def local_to_world_coordinates_batch(self,stack, data, z, host = None, port = None, owner = None, project = None, session=requests.session()):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         request_url = self.format_preamble(host,port,owner,project,stack)+"/z/%d/local-to-world-coordinates" % (z)
-        
-        
+
+
         r = session.put(request_url, data=data, headers={"content-type":"application/json"})
 
         #print r.text()
@@ -434,18 +485,18 @@ class Render(object):
         request_url = self.format_preamble(host,port,owner,project,stack)+"/resolvedTiles"
         if verbose:
             print request_url
-        
+
         r = session.put(request_url, data=data, headers={"content-type":"application/json","Accept":"text/plain"})
         return r
 
-        
+
     # http://renderer.int.janelia.org:8080/render-ws/v1/owner/flyTEM/project/fly_pilot/stack/20141107_863/tile/140422184419060139
     def get_tile_spec(self,stack, tile, host = None, port = None, owner = None, project = None, session=requests.session()):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         request_url = self.format_preamble(host,port,owner,project,stack)+"/tile/%s/render-parameters"%(tile)
 
         tilespec_json= self.process_simple_url_request(request_url,session)
-        
+
         return TileSpec(json=tilespec_json['tileSpecs'][0])
 
 
@@ -486,7 +537,7 @@ class Render(object):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         request_url = self.format_preamble(host,port,owner,project,stack)+'/z/%f/bounds'%(z)
         return self.process_simple_url_request(request_url,session)
-       
+
     #
     # API for doing the bulk requests locally (i.e., to be run on the cluster)
     # Full documentation here: http://wiki.int.janelia.org/wiki/display/flyTEM/Coordinate+Mapping+Tools
@@ -502,8 +553,8 @@ class Render(object):
         if verbose:
             request_url
         r=session.put(request_url,data=None,headers={"content-type":"application/json"})
-        return r                 
-        
+        return r
+
     def batch_local_work(self,stack, z, data, host = None, port = None, owner = None, project = None, localToWorld=False, deleteTemp=True, threads=16):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         fromJson = tempfile.NamedTemporaryFile(suffix=".json", mode='w', delete=False)
@@ -550,7 +601,7 @@ class Render(object):
         except:
             print r.text
         return image
-        
+
     def world_to_local_coordinates_batch_local(self,stack, z, data, host = None, port = None, owner = None, project = None):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         return batch_local_work(stack, z, data, host, port, owner, project, localToWorld=False)
@@ -608,7 +659,7 @@ class Render(object):
         request_url = self.format_baseurl(host, port)+"/owner/%s/matchCollection/%s/pGroup/%s/matches/"%\
         (owner,matchCollection,pgroup)
         return self.process_simple_url_request(request_url, session)
- 
+
     def get_match_groupIds_from_only(self,matchCollection,owner=None,host=None,port=None,verbose=False,session=requests.session()):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,None)
         request_url = self.format_baseurl(host, port)+"/owner/%s/matchCollection/%s/pGroupIds"%\
@@ -620,6 +671,3 @@ class Render(object):
         request_url = self.format_baseurl(host, port)+"/owner/%s/matchCollection/%s/qGroupIds"%\
         (owner,matchCollection)
         return self.process_simple_url_request(request_url, session)
-
-
-
