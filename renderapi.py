@@ -431,14 +431,16 @@ class Render(object):
             print(r.text)
             return None
 
-    def get_tile_image_data(self, stack, tileId, host=None, port=None,
-                            owner=None, project=None,
+    def get_tile_image_data(self, stack, tileId, normalizeForMatching=True,
+                            host=None, port=None, owner=None, project=None,
                             session=requests.session(), verbose=False):
         (host, port, owner, project, client_scripts) = self.process_defaults(
             host, port, owner, project)
         request_url = self.format_preamble(
             host, port, owner, project, stack) + \
             "/tile/%s/png-image" % (tileId)
+        if normalizeForMatching:
+            request_url += "?normalizeForMatching=true"
         if verbose:
             print request_url
         r = session.get(request_url)
