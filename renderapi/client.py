@@ -2,8 +2,8 @@ import json
 from functools import partial
 import logging
 import subprocess
-from renderapi.render import Render  # TODO make relative for final
-from renderapi.stack import set_stack_state, make_stack_params
+from renderapi import Render
+from stack import set_stack_state, make_stack_params
 
 try:
     from pathos.multiprocessing import ProcessingPool as Pool
