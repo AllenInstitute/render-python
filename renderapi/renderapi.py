@@ -107,6 +107,21 @@ class Render(object):
                           pr=self.DEFAULT_PROJECT, o=self.DEFAULT_OWNER,
                           s=self.DEFAULT_CLIENT_SCRIPTS))
 
+    @property
+    def DEFAULT_KWARGS(self):
+        return self.make_kwargs()
+
+    def make_kwargs(self, host=None, port=None, owner=None, project=None,
+                    client_scripts=None, **kwargs):
+        processed_kwargs = {
+            'host': self.DEFAULT_HOST if host is None else host,
+            'port': self.DEFAULT_PORT if port is None else port,
+            'owner': self.DEFAULT_OWNER if owner is None else owner,
+            'client_scripts': (self.DEFAULT_CLIENT_SCRIPTS if client_scripts
+                               is None else client_scripts)}
+        processed_kwargs.update(kwargs)
+        return processed_kwargs
+
     def process_defaults(self, host, port, owner, project,
                          client_scripts=None):
     #def process_defaults(self,host,port,owner,project,client_scripts=DEFAULT_CLIENT_SCRIPTS):
@@ -125,16 +140,6 @@ class Render(object):
         if client_scripts is None:
             client_scripts = self.DEFAULT_CLIENT_SCRIPTS
         return (host, port, owner, project, client_scripts)
-
-    def make_stack_params(self, host, port, owner, project, stack):
-    #utility function to turn host,port,owner,project,stack combinations
-    #to java CLI based argument list for subprocess calling
-    #returns [--baseDataUrl,self.format_baseurl(host,port),--owner
-        baseurl = self.format_baseurl(host, port)
-        project_params = ['--baseDataUrl', baseurl,
-                          '--owner', owner, '--project', project]
-        stack_params = project_params + ['--stack', stack]
-        return stack_params
 
     def delete_stack(self, stack, host=None, port=None, owner=None,
                      project=None, session=requests.session()):
@@ -165,120 +170,6 @@ class Render(object):
         except:
             print r.text
             return None
-
-        # import subprocess
-        # my_env = os.environ.copy()
-        # stack_params = self.make_stack_params(host,port,owner,project,stack)
-        # cmd = [os.path.join(client_scripts, 'manage_stacks.sh')] + \
-        # stack_params + \
-        # ['--action', 'CREATE', '--cycleNumber', '%d'%cycleNumber, '--cycleStepNumber', '%d'%cycleStepNumber]
-        # if verbose:
-        #     print cmd
-        # proc = subprocess.Popen(cmd, env=my_env, stdout=subprocess.PIPE)
-        # proc.wait()
-        # if verbose:
-        #     print proc.stdout.read()
-
-    def import_single_json_file(self, stack, jsonfile, transformFile=None,
-                                client_scripts=None, host=None, port=None,
-                                owner=None, project=None, verbose=False):
-
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project, client_scripts)
-
-        if transformFile is None:
-            transform_params = []
-        else:
-            transform_params = ['--transformFile', transformFile]
-        my_env = os.environ.copy()
-        stack_params = self.make_stack_params(
-            host, port, owner, project, stack)
-        cmd = [os.path.join(client_scripts, 'import_json.sh')] + \
-            stack_params + \
-            transform_params + \
-            [jsonfile]
-        if verbose:
-            print cmd
-        proc = subprocess.Popen(cmd, env=my_env, stdout=subprocess.PIPE)
-        proc.wait()
-        if verbose:
-            print proc.stdout.read()
-
-    def import_jsonfiles_and_transforms_parallel_by_z(
-            self, stack, jsonfiles, transformfiles, poolsize=20,
-            client_scripts=None, host=None, port=None, owner=None,
-            project=None, close_stack=True, verbose=False):
-
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project, client_scripts)
-        self.set_stack_state(stack, 'LOADING', host, port, owner, project)
-
-        pool = Pool(poolsize)
-
-        partial_import = partial(self.import_single_json_file, stack,
-                                 client_scripts=client_scripts, host=host,
-                                 port=port, owner=owner, project=project,
-                                 verbose=verbose)
-
-        rs = pool.amap(partial_import, jsonfiles, transformfiles)
-        rs.wait()
-
-        if close_stack:
-            self.set_stack_state(stack, 'COMPLETE', host, port, owner, project)
-
-    def import_jsonfiles_parallel(
-            self, stack, jsonfiles, poolsize=20, transformFile=None,
-            client_scripts=None, host=None, port=None, owner=None,
-            project=None, close_stack=True, verbose=False):
-
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project, client_scripts)
-        self.set_stack_state(stack, 'LOADING', host, port, owner, project)
-
-        pool = Pool(poolsize)
-
-        partial_import = partial(self.import_single_json_file, stack,
-                                 transformFile=transformFile,
-                                 client_scripts=client_scripts,
-                                 host=host, port=port, owner=owner,
-                                 project=project, verbose=verbose)
-        partial_import(jsonfiles[0])
-        rs = pool.amap(partial_import, jsonfiles)
-        rs.wait()
-
-        if close_stack:
-            self.set_stack_state(stack, 'COMPLETE', host, port, owner, project)
-
-    def import_jsonfiles(self, stack, jsonfiles, transformFile=None,
-                         client_scripts=None, host=None, port=None,
-                         owner=None, project=None, close_stack=True,
-                         verbose=False):
-
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project, client_scripts)
-
-        self.set_stack_state(stack, 'LOADING', host, port, owner, project)
-
-        if transformFile is None:
-            transform_params = []
-        else:
-            transform_params = ['--transformFile', transformFile]
-
-        my_env = os.environ.copy()
-        stack_params = self.make_stack_params(
-            host, port, owner, project, stack)
-        cmd = [os.path.join(client_scripts, 'import_json.sh')] + \
-            stack_params + \
-            transform_params + \
-            jsonfiles
-        if verbose:
-            print cmd
-        proc = subprocess.Popen(cmd, env=my_env, stdout=subprocess.PIPE)
-        proc.wait()
-        if verbose:
-            print proc.stdout.read()
-        if close_stack:
-            self.set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
     def world_to_local_coordinates(self, stack, z, x, y, host=None, port=None,
                                    owner=None, project=None,
