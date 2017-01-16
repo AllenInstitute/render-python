@@ -292,7 +292,6 @@ class Render(object):
 
         r = session.get(request_url)
         try:
-            #print(r.json())
             return r.json()
         except:
             print(r.text)
@@ -321,7 +320,6 @@ class Render(object):
 
         r = session.get(request_url)
         try:
-            #print(r.json())
             return r.json()
         except:
             print(r.text)
@@ -383,7 +381,6 @@ class Render(object):
             "/z/%d/world-to-local-coordinates" % (z)
         r = session.put(request_url, data=data,
                         headers={"content-type": "application/json"})
-        #print r.text
         return r.json()
 
     # curl -H "Content-Type: application/json" -X PUT --data @coordinate-world.json "http://renderer.int.janelia.org:8080/render-ws/v1/owner/flyTEM/project/fly_pilot/stack/20141107_863/z/2239/world-to-local-coordinates"
@@ -425,7 +422,6 @@ class Render(object):
             host, port, owner, project, stack) + "/section/%s/z" % (sectionId)
         r = session.get(request_url)
         try:
-            #print(r.json())
             return r.json()
         except:
             print(r.text)
@@ -473,7 +469,6 @@ class Render(object):
                         headers={"content-type": "application/json"})
 
         json_answer = r.json()
-        #print json_answer
         try:
             answer = np.zeros(dataarray.shape)
 
@@ -509,7 +504,6 @@ class Render(object):
                         headers={"content-type": "application/json"})
 
         json_answer = r.json()
-        #print json_answer
         try:
             answer = np.zeros(dataarray.shape)
 
@@ -536,7 +530,6 @@ class Render(object):
         r = session.put(request_url, data=data,
                         headers={"content-type": "application/json"})
 
-        #print r.text()
         return r.json()
 
     def format_baseurl(self, host, port):
@@ -614,7 +607,6 @@ class Render(object):
             print request_url
         tilespecs_json = self.process_simple_url_request(
             request_url, session)['tileSpecs']
-        #return tilespecs_json
         return [TileSpec(json=tilespec_json)
                 for tilespec_json in tilespecs_json]
 
@@ -687,8 +679,6 @@ class Render(object):
 
         if localToWorld:
             cmd = cmd + " --localToWorld"
-        #print(cmd)
-
         try:
             rc = subprocess.call(cmd, shell="True")
             if rc != 0:
@@ -715,7 +705,6 @@ class Render(object):
             host, port, owner, project, stack) + \
             "/z/%d/box/%d,%d,%d,%d,%3.2f/png-image" % (
                           z, x, y, width, height, scale)
-        #print request_url
         r = session.get(request_url)
         try:
             image = np.asarray(Image.open(io.BytesIO(r.content)))
