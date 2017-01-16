@@ -50,8 +50,8 @@ class Render(object):
                 if host == '':
                     logging.critical('Render Host must not be empty!')
                     raise ValueError('Render Host must not be empty!')
-                host = (host if host.startswith('http')
-                        else 'http://{}'.format(host))
+                # host = (host if host.startswith('http')
+                #         else 'http://{}'.format(host))
             else:
                 host = os.environ['RENDER_HOST']
         self.DEFAULT_HOST = host
@@ -64,40 +64,40 @@ class Render(object):
                     logging.critical('Render Port must not be empty!')
                     raise ValueError('Render Port must not be empty!')
             else:
-                port = str(int(os.environ['RENDER_PORT']))
+                port = int(os.environ['RENDER_PORT'])
         self.DEFAULT_PORT = port
 
         if project is None:
             if 'RENDER_PROJECT' not in os.environ:
                 project = str(raw_input("Enter Render Project: "))
-                if project == '':
-                    logging.critical('Render Project must not be empty!')
-                    raise ValueError('Render Project must not be empty!')
             else:
                 project = str(os.environ['RENDER_PROJECT'])
+            if project == '':
+                logging.critical('Render Project must not be empty!')
+                raise ValueError('Render Project must not be empty!')
         self.DEFAULT_PROJECT = project
 
         if owner is None:
             if 'RENDER_OWNER' not in os.environ:
                 owner = str(raw_input("Enter Render Owner: "))
-                if owner == '':
-                    logging.critical('Render Owner must not be empty!')
-                    raise ValueError('Render Owner must not be empty!')
             else:
                 owner = str(os.environ['RENDER_OWNER'])
+            if owner == '':
+                logging.critical('Render Owner must not be empty!')
+                raise ValueError('Render Owner must not be empty!')
         self.DEFAULT_OWNER = owner
 
         if client_scripts is None:
             if 'RENDER_CLIENT_SCRIPTS' not in os.environ:
                 client_scripts = str(raw_input(
                     "Enter Render Client Scripts location: "))
-                if client_scripts == '':
-                    logging.critical('Render Client Scripts must '
-                                     'not be empty!')
-                    raise ValueError('Render Client Scripts must '
-                                     'not be empty!')
             else:
                 client_scripts = str(os.environ['RENDER_CLIENT_SCRIPTS'])
+            if client_scripts == '':
+                logging.critical('Render Client Scripts must '
+                                 'not be empty!')
+                raise ValueError('Render Client Scripts must '
+                                 'not be empty!')
         self.DEFAULT_CLIENT_SCRIPTS = client_scripts
 
         logging.debug('Render object created with '
@@ -117,6 +117,7 @@ class Render(object):
             'host': self.DEFAULT_HOST if host is None else host,
             'port': self.DEFAULT_PORT if port is None else port,
             'owner': self.DEFAULT_OWNER if owner is None else owner,
+            'project': self.DEFAULT_PROJECT if project is None else project,
             'client_scripts': (self.DEFAULT_CLIENT_SCRIPTS if client_scripts
                                is None else client_scripts)}
         processed_kwargs.update(kwargs)

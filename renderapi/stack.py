@@ -1,6 +1,7 @@
 import json
 import logging
 import requests
+from renderapi import Render
 
 
 def format_baseurl(host, port):
