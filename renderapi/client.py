@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import json
 from functools import partial
 import logging
@@ -17,14 +18,19 @@ except ImportError as e:
 def import_single_json_file(stack, jsonfile, render=None, transformFile=None,
                             client_scripts=None, host=None, port=None,
                             owner=None, project=None, verbose=False, **kwargs):
+    '''
+    calls client script to import given jsonfile:
+        transformFile: ?
+    '''
+    # process render-based default configuration
     if render is not None:
         if not isinstance(render, Render):
             raise ValueError('invalid Render object specified!')
-        import_single_json_file(stack, jsonfile, **render.make_kwargs(
+        return import_single_json_file(stack, jsonfile, **render.make_kwargs(
             host=host, port=port, owner=owner, project=project,
             client_scripts=client_scripts, **{'verbose': verbose,
                                               'transformFile': None}))
-        return
+
     if transformFile is None:
         transform_params = []
     else:
@@ -48,16 +54,24 @@ def import_jsonfiles_and_transforms_parallel_by_z(
         stack, jsonfiles, transformfiles, render=None, poolsize=20,
         client_scripts=None, host=None, port=None, owner=None,
         project=None, close_stack=True, verbose=False, **kwargs):
+    '''
+    imports json files and transform files in parallel:
+        jsonfiles: "list of tilespec" jsons to import
+        transformfiles: ?
+        poolsize: number of processes for multiprocessing pool
+        close_stack: mark render stack as COMPLETE after successful import
+    '''
+    # process render-based default configuration
     if render is not None:
         if not isinstance(render, Render):
             raise ValueError('invalid Render object specified!')
-        import_jsonfiles_and_transforms_parallel_by_z(
+        return import_jsonfiles_and_transforms_parallel_by_z(
             stack, jsonfile, transformfiles, **render.make_kwargs(
                 host=host, port=port, owner=owner, project=project,
                 client_scripts=client_scripts, **{'verbose': verbose,
                                                   'close_stack': close_stack,
                                                   'poolsize': poolsize}))
-        return
+
     set_stack_state(stack, 'LOADING', host, port, owner, project)
     pool = Pool(poolsize)
     partial_import = partial(import_single_json_file, stack, render=render,
@@ -74,18 +88,23 @@ def import_jsonfiles_parallel(
         stack, jsonfiles, render=None, poolsize=20, transformFile=None,
         client_scripts=None, host=None, port=None, owner=None,
         project=None, close_stack=True, verbose=False, **kwargs):
+    '''
+    import jsons using client script in parallel
+        jsonfiles: list of jsonfiles to upload
+        poolsize: number of upload processes spawned by multiprocessing pool
+        transformFile: ?
+    '''
+    # process render-based default configuration
     if render is not None:
         if not isinstance(render, Render):
             raise ValueError('invalid Render object specified!')
-        import_jsonfiles_parallel(
+        return import_jsonfiles_parallel(
             stack, jsonfiles, **render.make_kwargs(
                 host=host, port=port, owner=owner,
                 project=project, client_scripts=client_scripts,
-                **{'verbose': verbose,
-                   'close_stack': close_stack,
-                   'poolsize': poolsize,
-                   'transformFile': transformFile}))
-        return
+                **{'verbose': verbose, 'close_stack': close_stack,
+                   'poolsize': poolsize, 'transformFile': transformFile}))
+
     set_stack_state(stack, 'LOADING', host, port, owner, project)
     pool = Pool(poolsize)
     partial_import = partial(import_single_json_file, stack, render=render,
@@ -104,17 +123,21 @@ def import_jsonfiles(stack, jsonfiles, render=None, transformFile=None,
                      client_scripts=None, host=None, port=None,
                      owner=None, project=None, close_stack=True,
                      verbose=False, **kwargs):
+    '''
+    import jsons using client script serially
+        jsonfiles: iterator of filenames to be uploaded
+        transformFile: ?
+        close_stack: ?
+    '''
     if render is not None:
         if not isinstance(render, Render):
             raise ValueError('invalid Render object specified!')
-        import_jsonfiles(
+        return import_jsonfiles(
             stack, jsonfiles, **render.make_kwargs(
                 host=host, port=port, owner=owner,
                 project=project, client_scripts=client_scripts,
-                **{'verbose': verbose,
-                   'close_stack': close_stack,
+                **{'verbose': verbose, 'close_stack': close_stack,
                    'transformFile': transformFile}))
-        return
 
     set_stack_state(stack, 'LOADING', host, port, owner, project)
     if transformFile is None:
