@@ -37,6 +37,7 @@ except ImportError as e:
 #   }
 # ]
 
+
 class Render(object):
     def __init__(self, host=None, port=None, owner=None, project=None,
                  client_scripts=None):
@@ -109,10 +110,19 @@ class Render(object):
 
     @property
     def DEFAULT_KWARGS(self):
+        '''
+        kwargs to which the render object falls back.  Depends on:
+            self.DEFAULT_HOST, self.DEFAULT_OWNER, self.DEFAULT_PORT,
+            self.DEFAULT_PROJECT, self.DEFAULT_CLIENT_SCRIPTS
+        '''
         return self.make_kwargs()
 
     def make_kwargs(self, host=None, port=None, owner=None, project=None,
                     client_scripts=None, **kwargs):
+        '''
+        make kwargs using this render object's defaults and any
+            designated kwargs passed in
+        '''
         processed_kwargs = {
             'host': self.DEFAULT_HOST if host is None else host,
             'port': self.DEFAULT_PORT if port is None else port,
@@ -724,3 +734,62 @@ class Render(object):
         request_url = self.format_baseurl(host, port) + \
             "/owner/%s/matchCollection/%s/qGroupIds" % (owner, matchCollection)
         return self.process_simple_url_request(request_url, session)
+
+
+def connect(host=None, port=None, owner=None, project=None,
+            client_scripts=None):
+    '''helper function to connect to a render instance'''
+    if host is None:
+        if 'RENDER_HOST' not in os.environ:
+            host = str(raw_input("Enter Render Host: "))
+            if host == '':
+                logging.critical('Render Host must not be empty!')
+                raise ValueError('Render Host must not be empty!')
+            # host = (host if host.startswith('http')
+            #         else 'http://{}'.format(host))
+        else:
+            host = os.environ['RENDER_HOST']
+
+    if port is None:
+        if 'RENDER_PORT' not in os.environ:
+            port = str(int(raw_input("Enter Render Port: ")))
+            if port == '':
+                # TODO better (no) port handling
+                logging.critical('Render Port must not be empty!')
+                raise ValueError('Render Port must not be empty!')
+        else:
+            port = int(os.environ['RENDER_PORT'])
+
+    if project is None:
+        if 'RENDER_PROJECT' not in os.environ:
+            project = str(raw_input("Enter Render Project: "))
+        else:
+            project = str(os.environ['RENDER_PROJECT'])
+        if project == '':
+            logging.critical('Render Project must not be empty!')
+            raise ValueError('Render Project must not be empty!')
+
+    if owner is None:
+        if 'RENDER_OWNER' not in os.environ:
+            owner = str(raw_input("Enter Render Owner: "))
+        else:
+            owner = str(os.environ['RENDER_OWNER'])
+        if owner == '':
+            logging.critical('Render Owner must not be empty!')
+            raise ValueError('Render Owner must not be empty!')
+
+    # TODO should client_scripts be required?
+    if client_scripts is None:
+        if 'RENDER_CLIENT_SCRIPTS' not in os.environ:
+            client_scripts = str(raw_input(
+                "Enter Render Client Scripts location: "))
+        else:
+            client_scripts = str(os.environ['RENDER_CLIENT_SCRIPTS'])
+        if client_scripts == '':
+            logging.critical('Render Client Scripts must '
+                             'not be empty!')
+            raise ValueError('Render Client Scripts must '
+                             'not be empty!')
+
+    return Render(host=host, port=port, owner=owner, project=project,
+                  client_scripts=client_scripts)
