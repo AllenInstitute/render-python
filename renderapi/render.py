@@ -3,14 +3,10 @@ import os
 import json
 import subprocess
 import sys
-from functools import partial
 import tempfile
-import io
-import time
 import requests
 import numpy as np
-from PIL import Image
-from tilespec import TileSpec, StackVersion
+from tilespec import TileSpec
 
 # import pathos.multiprocessing as mp
 try:
