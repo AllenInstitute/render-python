@@ -4,7 +4,7 @@ import io
 import requests
 from PIL import Image
 import numpy as np
-from render import Render
+from render import Render, format_baseurl, format_preamble
 
 # define acceptable image formats -- currently render generates png, jpeg, tiff
 IMAGE_FORMATS = {'png': 'png-image',
@@ -16,16 +16,6 @@ IMAGE_FORMATS = {'png': 'png-image',
                  '.tif': 'tiff-image',
                  'tiff': 'tiff-image',
                  None: 'png-image'}  # Default to png
-
-
-def format_baseurl(host, port):
-    return 'http://%s:%d/render-ws/v1' % (host, port)
-
-
-def format_preamble(host, port, owner, project, stack):
-    preamble = "%s/owner/%s/project/%s/stack/%s" % (
-        format_baseurl(host, port), owner, project, stack)
-    return preamble
 
 
 def get_bb_image(stack, z, x, y, width, height, render=None, scale=1.0,

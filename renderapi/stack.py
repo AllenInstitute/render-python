@@ -3,17 +3,7 @@ import json
 import logging
 from time import strftime
 import requests
-from render import Render
-
-
-def format_baseurl(host, port):
-    return 'http://%s:%d/render-ws/v1' % (host, port)
-
-
-def format_preamble(host, port, owner, project, stack):
-    preamble = "%s/owner/%s/project/%s/stack/%s" % (
-        format_baseurl(host, port), owner, project, stack)
-    return preamble
+from render import Render, format_baseurl, format_preamble
 
 
 class StackVersion:

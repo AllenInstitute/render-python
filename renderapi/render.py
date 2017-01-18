@@ -324,16 +324,6 @@ class Render(object):
             self.format_baseurl(host, port), owner, project, stack)
         return preamble
 
-    def process_simple_url_request(self, request_url, session):
-        r = session.get(request_url)
-        try:
-            #print(r.json())
-            return r.json()
-        except:
-            #print e
-            print(r.text)
-            return None
-
     def put_resolved_tilespecs(self, stack, data, host=None, port=None,
                                owner=None, project=None,
                                session=requests.session(), verbose=False):
@@ -345,70 +335,9 @@ class Render(object):
             print request_url
 
         r = session.put(request_url, data=data,
-                        headers={"content-type":"application/json",
-                                 "Accept":"text/plain"})
+                        headers={"content-type": "application/json",
+                                 "Accept": "text/plain"})
         return r
-
-
-    # http://renderer.int.janelia.org:8080/render-ws/v1/owner/flyTEM/project/fly_pilot/stack/20141107_863/tile/140422184419060139
-    def get_tile_spec(self, stack, tile, host=None, port=None, owner=None,
-                      project=None, session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project)
-        request_url = self.format_preamble(
-            host, port, owner, project, stack) + \
-            "/tile/%s/render-parameters" % (tile)
-
-        tilespec_json = self.process_simple_url_request(request_url, session)
-
-        return TileSpec(json=tilespec_json['tileSpecs'][0])
-
-    def get_tile_specs_from_minmax_box(self, stack, z, xmin, xmax, ymin, ymax,
-                                       scale=1.0, host=None, port=None,
-                                       owner=None, project=None,
-                                       session=requests.session(),
-                                       verbose=False):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project)
-        x = xmin
-        y = ymin
-        width = xmax - xmin
-        height = ymax - ymin
-        return self.get_tile_specs_from_box(stack, z, x, y, width, height,
-                                            scale, host, port, owner, project,
-                                            session, verbose)
-
-    def get_tile_specs_from_box(self, stack, z, x, y, width, height, scale=1.0,
-                                host=None, port=None, owner=None, project=None,
-                                session=requests.session(), verbose=False):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project)
-        request_url = self.format_preamble(
-            host, port, owner, project, stack) + \
-            "/z/%d/box/%d,%d,%d,%d,%3.2f/render-parameters" % (
-                          z, x, y, width, height, scale)
-        if verbose:
-            print request_url
-        tilespecs_json = self.process_simple_url_request(
-            request_url, session)['tileSpecs']
-        return [TileSpec(json=tilespec_json)
-                for tilespec_json in tilespecs_json]
-
-    def get_tile_specs_from_z(self, stack, z, host=None, port=None, owner=None,
-                              project=None, session=requests.session(),
-                              verbose=False):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project)
-        request_url = self.format_preamble(
-            host, port, owner, project, stack) + '/z/%f/tile-specs' % (z)
-        if verbose:
-            print request_url
-        tilespecs_json = self.process_simple_url_request(request_url, session)
-        if len(tilespecs_json) == 0:
-            return None
-        else:
-            return [TileSpec(json=tilespec_json)
-                    for tilespec_json in tilespecs_json]
 
     def get_bounds_from_z(self, stack, z, host=None, port=None, owner=None,
                           project=None, session=requests.session()):
@@ -563,3 +492,13 @@ def connect(host=None, port=None, owner=None, project=None,
 
     return Render(host=host, port=port, owner=owner, project=project,
                   client_scripts=client_scripts)
+
+
+def format_baseurl(host, port):
+    return 'http://%s:%d/render-ws/v1' % (host, port)
+
+
+def format_preamble(host, port, owner, project, stack):
+    preamble = "%s/owner/%s/project/%s/stack/%s" % (
+        format_baseurl(host, port), owner, project, stack)
+    return preamble

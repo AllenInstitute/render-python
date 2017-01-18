@@ -3,11 +3,7 @@
 Point Match APIs
 '''
 import requests
-from render import Render
-
-
-def format_baseurl(host, port):
-    return 'http://%s:%d/render-ws/v1' % (host, port)
+from render import Render, format_baseurl
 
 
 def get_matchcollection_owners(render=None, host=None, port=None,
