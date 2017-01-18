@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import logging
 import os
 import json
@@ -7,16 +8,6 @@ import tempfile
 import requests
 import numpy as np
 from tilespec import TileSpec
-
-# import pathos.multiprocessing as mp
-try:
-    from pathos.multiprocessing import ProcessingPool as Pool
-    has_pathos = True
-except ImportError as e:
-    logging.warning(e)
-    has_pathos = False
-    from multiprocessing import Pool
-
 
 # GET http://{host}:{port}/render-ws/v1/owner/{owner}/project/{project}/stack/{stack}/z/{z}/world-to-local-coordinates/{x},{y}
 # curl "http://renderer.int.janelia.org:8080/render-ws/v1/owner/flyTEM/project/fly_pilot/stack/20141107_863/z/2239/world-to-local-coordinates/40000,40000"

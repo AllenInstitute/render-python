@@ -4,6 +4,7 @@ import io
 import requests
 from PIL import Image
 import numpy as np
+from render import Render
 
 # define acceptable image formats -- currently render generates png, jpeg, tiff
 IMAGE_FORMATS = {'png': 'png-image',
