@@ -3,7 +3,7 @@ import json
 from functools import partial
 import logging
 import subprocess
-from renderapi import Render
+from render import Render
 from stack import set_stack_state, make_stack_params
 
 try:

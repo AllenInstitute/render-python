@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import json
 import logging
 import requests
@@ -34,6 +35,20 @@ def set_stack_state(stack, render=None, state='LOADING', host=None, port=None,
     r = session.put(request_url, data=None,
                     headers={"content-type": "application/json"})
     return r
+
+
+def likelyUniqueId(render=None, host=None, port=None,
+                   session=requests.session(), **kwargs):
+    '''return hex-code nearly-unique id from render server'''
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return likelyUniqueId(**render.make_kwargs(host=host, port=port,
+                              **{'session': session}))
+
+    request_url = '{}/likelyUniqueId'.format(format_baseurl(host, port))
+    return session.get(request_url, data=None,
+                       headers={"content-type": "application/json"})
 
 
 def make_stack_params(host, port, owner, project, stack):
