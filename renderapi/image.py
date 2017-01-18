@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import io
+import requests
 from PIL import Image
 import numpy as np
 
@@ -83,7 +84,7 @@ def get_tile_image_data(stack, tileId, render=None,
     except KeyError as e:
         raise ValueError('{} is not a valid render image format!'.format(e))
 
-    request_url = self.format_preamble(
+    request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/tile/%s/png-image" % (tileId)
     if normalizeForMatching:
