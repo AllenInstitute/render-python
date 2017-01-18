@@ -11,8 +11,9 @@ IMAGE_FORMATS = {'png': 'png-image',
                  'jpeg': 'jpeg-image',
                  '.jpg': 'jpeg-image',
                  'tif': 'tiff-image',
-                 '.tif': 'tiff-image'
-                 'tiff': 'tiff-image'}
+                 '.tif': 'tiff-image',
+                 'tiff': 'tiff-image',
+                 None: 'png-image'}  # Default to png
 
 
 def format_baseurl(host, port):
@@ -75,7 +76,7 @@ def get_tile_image_data(stack, tileId, render=None,
             raise ValueError('invalid Render object specified!')
         return get_tile_image_data(stack, tileId, **render.make_kwargs(
             host=host, port=port, owner=owner, project=project,
-            **{img_format': img_format, 'session': session}))
+            **{'img_format': img_format, 'session': session}))
 
     try:
         image_ext = IMAGE_FORMATS[img_format]
