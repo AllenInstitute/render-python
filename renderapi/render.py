@@ -152,36 +152,6 @@ class Render(object):
             client_scripts = self.DEFAULT_CLIENT_SCRIPTS
         return (host, port, owner, project, client_scripts)
 
-    def delete_stack(self, stack, host=None, port=None, owner=None,
-                     project=None, session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project)
-        request_url = self.format_preamble(host, port, owner, project, stack)
-        r = session.delete(request_url)
-        print r.text
-        return r
-
-    def create_stack(self, stack, cycleNumber=1, cycleStepNumber=1,
-                     client_scripts=None, host=None, port=None, owner=None,
-                     project=None, verbose=False, session=requests.session()):
-
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project, client_scripts)
-        sv = StackVersion(
-            cycleNumber=cycleNumber, cycleStepNumber=cycleStepNumber)
-        request_url = self.format_preamble(host, port, owner, project, stack)
-        if verbose:
-            print "stack version2", request_url, sv.to_dict()
-        payload = json.dumps(sv.to_dict())
-        r = session.post(request_url, data=payload,
-                         headers={"content-type": "application/json",
-                                  "Accept": "application/json"})
-        try:
-            return r
-        except:
-            print r.text
-            return None
-
     def world_to_local_coordinates(self, stack, z, x, y, host=None, port=None,
                                    owner=None, project=None,
                                    session=requests.session()):

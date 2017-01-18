@@ -2,7 +2,8 @@
 import json
 import logging
 import requests
-from renderapi import Render
+from render import Render
+from tilespec import StackVersion
 
 
 def format_baseurl(host, port):
@@ -61,3 +62,45 @@ def make_stack_params(host, port, owner, project, stack):
                       '--owner', owner, '--project', project]
     stack_params = project_params + ['--stack', stack]
     return stack_params
+
+
+def delete_stack(stack, render=None, host=None, port=None, owner=None,
+                 project=None, session=requests.session(), **kwargs):
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return delete_stack(stack, **render.make_kwargs(
+            host=host, port=port, owner=owner, project=project,
+            **{'session': session}))
+
+    request_url = format_preamble(host, port, owner, project, stack)
+    r = session.delete(request_url)
+    logging.debug(r.text)
+    return r
+
+
+def create_stack(self, stack, cycleNumber=1, cycleStepNumber=1,
+                 host=None, port=None, owner=None, project=None, verbose=False,
+                 session=requests.session(), **kwargs):
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return create_stack(stack, **render.make_kwargs(
+            host=host, port=port, owner=owner, project=project,
+            **{'session': session, 'cycleNumber': cycleNumber,
+               'cycleStepNumber': cycleStepNumber, 'verbose': verbose}))
+
+    sv = StackVersion(
+        cycleNumber=cycleNumber, cycleStepNumber=cycleStepNumber)
+    request_url = format_preamble(host, port, owner, project, stack)
+    if verbose:
+        print "stack version2", request_url, sv.to_dict()
+    payload = json.dumps(sv.to_dict())
+    r = session.post(request_url, data=payload,
+                     headers={"content-type": "application/json",
+                              "Accept": "application/json"})
+    try:
+        return r
+    except:
+        logging.error(r.text)
+        return None
