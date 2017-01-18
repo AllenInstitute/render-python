@@ -1,4 +1,3 @@
-import time
 import numpy as np
 
 
@@ -58,40 +57,6 @@ class ResolvedTileSpecCollection:
                 tf = Transform()
             tf.from_dict(tfd)
             self.transforms.append(tf)
-
-
-class StackVersion:
-    def __init__(self, cycleNumber=1, cycleStepNumber=1, stackResolutionX=1,
-                 stackResolutionY=1, stackResolutionZ=1,
-                 materializedBoxRootPath=None, versionNotes="",
-                 createTimestamp=None):
-        self.cycleNumber = cycleNumber
-        self.cycleStepNumber = cycleStepNumber
-        self.stackResolutionX = stackResolutionX
-        self.stackResolutionY = stackResolutionY
-        self.stackResolutionZ = stackResolutionZ
-        self.materializedBoxRootPath = materializedBoxRootPath
-        if createTimestamp is None:
-            createTimestamp = time.strftime('%Y-%M-%dT%H:%M:%S.00Z')
-        self.createTimestamp = createTimestamp
-        self.versionNotes = versionNotes
-
-    def to_dict(self):
-        d = {}
-        d['cycleNumber'] = self.cycleNumber
-        d['cycleStepNumber'] = self.cycleStepNumber
-        d['stackResolutionX'] = self.stackResolutionX
-        d['stackResolutionY'] = self.stackResolutionY
-        d['stackResolutionZ'] = self.stackResolutionZ
-        d['createTimestamp'] = self.createTimestamp
-        d["materializedBoxRootPath"] = "string"
-        d['mipmapPathBuilder'] = {'numberOfLevels': 0}
-        d['versionNotes'] = self.versionNotes
-        return d
-
-    def from_dict(self, d):
-        for key in d.keys():
-            eval('self.%s=d[%s]' % (key, key))
 
 
 class Filter:
