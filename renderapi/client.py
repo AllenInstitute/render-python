@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+'''
+render functions relying on render-ws client scripts
+'''
 import json
 from functools import partial
 import logging

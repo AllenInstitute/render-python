@@ -41,64 +41,10 @@ except ImportError as e:
 class Render(object):
     def __init__(self, host=None, port=None, owner=None, project=None,
                  client_scripts=None):
-
-        # FIXME: combine port and host into server
-        # FIXME port handling might have weird casting requirements
-        # TODO maybe pull this out to a separate renderapi.connect() function?
-        if host is None:
-            if 'RENDER_HOST' not in os.environ:
-                host = str(raw_input("Enter Render Host: "))
-                if host == '':
-                    logging.critical('Render Host must not be empty!')
-                    raise ValueError('Render Host must not be empty!')
-                # host = (host if host.startswith('http')
-                #         else 'http://{}'.format(host))
-            else:
-                host = os.environ['RENDER_HOST']
         self.DEFAULT_HOST = host
-
-        if port is None:
-            if 'RENDER_PORT' not in os.environ:
-                port = str(int(raw_input("Enter Render Port: ")))
-                if port == '':
-                    # TODO better (no) port handling
-                    logging.critical('Render Port must not be empty!')
-                    raise ValueError('Render Port must not be empty!')
-            else:
-                port = int(os.environ['RENDER_PORT'])
         self.DEFAULT_PORT = port
-
-        if project is None:
-            if 'RENDER_PROJECT' not in os.environ:
-                project = str(raw_input("Enter Render Project: "))
-            else:
-                project = str(os.environ['RENDER_PROJECT'])
-            if project == '':
-                logging.critical('Render Project must not be empty!')
-                raise ValueError('Render Project must not be empty!')
         self.DEFAULT_PROJECT = project
-
-        if owner is None:
-            if 'RENDER_OWNER' not in os.environ:
-                owner = str(raw_input("Enter Render Owner: "))
-            else:
-                owner = str(os.environ['RENDER_OWNER'])
-            if owner == '':
-                logging.critical('Render Owner must not be empty!')
-                raise ValueError('Render Owner must not be empty!')
         self.DEFAULT_OWNER = owner
-
-        if client_scripts is None:
-            if 'RENDER_CLIENT_SCRIPTS' not in os.environ:
-                client_scripts = str(raw_input(
-                    "Enter Render Client Scripts location: "))
-            else:
-                client_scripts = str(os.environ['RENDER_CLIENT_SCRIPTS'])
-            if client_scripts == '':
-                logging.critical('Render Client Scripts must '
-                                 'not be empty!')
-                raise ValueError('Render Client Scripts must '
-                                 'not be empty!')
         self.DEFAULT_CLIENT_SCRIPTS = client_scripts
 
         logging.debug('Render object created with '
@@ -297,27 +243,6 @@ class Render(object):
             return r.json()
         except:
             print(r.text)
-            return None
-
-    def get_tile_image_data(self, stack, tileId, normalizeForMatching=True,
-                            host=None, port=None, owner=None, project=None,
-                            session=requests.session(), verbose=False):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project)
-        request_url = self.format_preamble(
-            host, port, owner, project, stack) + \
-            "/tile/%s/png-image" % (tileId)
-        if normalizeForMatching:
-            request_url += "?normalizeForMatching=true"
-        if verbose:
-            print request_url
-        r = session.get(request_url)
-        try:
-            img = Image.open(io.BytesIO(r.content))
-            array = np.asarray(img)
-            return array
-        except:
-            logging.error(r.text)
             return None
 
     def world_to_local_coordinates_array(self, stack, dataarray, tileId, z=0,
@@ -568,22 +493,6 @@ class Render(object):
 
         return outdata
 
-    def get_png_tile(self, stack, z, x, y, width, height, scale=1.0, host=None,
-                     port=None, owner=None, project=None,
-                     session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project)
-        request_url = self.format_preamble(
-            host, port, owner, project, stack) + \
-            "/z/%d/box/%d,%d,%d,%d,%3.2f/png-image" % (
-                          z, x, y, width, height, scale)
-        r = session.get(request_url)
-        try:
-            image = np.asarray(Image.open(io.BytesIO(r.content)))
-        except:
-            print r.text
-        return image
-
     def world_to_local_coordinates_batch_local(self, stack, z, data, host=None,
                                                port=None, owner=None,
                                                project=None):
@@ -600,31 +509,6 @@ class Render(object):
         return batch_local_work(stack, z, data, host, port, owner, project,
                                 localToWorld=True)
 
-    def get_matchcollection_owners(self, host=None, port=None, verbose=False,
-                                   session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, None, None)
-        request_url = self.format_baseurl(host, port) + \
-            "/matchCollectionOwners"
-        return self.process_simple_url_request(request_url, session)
-
-    def get_matchcollections(self, owner=None, host=None, port=None,
-                             verbose=False, session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, None)
-        request_url = self.format_baseurl(host, port) + \
-            "/owner/%s/matchCollections" % owner
-        return self.process_simple_url_request(request_url, session)
-
-    def get_match_groupIds(self, matchCollection, owner=None, host=None,
-                           port=None, verbose=False,
-                           session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, None)
-        request_url = self.format_baseurl(host, port) + \
-            "/owner/%s/matchCollection/%s/groupIds" % (owner, matchCollection)
-        return self.process_simple_url_request(request_url, session)
-
     def get_section_z_value(self, stack, sectionId, host=None, port=None,
                             owner=None, project=None, verbose=False,
                             session=requests.session()):
@@ -633,77 +517,6 @@ class Render(object):
         request_url = self.format_preamble(
             host, port, owner, project, stack) + "/section/%s/z" % sectionId
         return float(self.process_simple_url_request(request_url, session))
-
-    def get_matches_outside_group(self, matchCollection, groupId, owner=None,
-                                  host=None, port=None, verbose=False,
-                                  session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, None)
-        request_url = self.format_baseurl(host, port) + \
-            "/owner/%s/matchCollection/%s/group/%s/matchesOutsideGroup" % (
-                owner, matchCollection, groupId)
-        return self.process_simple_url_request(request_url, session)
-
-    def get_matches_within_group(self, matchCollection, groupId, owner=None,
-                                 host=None, port=None, verbose=False,
-                                 session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, None)
-        request_url = self.format_baseurl(host, port) + \
-            "/owner/%s/matchCollection/%s/group/%s/matchesWithinGroup" % (
-                owner, matchCollection, groupId)
-        return self.process_simple_url_request(request_url, session)
-
-    def get_matches_from_group_to_group(self, matchCollection, pgroup, qgroup,
-                                        owner=None, host=None, port=None,
-                                        verbose=False,
-                                        session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, None)
-        request_url = self.format_baseurl(host, port) + \
-            "/owner/%s/matchCollection/%s/group/%s/matchesWith/%s" % (
-                owner, matchCollection, pgroup, qgroup)
-        return self.process_simple_url_request(request_url, session)
-
-    def get_matches_from_tile_to_tile(self, matchCollection, pgroup, pid,
-                                      qgroup, qid, owner=None, host=None,
-                                      port=None, verbose=False,
-                                      session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, None)
-        request_url = self.format_baseurl(host, port) + \
-            ("/owner/%s/matchCollection/%s/group/%s/id/%s/"
-             "matchesWith/%s/id/%s" % (
-                 owner, matchCollection, pgroup, pid, qgroup, qid))
-        return self.process_simple_url_request(request_url, session)
-
-    def get_matches_with_group(self, matchCollection, pgroup, owner=None,
-                               host=None, port=None, verbose=False,
-                               session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, None)
-        request_url = self.format_baseurl(host, port) + \
-            "/owner/%s/matchCollection/%s/pGroup/%s/matches/" % (
-                owner, matchCollection, pgroup)
-        return self.process_simple_url_request(request_url, session)
-
-    def get_match_groupIds_from_only(self, matchCollection, owner=None,
-                                     host=None, port=None, verbose=False,
-                                     session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, None)
-        request_url = self.format_baseurl(host, port) + \
-            "/owner/%s/matchCollection/%s/pGroupIds" % (owner, matchCollection)
-        return self.process_simple_url_request(request_url, session)
-
-    def get_match_groupIds_to_only(self, matchCollection, owner=None,
-                                   host=None, port=None, verbose=False,
-                                   session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, None)
-        request_url = self.format_baseurl(host, port) + \
-            "/owner/%s/matchCollection/%s/qGroupIds" % (owner, matchCollection)
-        return self.process_simple_url_request(request_url, session)
 
 
 def connect(host=None, port=None, owner=None, project=None,
