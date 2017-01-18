@@ -317,7 +317,7 @@ class Render(object):
             array = np.asarray(img)
             return array
         except:
-            print (r.text)
+            logging.error(r.text)
             return None
 
     def world_to_local_coordinates_array(self, stack, dataarray, tileId, z=0,
