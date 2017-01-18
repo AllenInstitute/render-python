@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+from render import Render, format_baseurl, format_preamble
 import numpy as np
 
 
@@ -368,3 +370,101 @@ class TileSpec:
                 f = Filter()
                 f.from_dict(f)
                 self.inputfilters.append(f)
+
+
+def get_tile_spec(stack, tile, render=None, host=None, port=None, owner=None,
+                  project=None, session=requests.session(), **kwargs):
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return get_tile_spec(
+            stack, tile, **render.make_kwargs(
+                host=host, port=port, owner=owner, project=project,
+                **{'session': session}))
+
+    request_url = format_preamble(
+        host, port, owner, project, stack) + \
+        "/tile/%s/render-parameters" % (tile)
+    r = session.get(request_url)
+    try:
+        tilespec_json = r.json()
+    except:
+        logging.error(r.text)
+    return TileSpec(json=tilespec_json['tileSpecs'][0])
+
+
+def get_tile_specs_from_minmax_box(stack, z, xmin, xmax, ymin, ymax,
+                                   render=None, scale=1.0, host=None,
+                                   port=None, owner=None, project=None,
+                                   session=requests.session(),
+                                   verbose=False, **kwargs):
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return get_tile_specs_from_minmax_box(
+            stack, z, xmin, xmax, ymin, ymax, **render.make_kwargs(
+                host=host, port=port, owner=owner, project=project,
+                **{'session': session, 'verbose': verbose}))
+
+    x = xmin
+    y = ymin
+    width = xmax - xmin
+    height = ymax - ymin
+    return get_tile_specs_from_box(stack, z, x, y, width, height,
+                                   scale, host, port, owner, project,
+                                   session, verbose)
+
+
+def get_tile_specs_from_box(stack, z, x, y, width, height, render=None,
+                            scale=1.0, host=None, port=None, owner=None,
+                            project=None, session=requests.session(),
+                            verbose=False, **kwargs):
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return get_tile_specs_from_box(
+            stack, z, x, y, width, height, **render.make_kwargs(
+                host=host, port=port, owner=owner, project=project,
+                **{'session': session, 'verbose': verbose}))
+
+    request_url = format_preamble(
+        host, port, owner, project, stack) + \
+        "/z/%d/box/%d,%d,%d,%d,%3.2f/render-parameters" % (
+                      z, x, y, width, height, scale)
+    if verbose:
+        print request_url
+    r = session.get(request_url)
+    try:
+        tilespecs_json = r.json()
+    except:
+        logging.error(r.text)
+    return [TileSpec(json=tilespec_json)
+            for tilespec_json in tilespecs_json['tileSpecs']]
+
+
+def get_tile_specs_from_z(stack, z, render=None, host=None, port=None,
+                          owner=None, project=None, session=requests.session(),
+                          verbose=False, **kwargs):
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return get_tile_specs_from_box(
+            stack, z, **render.make_kwargs(
+                host=host, port=port, owner=owner, project=project,
+                **{'session': session, 'verbose': verbose}))
+
+    request_url = format_preamble(
+        host, port, owner, project, stack) + '/z/%f/tile-specs' % (z)
+    if verbose:
+        print request_url
+    r = session.get(request_url)
+    try:
+        tilespecs_json = r.json()
+    except:
+        logging.error(r.text)
+
+    if len(tilespecs_json) == 0:
+        return None
+    else:
+        return [TileSpec(json=tilespec_json)
+                for tilespec_json in tilespecs_json]

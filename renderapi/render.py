@@ -7,7 +7,6 @@ import sys
 import tempfile
 import requests
 import numpy as np
-from tilespec import TileSpec
 
 # GET http://{host}:{port}/render-ws/v1/owner/{owner}/project/{project}/stack/{stack}/z/{z}/world-to-local-coordinates/{x},{y}
 # curl "http://renderer.int.janelia.org:8080/render-ws/v1/owner/flyTEM/project/fly_pilot/stack/20141107_863/z/2239/world-to-local-coordinates/40000,40000"
