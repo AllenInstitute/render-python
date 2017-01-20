@@ -165,24 +165,24 @@ class AffineModel(Transform):
         self.load_M()
         
     def load_M(self):
-        self.M = np.identity(4,np.double)
+        self.M = np.identity(3,np.double)
         self.M[0,0]=self.M00
         self.M[0,1]=self.M01
         self.M[1,0]=self.M10
         self.M[1,1]=self.M11
-        self.M[0,3]=self.B0
-        self.M[1,3]=self.B1
+        self.M[0,2]=self.B0
+        self.M[1,2]=self.B1
         
     def to_dict(self):
         d = {}
         d['type']='leaf'
         d['className']=self.className
-        d['dataString']="%f %f %f %f %f %f"%(self.M[0,0],self.M[0,1],self.M[1,0],self.M[1,1],self.M[0,3],self.M[1,3])
+        d['dataString']="%.10f %.10f %.10f %.10f %.10f %.10f"%(self.M[0,0],self.M[1,0],self.M[0,1],self.M[1,1],self.M[0,2],self.M[1,2])
         return d
         
     def from_dict(self,d):
         ds = d['dataString'].split()
-        (self.M00,self.M01,self.M10,self.M11,self.B0,self.B1)=map(float,ds)
+        (self.M00,self.M10,self.M01,self.M11,self.B0,self.B1)=map(float,ds)
         self.load_M()
     
     def invert(self):
@@ -195,19 +195,13 @@ class AffineModel(Transform):
 
         zerovec = np.zeros((Np,1),np.double)
         onevec = np.ones((Np,1),np.double)
-    
-        if points.shape[1]==2:
-            Nd = 2
-            points=np.concatenate((points,zerovec),axis=1)
-            points=np.concatenate((points,onevec),axis=1)
-        elif points.shape[1]==3:
-            points=np.concatenate((points,onevec),axis=1)
-            Nd = 3
-        assert(points.shape[1]==4)
+        assert(points.shape[1]==2)
+        Nd = 2
+        points=np.concatenate((points,onevec),axis=1)
         return points,Nd
     
     def convert_points_vector_to_array(self,points,Nd):
-        points=points[:,0:Nd]/np.tile(points[:,3],(Nd,1)).T
+        points=points[:,0:Nd]/np.tile(points[:,2],(Nd,1)).T
         return points
     
     def tform(self,points):
@@ -215,13 +209,34 @@ class AffineModel(Transform):
         pt=np.dot(self.M,points.T).T
         return self.convert_points_vector_to_array(pt,Nd)
     
+    def concatenate(self,model):
+        #final double a00 = m00 * model.m00 + m01 * model.m10;
+        #final double a01 = m00 * model.m01 + m01 * model.m11;
+        #final double a02 = m00 * model.m02 + m01 * model.m12 + m02;
+
+        #final double a10 = m10 * model.m00 + m11 * model.m10;
+        #final double a11 = m10 * model.m01 + m11 * model.m11;
+        #final double a12 = m10 * model.m02 + m11 * model.m12 + m12;
+        a00 = self.M[0,0] * model.M[0,0] + self.M[0,1] * model.M[1,0]
+        a01 = self.M[0,0] * model.M[0,1] + self.M[0,1] * model.M[1,1]
+        a02 = self.M[0,0] * model.M[0,2] + self.M[0,1] * model.M[1,2] + self.M[0,2];
+
+        a10 = self.M[1,0] * model.M[0,0] + self.M[1,1] * model.M[1,0]
+        a11 = self.M[1,0] * model.M[0,1] + self.M[1,1] * model.M[1,1]
+        a12 = self.M[1,0] * model.M[0,2] + self.M[1,1] * model.M[1,2] + self.M[1,2];
+        
+        newmodel = AffineModel(a00,a01,a10,a11,a02,a12)
+        return newmodel
+        
+        
+     
     def inverse_tform(self,points):
         points,Nd = self.convert_to_point_vector(points)
         pt = np.dot(np.linalg.inv(self.M),points.T).T
         return self.convert_points_vector_to_array(pt,Nd)   
         
     def __str__(self):
-        return "M=[[%f,%f],[%f,%f]] B=[%f,%f]"%(self.M[0,0],self.M[0,1],self.M[1,0],self.M[1,1],self.M[0,3],self.M[1,3])
+        return "M=[[%f,%f],[%f,%f]] B=[%f,%f]"%(self.M[0,0],self.M[0,1],self.M[1,0],self.M[1,1],self.M[0,2],self.M[1,2])
 
     
         
