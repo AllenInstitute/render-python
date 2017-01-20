@@ -78,9 +78,11 @@ class Render(object):
         stack_params= project_params + ['--stack', stack]
         return stack_params
 
-    def delete_stack(self,stack,host=None,port=None,owner=None,project=None,session=requests.session()):
+    def delete_stack(self,stack,host=None,port=None,owner=None,project=None,session=requests.session(),verbose=False):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         request_url = self.format_preamble(host,port,owner,project,stack)
+        if verbose:
+            print request_url
         r=session.delete(request_url)
         print r.text           
         return r
