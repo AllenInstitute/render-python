@@ -6,8 +6,8 @@ import json
 from functools import partial
 import logging
 import subprocess
-from render import Render
-from stack import set_stack_state, make_stack_params
+from .render import Render
+from .stack import set_stack_state, make_stack_params
 
 try:
     from pathos.multiprocessing import ProcessingPool as Pool
@@ -160,5 +160,53 @@ def import_jsonfiles(stack, jsonfiles, render=None, transformFile=None,
     proc.wait()
     if verbose:
         print proc.stdout.read()
+    if close_stack:
+        set_stack_state(stack, 'COMPLETE', host, port, owner, project)
+
+
+# FIXME paperweight for proper render_ws_client implemntation
+# TODO this should allow you to set validator parameters
+def import_jsonfiles_validate_client(stack, jsonfiles, render=None,
+                                     transformFile=None, client_scripts=None,
+                                     host=None, port=None, owner=None,
+                                     project=None, close_stack=True, mem=6,
+                                     **kwargs):
+    '''
+    Uses java client for parallelization and validation
+    '''
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return import_jsonfiles_validate_client(
+            stack, jsonfiles, **render.make_kwargs(
+                host=host, port=port, owner=owner,
+                project=project, client_scripts=client_scripts,
+                **{'close_stack': close_stack, 'mem'=mem,
+                   'transformFile': transformFile}))
+
+    transform_params = (['--transformFile', transformFile]
+                        if transformFile is not None else [])
+    validator_params = [
+        '--validatorClass',
+        'org.janelia.alignment.spec.validator.TemTileSpecValidator',
+        '--validatorData',
+        'minCoordinate:-500,maxCoordinate:50000,minSize:500,maxSize:10000']
+    my_env = os.environ.copy()
+    stack_params = make_stack_params(host, port, owner, project, stack)
+    cmd = [os.path.join(client_scripts, 'run_ws_client.sh')] + \
+        ['{}G'.format(str(int(mem))),
+         'org.janelia.render.client.ImportJsonClient'] + \
+        stack_params + \
+        validator_params + \
+        transform_params + \
+        jsonfiles
+
+    set_stack_state(stack, 'LOADING', host, port, owner, project)
+    logging.debug(cmd)
+
+    proc = subprocess.Popen(cmd, env=my_env, stdout=subprocess.PIPE)
+    proc.wait()
+    logging.debug(proc.stdout.read())
+
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
