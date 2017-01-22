@@ -3,7 +3,7 @@ import json
 import logging
 from time import strftime
 import requests
-from render import Render, format_baseurl, format_preamble
+from .render import Render, format_baseurl, format_preamble
 
 
 class StackVersion:

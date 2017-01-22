@@ -3,7 +3,7 @@
 Point Match APIs
 '''
 import requests
-from render import Render, format_baseurl
+from .render import Render, format_baseurl
 
 
 def get_matchcollection_owners(render=None, host=None, port=None,
