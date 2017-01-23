@@ -2,12 +2,15 @@
 
 from . import render
 from . import tilespec
-from . import client
 from . import errors
 from . import stack
+from . import client
 from . import image
+from . import pointmatch
+from . import coordinate
 from .render import connect
 from .render import Render
 
 __all__ = ['render', 'client', 'tilespec', 'errors',
-           'stack', 'image', 'connect', 'Render']
+           'stack', 'image', 'pointmatch', 'coordinate',
+           'connect', 'Render']
