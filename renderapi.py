@@ -319,7 +319,20 @@ class Render(object):
         except:
             print(r.text)
             return None
-        
+    def get_sectionData_for_stack(self,stack,project = None,
+        host = None,port = None,owner = None,session=requests.session(),verbose=False):
+        (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
+        request_url = self.format_preamble(host,port,owner,project,stack)+"/sectionData"
+        if verbose:
+            print(request_url)
+        r = session.get(request_url)
+        try:
+            return r.json()
+        except:
+            print(r.text)
+            return None
+
+
     def get_z_value_for_section(self,stack,sectionId,project = None,
     host = None,port = None,owner = None,session=requests.session()):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
@@ -347,7 +360,7 @@ class Render(object):
             print (r.text)    
             return None
 
-    def world_to_local_coordinates_array(self,stack, dataarray, tileId, z=0,host = None, port = None, owner = None, project = None, session=requests.session()):
+    def world_to_local_coordinates_array(self,stack, dataarray, tileId,z,host = None, port = None, owner = None, project = None, session=requests.session()):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         request_url = self.format_preamble(host,port,owner,project,stack)+"/z/%d/world-to-local-coordinates" % (z)
         dlist =[]
@@ -365,16 +378,18 @@ class Render(object):
         try:
             answer = np.zeros(dataarray.shape)
 
-            for i,coord in enumerate(json_answer):
-
-                c = coord['local']
-                answer[i,0]=c[0]
-                answer[i,1]=c[1]
+            for i,matches in enumerate(json_answer):
+                if len(matches)>0:
+                    for coord in matches:
+                        if coord['tileId']==tileId:
+                            c = coord['local']
+                            answer[i,0]=c[0]
+                            answer[i,1]=c[1]
             return answer
 
         except:
             print json_answer
-            return None
+            return json_answer
         
     def local_to_world_coordinates_array(self,stack, dataarray, tileId, z=0,host = None, port = None, owner = None, project = None, session=requests.session()):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
@@ -415,6 +430,7 @@ class Render(object):
 
         #print r.text()
         return r.json()
+
 
     def format_baseurl(self,host,port):
         return 'http://%s:%d/render-ws/v1'%(host,port)
@@ -625,5 +641,11 @@ class Render(object):
         (owner,matchCollection)
         return self.process_simple_url_request(request_url, session)
 
-
+    def import_matches(self,matchCollection,data,owner=None,host=None,port=None,verbose=False,session=requests.session()):
+        (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,None)
+        request_url =self.format_baseurl(host, port)+"/owner/%s/matchCollection/%s/matches"%(owner,matchCollection)
+        if verbose:
+            print request_url
+        r = session.put(request_url, data=data, headers={"content-type":"application/json","Accept":"application/json"})
+        return r
 
