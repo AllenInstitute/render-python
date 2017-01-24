@@ -8,21 +8,6 @@ import tempfile
 import requests
 import numpy as np
 
-# GET http://{host}:{port}/render-ws/v1/owner/{owner}/project/{project}/stack/{stack}/z/{z}/world-to-local-coordinates/{x},{y}
-# curl "http://renderer.int.janelia.org:8080/render-ws/v1/owner/flyTEM/project/fly_pilot/stack/20141107_863/z/2239/world-to-local-coordinates/40000,40000"
-# returns:
-# [
-#   {
-#     "tileId": "140422184419060139",
-#     "visible": true,
-#     "local": [
-#       1238.9023,
-#       1044.9727,
-#       2239.0
-#     ]
-#   }
-# ]
-
 
 class Render(object):
     def __init__(self, host=None, port=None, owner=None, project=None,
@@ -67,11 +52,13 @@ class Render(object):
 
     def process_defaults(self, host, port, owner, project,
                          client_scripts=None):
-    #def process_defaults(self,host,port,owner,project,client_scripts=DEFAULT_CLIENT_SCRIPTS):
-    #utility function which will convert arguments to default arguments if they are None
-    #allows Render object to be used with defaults if lazy, but allows projects/hosts/owners to be changed
-    #from call to call if desired.
-    #used by many functions convert default None arguments to default values.
+        '''
+        utility function which will convert arguments to default arguments if
+            they are None allows Render object to be used with defaults if
+            lazy, but allows projects/hosts/owners to be changed from call
+            to call if desired.  used by many functions convert default None
+            arguments to default values.
+        '''
         if host is None:
             host = self.DEFAULT_HOST
         if port is None:
@@ -84,123 +71,6 @@ class Render(object):
             client_scripts = self.DEFAULT_CLIENT_SCRIPTS
         return (host, port, owner, project, client_scripts)
 
-    def world_to_local_coordinates(self, stack, z, x, y, host=None, port=None,
-                                   owner=None, project=None,
-                                   session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project)
-
-        request_url = self.format_preamble(
-            host, port, owner, project, stack) + \
-            "/z/%d/world-to-local-coordinates/%f,%f" % (z, x, y)
-
-        r = session.get(request_url)
-        try:
-            return r.json()
-        except:
-            print(r.text)
-            return None
-
-    # GET http://{host}:{port}/render-ws/v1/owner/{owner}/project/{project}/stack/{stack}/tile/{tileId}/local-to-world-coordinates/{x},{y}
-    # curl "http://renderer.int.janelia.org:8080/render-ws/v1/owner/flyTEM/project/fly_pilot/stack/20141107_863/tile/140422184419063136/local-to-world-coordinates/1244.0508,1433.8711"
-    # returns:
-    # {
-    #   "tileId": "140422184419063136",
-    #   "world": [
-    #     40000.0,
-    #     40000.004,
-    #     2239.0
-    #   ]
-    # }
-    def local_to_world_coordinates(self, stack, tileId, x, y, host=None,
-                                   port=None, owner=None, project=None,
-                                   session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project)
-
-        request_url = self.format_preamble(
-            host, port, owner, project, stack) + \
-            "/tile/%s/local-to-world-coordinates/%f,%f" % (tileId, x, y)
-
-        r = session.get(request_url)
-        try:
-            return r.json()
-        except:
-            print(r.text)
-            return None
-
-    def get_owners(self, host=None, port=None, session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, None, None)
-        request_url = "%s/owners/" % self.format_baseurl(host, port)
-        return self.process_simple_url_request(request_url, session)
-
-    def get_projects_by_owner(self, owner=None, host=None, port=None,
-                              session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, None)
-        metadata = self.get_stack_metadata_by_owner(owner)
-        projects = list(set([m['stackId']['project'] for m in metadata]))
-        return projects
-
-    def get_stacks_by_owner_project(self, owner=None, project=None, host=None,
-                                    port=None, session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project)
-        metadata = self.get_stack_metadata_by_owner(owner)
-        stacks = ([m['stackId']['stack'] for m in metadata
-                   if m['stackId']['project'] == project])
-        return stacks
-
-    def get_stack_metadata_by_owner(self, owner=None, host=None, port=None,
-                                    session=requests.session(), verbose=False):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, None)
-        request_url = "%s/owner/%s/stacks/" % (
-            self.format_baseurl(host, port), owner)
-        if verbose:
-            request_url
-        return self.process_simple_url_request(request_url, session)
-
-    # PUT http://{host}:{port}/render-ws/v1/owner/{owner}/project/{project}/stack/{stack}/z/{z}/local-to-world-coordinates
-    # with request body containing JSON array of local coordinate elements
-    # curl -H "Content-Type: application/json" -X PUT --data @coordinate-local.json "http://renderer.int.janelia.org:8080/render-ws/v1/owner/flyTEM/project/fly_pilot/stack/20141107_863/z/2239/local-to-world-coordinates"
-    # [
-    #   {
-    #     "tileId": "140422184419063136",
-    #     "world": [
-    #       40000.0,
-    #       40000.004,
-    #       2239.0
-    #     ]
-    #   }
-    # ]
-    def world_to_local_coordinates_batch(self, stack, z, data, host=None,
-                                         port=None, owner=None, project=None,
-                                         session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project)
-        request_url = self.format_preamble(
-            host, port, owner, project, stack) + \
-            "/z/%d/world-to-local-coordinates" % (z)
-        r = session.put(request_url, data=data,
-                        headers={"content-type": "application/json"})
-        return r.json()
-
-    # curl -H "Content-Type: application/json" -X PUT --data @coordinate-world.json "http://renderer.int.janelia.org:8080/render-ws/v1/owner/flyTEM/project/fly_pilot/stack/20141107_863/z/2239/world-to-local-coordinates"
-    # [
-    #   [
-    #     {
-    #       "tileId": "140422184419060139",
-    #       "visible": true,
-    #       "local": [
-    #         1238.9023,
-    #         1044.9727,
-    #         2239.0
-    #       ]
-    #     }
-    #   ]
-    # ]
     def get_z_values_for_stack(self, stack, project=None, host=None, port=None,
                                owner=None, session=requests.session(),
                                verbose=False):
@@ -231,98 +101,6 @@ class Render(object):
             print(r.text)
             return None
 
-    def world_to_local_coordinates_array(self, stack, dataarray, tileId, z=0,
-                                         host=None, port=None, owner=None,
-                                         project=None,
-                                         session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project)
-        request_url = self.format_preamble(
-            host, port, owner, project, stack) + \
-            "/z/%d/world-to-local-coordinates" % (z)
-        dlist = []
-        for i in range(dataarray.shape[0]):
-            d = {}
-            d['tileId'] = tileId
-            d['world'] = [dataarray[i, 0], dataarray[i, 1]]
-            dlist.append(d)
-        jsondata = json.dumps(dlist)
-
-        r = session.put(request_url, data=jsondata,
-                        headers={"content-type": "application/json"})
-
-        json_answer = r.json()
-        try:
-            answer = np.zeros(dataarray.shape)
-
-            for i, coord in enumerate(json_answer):
-
-                c = coord['local']
-                answer[i, 0] = c[0]
-                answer[i, 1] = c[1]
-            return answer
-
-        except:
-            print json_answer
-            return None
-
-    def local_to_world_coordinates_array(self, stack, dataarray, tileId, z=0,
-                                         host=None, port=None, owner=None,
-                                         project=None,
-                                         session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project)
-        request_url = self.format_preamble(
-            host, port, owner, project, stack) + \
-            "/z/%d/local-to-world-coordinates" % (z)
-        dlist = []
-        for i in range(dataarray.shape[0]):
-            d = {}
-            d['tileId'] = tileId
-            d['local'] = [dataarray[i, 0], dataarray[i, 1]]
-            dlist.append(d)
-        jsondata = json.dumps(dlist)
-
-        r = session.put(request_url, data=jsondata,
-                        headers={"content-type": "application/json"})
-
-        json_answer = r.json()
-        try:
-            answer = np.zeros(dataarray.shape)
-
-            for i, coord in enumerate(json_answer):
-
-                c = coord['world']
-                answer[i, 0] = c[0]
-                answer[i, 1] = c[1]
-            return answer
-
-        except:
-            print json_answer
-            return None
-
-    def local_to_world_coordinates_batch(self, stack, data, z, host=None,
-                                         port=None, owner=None, project=None,
-                                         session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project)
-        request_url = self.format_preamble(
-            host, port, owner, project, stack) + \
-            "/z/%d/local-to-world-coordinates" % (z)
-
-        r = session.put(request_url, data=data,
-                        headers={"content-type": "application/json"})
-
-        return r.json()
-
-    def format_baseurl(self, host, port):
-        return 'http://%s:%d/render-ws/v1' % (host, port)
-
-    def format_preamble(self, host, port, owner, project, stack):
-        preamble = "%s/owner/%s/project/%s/stack/%s" % (
-            self.format_baseurl(host, port), owner, project, stack)
-        return preamble
-
     def put_resolved_tilespecs(self, stack, data, host=None, port=None,
                                owner=None, project=None,
                                session=requests.session(), verbose=False):
@@ -352,21 +130,6 @@ class Render(object):
     #
 
     MAP_COORD_SCRIPT = "/groups/flyTEM/flyTEM/render/bin/map-coord.sh"
-
-    def set_stack_state(self, stack, state='LOADING', host=None, port=None,
-                        owner=None, project=None, session=requests.session(),
-                        verbose=False):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project)
-        assert state in ['LOADING', 'COMPLETE', 'OFFLINE']
-        request_url = self.format_preamble(
-            host, port, owner, project, stack) + "/state/%s" % state
-        if verbose:
-            request_url
-        r = session.put(request_url, data=None,
-                        headers={"content-type": "application/json"})
-        return r
-
     def batch_local_work(self, stack, z, data, host=None, port=None,
                          owner=None, project=None, localToWorld=False,
                          deleteTemp=True, threads=16):
@@ -501,3 +264,71 @@ def format_preamble(host, port, owner, project, stack):
     preamble = "%s/owner/%s/project/%s/stack/%s" % (
         format_baseurl(host, port), owner, project, stack)
     return preamble
+
+
+def get_owners(host=None, port=None, render=None,
+               session=requests.session(), **kwargs):
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return get_owners(**render.make_kwargs(
+            host=host, port=port,
+            **{'session': session}))
+
+    request_url = "%s/owners/" % format_baseurl(host, port)
+    r = session.get(request_url)
+    try:
+        return r.json()
+    except:
+        logging.error(r.text)
+
+
+def get_stack_metadata_by_owner(owner=None, host=None, port=None, render=None,
+                                session=requests.session(),
+                                verbose=False, **kwargs):
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return get_stack_metadata_by_owner(**render.make_kwargs(
+            owner=owner, host=host, port=port,
+            **{'session': session, 'verbose': verbose}))
+
+    request_url = "%s/owner/%s/stacks/" % (
+        format_baseurl(host, port), owner)
+    if verbose:
+        logging.debug(request_url)
+    r = session.get(request_url)
+    try:
+        return r.json()
+    except:
+        logging.error(r.text)
+
+
+def get_projects_by_owner(owner=None, host=None, port=None, render=None,
+                          session=requests.session(), **kwargs):
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return get_projects_by_owner(**render.make_kwargs(
+            owner=owner, host=host, port=port,
+            **{'session': session}))
+
+    metadata = get_stack_metadata_by_owner(owner)
+    projects = list(set([m['stackId']['project'] for m in metadata]))
+    return projects
+
+
+def get_stacks_by_owner_project(owner=None, project=None, host=None,
+                                port=None, render=None,
+                                session=requests.session(), **kwargs):
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return get_projects_by_owner(**render.make_kwargs(
+            owner=owner, host=host, port=port, project=project,
+            **{'session': session}))
+
+    metadata = get_stack_metadata_by_owner(owner)
+    stacks = ([m['stackId']['stack'] for m in metadata
+               if m['stackId']['project'] == project])
+    return stacks
