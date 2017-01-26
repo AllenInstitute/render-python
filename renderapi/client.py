@@ -181,7 +181,7 @@ def import_jsonfiles_validate_client(stack, jsonfiles, render=None,
             stack, jsonfiles, **render.make_kwargs(
                 host=host, port=port, owner=owner,
                 project=project, client_scripts=client_scripts,
-                **{'close_stack': close_stack, 'mem'=mem,
+                **{'close_stack': close_stack, 'mem': mem,
                    'transformFile': transformFile}))
 
     transform_params = (['--transformFile', transformFile]

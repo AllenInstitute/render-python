@@ -4,6 +4,7 @@ coordinate mapping functions for render api
 '''
 
 from .render import Render, format_preamble
+import requests
 
 
 def world_to_local_coordinates(stack, z, x, y, render=None, host=None,

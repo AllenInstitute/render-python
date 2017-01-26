@@ -197,6 +197,17 @@ class Render(object):
         return float(self.process_simple_url_request(request_url, session))
 
 
+class RenderClient(Render):
+    '''Draft object for render_webservice_client.sh calls'''
+    def __init__(self, client_script=None, *args, **kwargs):
+        super(RenderClient, self).__init__(**kwargs)
+        self.client_script = client_script
+
+    def make_kwargs(self, *args, **kwargs):
+        return super(RenderClient, self).make_kwargs(
+            client_script=self.client_script, *args, **kwargs)
+
+
 def connect(host=None, port=None, owner=None, project=None,
             client_scripts=None):
     '''helper function to connect to a render instance'''

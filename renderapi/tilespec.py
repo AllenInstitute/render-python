@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from .render import Render, format_baseurl, format_preamble
+import requests
 import numpy as np
 
 
