@@ -4,13 +4,14 @@ import logging
 from time import strftime
 import requests
 from .render import Render, format_baseurl, format_preamble
+from .utils import jbool
 
 
 class StackVersion:
-    def __init__(self, cycleNumber=1, cycleStepNumber=1, stackResolutionX=1,
-                 stackResolutionY=1, stackResolutionZ=1,
+    def __init__(self, cycleNumber=1, cycleStepNumber=1, stackResolutionX=0,
+                 stackResolutionY=0, stackResolutionZ=0,
                  materializedBoxRootPath=None, versionNotes="",
-                 createTimestamp=None):
+                 createTimestamp=None, **kwargs):
         self.cycleNumber = cycleNumber
         self.cycleStepNumber = cycleStepNumber
         self.stackResolutionX = stackResolutionX
@@ -103,7 +104,7 @@ def delete_stack(stack, render=None, host=None, port=None, owner=None,
     return r
 
 
-def create_stack(self, stack, cycleNumber=1, cycleStepNumber=1,
+def create_stack(stack, cycleNumber=1, cycleStepNumber=1, render=None,
                  host=None, port=None, owner=None, project=None, verbose=False,
                  session=requests.session(), **kwargs):
     if render is not None:
@@ -128,3 +129,34 @@ def create_stack(self, stack, cycleNumber=1, cycleStepNumber=1,
     except:
         logging.error(r.text)
         return None
+
+
+def clone_stack(inputstack, outputstack, render=None, host=None, port=None,
+                owner=None, project=None, skipTransforms=False, toProject=None,
+                z=None, session=None, **kwargs):
+    '''
+    result:
+        cloned stack in LOADING state with tiles in layers specified by z'
+    '''
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return clone_stack(inputstack, outputstack, **render.make_kwargs(
+            host=host, port=port, owner=owner, project=project,
+            session=session, skipTransforms=skipTransforms,
+            toProject=toProject, **kwargs))
+
+    if z is not None:
+        zs = [float(i) for i in z]  # TODO test me
+    session = requests.session() if session is None else session
+    sv = StackVersion(**kwargs)
+    request_url = '{}/{}'.format(format_preamble(
+        host, port, owner, project, inputstack), outputstack)
+
+    logging.debug(request_url)
+    r = session.put(request_url, params={
+        'z': zs, 'toProject': toProject,
+        'skipTransforms': jbool(skipTransforms)},
+                    data=json.dumps(sv.to_dict()))
+
+    return r
