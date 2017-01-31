@@ -611,11 +611,25 @@ class Render(object):
         (owner,matchCollection,groupId)
         return self.process_simple_url_request(request_url, session)
 
+    def delete_matches_from_group_to_group(self,matchCollection,pgroup,qgroup,owner=None,host=None,port=None,verbose=False,session=requests.session()):
+        (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,None)
+        request_url = self.format_baseurl(host, port)+"/owner/%s/matchCollection/%s/group/%s/matchesWith/%s"%\
+        (owner,matchCollection,pgroup,qgroup)
+        r=session.delete(request_url)
+        return r
+
     def get_matches_from_group_to_group(self,matchCollection,pgroup,qgroup,owner=None,host=None,port=None,verbose=False,session=requests.session()):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,None)
         request_url = self.format_baseurl(host, port)+"/owner/%s/matchCollection/%s/group/%s/matchesWith/%s"%\
         (owner,matchCollection,pgroup,qgroup)
         return self.process_simple_url_request(request_url, session)
+
+    def delete_matches_from_tile_to_tile(self,matchCollection,pgroup,pid,qgroup,qid,owner=None,host=None,port=None,verbose=False,session=requests.session()):
+        (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,None)
+        request_url = self.format_baseurl(host, port)+"/owner/%s/matchCollection/%s/group/%s/id/%s/matchesWith/%s/id/%s"%\
+        (owner,matchCollection,pgroup,pid,qgroup,qid)
+        r=session.delete(request_url)
+        return r
 
     def get_matches_from_tile_to_tile(self,matchCollection,pgroup,pid,qgroup,qid,owner=None,host=None,port=None,verbose=False,session=requests.session()):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,None)
