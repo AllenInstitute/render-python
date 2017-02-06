@@ -78,6 +78,7 @@ class Filter:
         self.classname = d['className']
         self.params = d['params']
 
+
 class ReferenceTransform:
     def __init__(self, refId=None, json=None):
         if json is not None:
@@ -416,15 +417,14 @@ def get_tile_spec(stack, tile, render=None, host=None, port=None, owner=None,
 def get_tile_specs_from_minmax_box(stack, z, xmin, xmax, ymin, ymax,
                                    render=None, scale=1.0, host=None,
                                    port=None, owner=None, project=None,
-                                   session=requests.session(),
-                                   verbose=False, **kwargs):
+                                   session=requests.session(), **kwargs):
     if render is not None:
         if not isinstance(render, Render):
             raise ValueError('invalid Render object specified!')
         return get_tile_specs_from_minmax_box(
             stack, z, xmin, xmax, ymin, ymax, **render.make_kwargs(
                 host=host, port=port, owner=owner, project=project,
-                **{'session': session, 'verbose': verbose}))
+                **{'session': session}))
 
     x = xmin
     y = ymin
@@ -432,27 +432,26 @@ def get_tile_specs_from_minmax_box(stack, z, xmin, xmax, ymin, ymax,
     height = ymax - ymin
     return get_tile_specs_from_box(stack, z, x, y, width, height,
                                    scale, host, port, owner, project,
-                                   session, verbose)
+                                   session)
 
 
 def get_tile_specs_from_box(stack, z, x, y, width, height, render=None,
                             scale=1.0, host=None, port=None, owner=None,
                             project=None, session=requests.session(),
-                            verbose=False, **kwargs):
+                            **kwargs):
     if render is not None:
         if not isinstance(render, Render):
             raise ValueError('invalid Render object specified!')
         return get_tile_specs_from_box(
             stack, z, x, y, width, height, **render.make_kwargs(
                 host=host, port=port, owner=owner, project=project,
-                **{'session': session, 'verbose': verbose}))
+                **{'session': session}))
 
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%d/box/%d,%d,%d,%d,%3.2f/render-parameters" % (
                       z, x, y, width, height, scale)
-    if verbose:
-        print request_url
+    logging.debug(request_url)
     r = session.get(request_url)
     try:
         tilespecs_json = r.json()
@@ -464,19 +463,18 @@ def get_tile_specs_from_box(stack, z, x, y, width, height, render=None,
 
 def get_tile_specs_from_z(stack, z, render=None, host=None, port=None,
                           owner=None, project=None, session=requests.session(),
-                          verbose=False, **kwargs):
+                          **kwargs):
     if render is not None:
         if not isinstance(render, Render):
             raise ValueError('invalid Render object specified!')
         return get_tile_specs_from_z(
             stack, z, **render.make_kwargs(
                 host=host, port=port, owner=owner, project=project,
-                **{'session': session, 'verbose': verbose}))
+                **{'session': session}))
 
     request_url = format_preamble(
         host, port, owner, project, stack) + '/z/%f/tile-specs' % (z)
-    if verbose:
-        print request_url
+    logging.debug(request_url)
     r = session.get(request_url)
     try:
         tilespecs_json = r.json()

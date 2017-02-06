@@ -42,7 +42,7 @@ class StackVersion:
 
 def set_stack_state(stack, render=None, state='LOADING', host=None, port=None,
                     owner=None, project=None, session=requests.session(),
-                    verbose=False, **kwargs):
+                    **kwargs):
 
     if render is not None:
         if not isinstance(render, Render):
@@ -50,13 +50,12 @@ def set_stack_state(stack, render=None, state='LOADING', host=None, port=None,
         return set_stack_state(
             stack, **render.make_kwargs(
                 host=host, port=port, owner=owner, project=project,
-                **{'verbose': verbose, 'state': state, 'session': session}))
+                **{'state': state, 'session': session}))
 
     assert state in ['LOADING', 'COMPLETE', 'OFFLINE']
     request_url = format_preamble(
         host, port, owner, project, stack) + "/state/%s" % state
-    if verbose:
-        request_url
+    logging.debug(request_url)
     r = session.put(request_url, data=None,
                     headers={"content-type": "application/json"})
     return r
@@ -104,7 +103,7 @@ def delete_stack(stack, render=None, host=None, port=None, owner=None,
 
 
 def create_stack(stack, cycleNumber=1, cycleStepNumber=1, render=None,
-                 host=None, port=None, owner=None, project=None, verbose=False,
+                 host=None, port=None, owner=None, project=None,
                  session=requests.session(), **kwargs):
     if render is not None:
         if not isinstance(render, Render):
@@ -112,13 +111,12 @@ def create_stack(stack, cycleNumber=1, cycleStepNumber=1, render=None,
         return create_stack(stack, **render.make_kwargs(
             host=host, port=port, owner=owner, project=project,
             **{'session': session, 'cycleNumber': cycleNumber,
-               'cycleStepNumber': cycleStepNumber, 'verbose': verbose}))
+               'cycleStepNumber': cycleStepNumber}))
 
     sv = StackVersion(
         cycleNumber=cycleNumber, cycleStepNumber=cycleStepNumber)
     request_url = format_preamble(host, port, owner, project, stack)
-    if verbose:
-        print "stack version2", request_url, sv.to_dict()
+    logging.debug("stack version {} {}".format(request_url, sv.to_dict()))
     payload = json.dumps(sv.to_dict())
     r = session.post(request_url, data=payload,
                      headers={"content-type": "application/json",
@@ -127,7 +125,6 @@ def create_stack(stack, cycleNumber=1, cycleStepNumber=1, render=None,
         return r
     except:
         logging.error(r.text)
-        return None
 
 
 def clone_stack(inputstack, outputstack, render=None, host=None, port=None,

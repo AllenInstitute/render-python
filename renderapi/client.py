@@ -20,7 +20,7 @@ except ImportError as e:
 
 def import_single_json_file(stack, jsonfile, render=None, transformFile=None,
                             client_scripts=None, host=None, port=None,
-                            owner=None, project=None, verbose=False, **kwargs):
+                            owner=None, project=None, **kwargs):
     '''
     calls client script to import given jsonfile:
         transformFile: ?
@@ -31,8 +31,7 @@ def import_single_json_file(stack, jsonfile, render=None, transformFile=None,
             raise ValueError('invalid Render object specified!')
         return import_single_json_file(stack, jsonfile, **render.make_kwargs(
             host=host, port=port, owner=owner, project=project,
-            client_scripts=client_scripts, **{'verbose': verbose,
-                                              'transformFile': None}))
+            client_scripts=client_scripts, **{'transformFile': None}))
 
     if transformFile is None:
         transform_params = []
@@ -45,18 +44,16 @@ def import_single_json_file(stack, jsonfile, render=None, transformFile=None,
         stack_params + \
         transform_params + \
         [jsonfile]
-    if verbose:
-        print cmd
+    logging.debug(cmd)
     proc = subprocess.Popen(cmd, env=my_env, stdout=subprocess.PIPE)
     proc.wait()
-    if verbose:
-        print proc.stdout.read()
+    logging.debug(proc.stdout.read())
 
 
 def import_jsonfiles_and_transforms_parallel_by_z(
         stack, jsonfiles, transformfiles, render=None, poolsize=20,
         client_scripts=None, host=None, port=None, owner=None,
-        project=None, close_stack=True, verbose=False, **kwargs):
+        project=None, close_stack=True, **kwargs):
     '''
     imports json files and transform files in parallel:
         jsonfiles: "list of tilespec" jsons to import
@@ -71,16 +68,14 @@ def import_jsonfiles_and_transforms_parallel_by_z(
         return import_jsonfiles_and_transforms_parallel_by_z(
             stack, jsonfile, transformfiles, **render.make_kwargs(
                 host=host, port=port, owner=owner, project=project,
-                client_scripts=client_scripts, **{'verbose': verbose,
-                                                  'close_stack': close_stack,
+                client_scripts=client_scripts, **{'close_stack': close_stack,
                                                   'poolsize': poolsize}))
 
     set_stack_state(stack, 'LOADING', host, port, owner, project)
     pool = Pool(poolsize)
     partial_import = partial(import_single_json_file, stack, render=render,
                              client_scripts=client_scripts, host=host,
-                             port=port, owner=owner, project=project,
-                             verbose=verbose)
+                             port=port, owner=owner, project=project)
     rs = pool.amap(partial_import, jsonfiles, transformfiles)
     rs.wait()
     if close_stack:
@@ -90,7 +85,7 @@ def import_jsonfiles_and_transforms_parallel_by_z(
 def import_jsonfiles_parallel(
         stack, jsonfiles, render=None, poolsize=20, transformFile=None,
         client_scripts=None, host=None, port=None, owner=None,
-        project=None, close_stack=True, verbose=False, **kwargs):
+        project=None, close_stack=True, **kwargs):
     '''
     import jsons using client script in parallel
         jsonfiles: list of jsonfiles to upload
@@ -105,7 +100,7 @@ def import_jsonfiles_parallel(
             stack, jsonfiles, **render.make_kwargs(
                 host=host, port=port, owner=owner,
                 project=project, client_scripts=client_scripts,
-                **{'verbose': verbose, 'close_stack': close_stack,
+                **{'close_stack': close_stack,
                    'poolsize': poolsize, 'transformFile': transformFile}))
 
     set_stack_state(stack, 'LOADING', host, port, owner, project)

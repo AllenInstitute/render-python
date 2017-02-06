@@ -60,7 +60,7 @@ def get_bb_image(stack, z, x, y, width, height, render=None, scale=1.0,
 def get_tile_image_data(stack, tileId, render=None,
                         normalizeForMatching=True, host=None, port=None,
                         owner=None, project=None, img_format=None,
-                        session=requests.session(), verbose=False, **kwargs):
+                        session=requests.session(), **kwargs):
     '''
     render image from a tile with all transforms and return numpy array
     '''
@@ -81,8 +81,7 @@ def get_tile_image_data(stack, tileId, render=None,
         "/tile/%s/png-image" % (tileId)
     if normalizeForMatching:
         request_url += "?normalizeForMatching=true"
-    if verbose:
-        print request_url
+    logging.debug(request_url)
     r = session.get(request_url)
     try:
         img = Image.open(io.BytesIO(r.content))
@@ -90,4 +89,3 @@ def get_tile_image_data(stack, tileId, render=None,
         return array
     except:
         logging.error(r.text)
-        return None
