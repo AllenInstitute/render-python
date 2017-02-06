@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from .render import Render, format_baseurl, format_preamble
+import logging
 import requests
 import numpy as np
 
@@ -76,7 +77,6 @@ class Filter:
     def from_dict(self, d):
         self.classname = d['className']
         self.params = d['params']
-
 
 class ReferenceTransform:
     def __init__(self, refId=None, json=None):
@@ -197,7 +197,7 @@ class AffineModel(Transform):
 
     def concatenate(self, model):
         '''
-        concatenate a model to this model -- proted from trakEM2 below:
+        concatenate a model to this model -- ported from trakEM2 below:
             final double a00 = m00 * model.m00 + m01 * model.m10;
             final double a01 = m00 * model.m01 + m01 * model.m11;
             final double a02 = m00 * model.m02 + m01 * model.m12 + m02;
@@ -468,7 +468,7 @@ def get_tile_specs_from_z(stack, z, render=None, host=None, port=None,
     if render is not None:
         if not isinstance(render, Render):
             raise ValueError('invalid Render object specified!')
-        return get_tile_specs_from_box(
+        return get_tile_specs_from_z(
             stack, z, **render.make_kwargs(
                 host=host, port=port, owner=owner, project=project,
                 **{'session': session, 'verbose': verbose}))

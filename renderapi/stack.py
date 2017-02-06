@@ -18,9 +18,8 @@ class StackVersion:
         self.stackResolutionY = stackResolutionY
         self.stackResolutionZ = stackResolutionZ
         self.materializedBoxRootPath = materializedBoxRootPath
-        if createTimestamp is None:
-            createTimestamp = strftime('%Y-%M-%dT%H:%M:%S.00Z')
-        self.createTimestamp = createTimestamp
+        self.createTimestamp = (strftime('%Y-%M-%dT%H:%M:%S.00Z') if
+                                createTimestamp is None else createTimestamp)
         self.versionNotes = versionNotes
 
     def to_dict(self):
@@ -31,7 +30,7 @@ class StackVersion:
         d['stackResolutionY'] = self.stackResolutionY
         d['stackResolutionZ'] = self.stackResolutionZ
         d['createTimestamp'] = self.createTimestamp
-        d["materializedBoxRootPath"] = "string"
+        d["materializedBoxRootPath"] = self.materializedBoxRootPath
         d['mipmapPathBuilder'] = {'numberOfLevels': 0}
         d['versionNotes'] = self.versionNotes
         return d

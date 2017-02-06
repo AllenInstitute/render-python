@@ -3,6 +3,7 @@
 Point Match APIs
 '''
 import requests
+import logging
 from .render import Render, format_baseurl
 
 

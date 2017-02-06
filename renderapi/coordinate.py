@@ -4,6 +4,7 @@ coordinate mapping functions for render api
 '''
 
 from .render import Render, format_preamble
+import logging
 import requests
 
 
