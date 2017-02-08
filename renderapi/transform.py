@@ -355,7 +355,8 @@ def transformsum(transformlist, src=None):
     for tform in transformlist:
         if isinstance(tform, list):
             logging.debug('found transformlist!')
-            sumtform.concatenate(transformsum(tform, src=src), srcpts=src)
+            sumtform = sumtform.concatenate(
+                transformsum(tform, src=src), srcpts=src)
         else:
-            sumtform.concatenate(tform, srcpts=src)
-    return tform
+            sumtform = sumtform.concatenate(tform, srcpts=src)
+    return sumtform
