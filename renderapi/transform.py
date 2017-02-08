@@ -11,6 +11,7 @@ TODO:
 '''
 import json
 import numpy as np
+from .errors import ConversionError
 
 
 class EstimationError(Exception):
@@ -201,11 +202,15 @@ class Polynomial2DTransform(Transform):
     className = 'mpicbg.trakEM2.transform.PolynomialTransform2D'
 
     def __init__(self, dataString=None, src=None, dst=None, order=2,
-                 force_polynomial=True):
+                 force_polynomial=True, params=None, identity=False):
         self.className = 'mpicbg.trakEM2.transform.PolynomialTransform2D'
         if dataString is not None:
             self._process_dataString(dataString)
-        if src is not None and dst is not None:
+        elif identity:
+            self._process_params(np.array([[0, 1, 0], [0, 0, 1]]))
+        elif params is not None:
+            self._process_params(params)
+        elif src is not None and dst is not None:
             self._process_params(self.estimate(src, dst, order))
 
         if not force_polynomial and self.is_affine:
@@ -216,6 +221,12 @@ class Polynomial2DTransform(Transform):
     def is_affine(self):
         '''TODO allow default to Affine'''
         return False
+        # return self.order
+
+    @property
+    def order(self):
+        no_coeffs = len(self.params.ravel())
+        return (abs(np.sqrt(4 * no_coeffs + 1)) - 3) / 2
 
     def estimate(self, src, dst, order=2, convergence_test=None):
         '''This is unreliable -- add tests to ensure repeatability'''
@@ -266,10 +277,15 @@ class Polynomial2DTransform(Transform):
         generate datastring and param attributes from datastring
         '''
         dsList = datastring.split(' ')
-        self.params = numpy.array(
+        self.params = np.array(
             [[float(d) for d in dsList[:len(dsList)/2]],
              [float(d) for d in dsList[len(dsList)/2]]])
         self.dataString = datastring
+
+    def _format_raveled_params(self, raveled_params):
+        return np.array(
+            [[float(d) for d in dsList[:len(raveled_params)/2]],
+             [float(d) for d in dsList[len(raveled_params)/2]]])
 
     def tform(self, points):
         dst = np.zeros(points.shape)
@@ -285,13 +301,61 @@ class Polynomial2DTransform(Transform):
                 pidx += 1
         return dst
 
+    def coefficients(self, order=None):
+        if order is None:
+            order = self.order
+        return (order + 1) * (order + 2)
 
-def transformsum(transformlist):
+    def asorder(self, order):
+        ''''''
+        if self.order > order:
+            raise ConversionError(
+                'transformation {} is order {} -- conversion to '
+                'order {} not supported'.format(
+                    self.dataString, self.order, order))
+        new_params_raveled = self.params.ravel() + [
+            0 for i in range(self.coefficients(order) - self.coefficients())]
+        new_params = self._format_raveled_params(new_params_raveled)
+        return Polynomial2DTransform(params=new_params)
+
+    def _fromAffine(self, aff):
+        if not isinstance(aff, AffineModel):
+            raise ConversionError('attempting to convert a nonaffine model!')
+        return Polynomial2DTransform(params=np.array([
+            [aff.M[0, 2], aff.M[0, 0], aff.M[0, 1]],
+            [aff.M[1, 2], aff.M[1, 0], aff.M[1, 1]]]))
+
+    def concatenate(self, othertform, order=None, srcpts=None):
+        '''
+        currently uses an estimation to represent composition of transforms
+        '''
+        if isinstance(othertform, AffineModel):
+            othertform = self._fromAffine(othertform)
+        if order is None:
+            order = max([self.order, othertform.order])
+        # TODO define srcpts and dstpts
+        if srcpts is not None:
+            dstpts = othertform.tform(self.tform(srcpts))
+        else:
+            raise NotImplementedError('default source points unavailable!')
+        return Polynomial2DTransform(src=srcpts, dst=dstpts, order=order)
+
+
+def transformsum(transformlist, src=None):
     '''
     summation of all transforms in a list of transforms.
         Will force affines as polynomials.  Does not support LC.
+    input:
+        src -- test points representing the
     Returns:
-        AffineTransform or Polynomial2DTransform representing the sum of the
+        Polynomial2DTransform representing the sum of the
             input list
     '''
-    pass
+    sumtform = Polynomial2DTransform(identity=True)
+    for tform in transformlist:
+        if isinstance(tform, list):
+            logging.debug('found transformlist!')
+            sumtform.concatenate(transformsum(tform, src=src), srcpts=src)
+        else:
+            sumtform.concatenate(tform, srcpts=src)
+    return tform
