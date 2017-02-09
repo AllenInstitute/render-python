@@ -7,6 +7,8 @@ from .render import Render, format_preamble
 import logging
 import requests
 
+logger = logging.getLogger(__name__)
+
 
 def world_to_local_coordinates(stack, z, x, y, render=None, host=None,
                                port=None, owner=None, project=None,
@@ -26,7 +28,7 @@ def world_to_local_coordinates(stack, z, x, y, render=None, host=None,
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def local_to_world_coordinates(stack, tileId, x, y, render=None,
@@ -48,7 +50,7 @@ def local_to_world_coordinates(stack, tileId, x, y, render=None,
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def world_to_local_coordinates_batch(stack, z, data, render=None, host=None,
@@ -125,7 +127,7 @@ def world_to_local_coordinates_array(stack, dataarray, tileId, z=0,
             answer[i, 1] = c[1]
         return answer
     except:
-        logging.error(json_answer)
+        logger.error(json_answer)
 
 
 def local_to_world_coordinates_array(stack, dataarray, tileId, z=0,
@@ -162,4 +164,4 @@ def local_to_world_coordinates_array(stack, dataarray, tileId, z=0,
             answer[i, 1] = c[1]
         return answer
     except:
-        logging.error(json_answer)
+        logger.error(json_answer)

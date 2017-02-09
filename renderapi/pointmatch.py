@@ -6,6 +6,8 @@ import requests
 import logging
 from .render import Render, format_baseurl
 
+logger = logging.getLogger(__name__)
+
 
 def get_matchcollection_owners(render=None, host=None, port=None,
                                session=requests.session(), **kwargs):
@@ -21,7 +23,7 @@ def get_matchcollection_owners(render=None, host=None, port=None,
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def get_matchcollections(render=None, owner=None, host=None, port=None,
@@ -39,7 +41,7 @@ def get_matchcollections(render=None, owner=None, host=None, port=None,
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def get_match_groupIds(matchCollection, render=None, owner=None, host=None,
@@ -57,7 +59,7 @@ def get_match_groupIds(matchCollection, render=None, owner=None, host=None,
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def get_matches_outside_group(matchCollection, groupId, render=None,
@@ -78,7 +80,7 @@ def get_matches_outside_group(matchCollection, groupId, render=None,
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def get_matches_within_group(matchCollection, groupId, owner=None,
@@ -99,7 +101,7 @@ def get_matches_within_group(matchCollection, groupId, owner=None,
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def get_matches_from_group_to_group(matchCollection, pgroup, qgroup,
@@ -121,7 +123,7 @@ def get_matches_from_group_to_group(matchCollection, pgroup, qgroup,
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def get_matches_from_tile_to_tile(matchCollection, pgroup, pid,
@@ -144,7 +146,7 @@ def get_matches_from_tile_to_tile(matchCollection, pgroup, pid,
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def get_matches_with_group(matchCollection, pgroup, render=None, owner=None,
@@ -165,7 +167,7 @@ def get_matches_with_group(matchCollection, pgroup, render=None, owner=None,
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def get_match_groupIds_from_only(matchCollection, render=None, owner=None,
@@ -185,7 +187,7 @@ def get_match_groupIds_from_only(matchCollection, render=None, owner=None,
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def get_match_groupIds_to_only(matchCollection, render=None, owner=None,
@@ -205,4 +207,4 @@ def get_match_groupIds_to_only(matchCollection, render=None, owner=None,
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)

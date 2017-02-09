@@ -4,6 +4,8 @@ import logging
 import requests
 import numpy as np
 
+logger = logging.getLogger(__name__)
+
 
 class ResolvedTileSpecMap:
     def __init__(self, tilespecs=[], transforms=[]):
@@ -410,7 +412,7 @@ def get_tile_spec(stack, tile, render=None, host=None, port=None, owner=None,
     try:
         tilespec_json = r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
     return TileSpec(json=tilespec_json['tileSpecs'][0])
 
 
@@ -451,12 +453,12 @@ def get_tile_specs_from_box(stack, z, x, y, width, height, render=None,
         host, port, owner, project, stack) + \
         "/z/%d/box/%d,%d,%d,%d,%3.2f/render-parameters" % (
                       z, x, y, width, height, scale)
-    logging.debug(request_url)
+    logger.debug(request_url)
     r = session.get(request_url)
     try:
         tilespecs_json = r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
     return [TileSpec(json=tilespec_json)
             for tilespec_json in tilespecs_json['tileSpecs']]
 
@@ -474,12 +476,12 @@ def get_tile_specs_from_z(stack, z, render=None, host=None, port=None,
 
     request_url = format_preamble(
         host, port, owner, project, stack) + '/z/%f/tile-specs' % (z)
-    logging.debug(request_url)
+    logger.debug(request_url)
     r = session.get(request_url)
     try:
         tilespecs_json = r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
     if len(tilespecs_json) == 0:
         return None

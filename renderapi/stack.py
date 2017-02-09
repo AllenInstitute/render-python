@@ -6,6 +6,8 @@ import requests
 from .render import Render, format_baseurl, format_preamble
 from .utils import jbool
 
+logger = logging.getLogger(__name__)
+
 
 class StackVersion:
     def __init__(self, cycleNumber=1, cycleStepNumber=1, stackResolutionX=0,
@@ -40,9 +42,9 @@ class StackVersion:
             eval('self.%s=d[%s]' % (key, key))
 
 
-def set_stack_state(stack, render=None, state='LOADING', host=None, port=None,
-                    owner=None, project=None, session=requests.session(),
-                    **kwargs):
+def set_stack_state(stack, state='LOADING', host=None, port=None,
+                    owner=None, project=None, render=None,
+                    session=requests.session(), **kwargs):
 
     if render is not None:
         if not isinstance(render, Render):
@@ -55,13 +57,13 @@ def set_stack_state(stack, render=None, state='LOADING', host=None, port=None,
     assert state in ['LOADING', 'COMPLETE', 'OFFLINE']
     request_url = format_preamble(
         host, port, owner, project, stack) + "/state/%s" % state
-    logging.debug(request_url)
+    logger.debug(request_url)
     r = session.put(request_url, data=None,
                     headers={"content-type": "application/json"})
     return r
 
 
-def likelyUniqueId(render=None, host=None, port=None,
+def likelyUniqueId(host=None, port=None, render=None,
                    session=requests.session(), **kwargs):
     '''return hex-code nearly-unique id from render server'''
     if render is not None:
@@ -71,8 +73,9 @@ def likelyUniqueId(render=None, host=None, port=None,
                               **{'session': session}))
 
     request_url = '{}/likelyUniqueId'.format(format_baseurl(host, port))
-    return session.get(request_url, data=None,
-                       headers={"content-type": "application/json"})
+    r = session.get(request_url, data=None,
+                    headers={"content-type": "text/plain"})
+    return r.text
 
 
 def make_stack_params(host, port, owner, project, stack):
@@ -98,7 +101,7 @@ def delete_stack(stack, render=None, host=None, port=None, owner=None,
 
     request_url = format_preamble(host, port, owner, project, stack)
     r = session.delete(request_url)
-    logging.debug(r.text)
+    logger.debug(r.text)
     return r
 
 
@@ -116,7 +119,7 @@ def create_stack(stack, cycleNumber=1, cycleStepNumber=1, render=None,
     sv = StackVersion(
         cycleNumber=cycleNumber, cycleStepNumber=cycleStepNumber)
     request_url = format_preamble(host, port, owner, project, stack)
-    logging.debug("stack version {} {}".format(request_url, sv.to_dict()))
+    logger.debug("stack version {} {}".format(request_url, sv.to_dict()))
     payload = json.dumps(sv.to_dict())
     r = session.post(request_url, data=payload,
                      headers={"content-type": "application/json",
@@ -124,7 +127,7 @@ def create_stack(stack, cycleNumber=1, cycleStepNumber=1, render=None,
     try:
         return r
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def clone_stack(inputstack, outputstack, render=None, host=None, port=None,
@@ -149,7 +152,7 @@ def clone_stack(inputstack, outputstack, render=None, host=None, port=None,
     request_url = '{}/{}'.format(format_preamble(
         host, port, owner, project, inputstack), outputstack)
 
-    logging.debug(request_url)
+    logger.debug(request_url)
     r = session.put(request_url, params={
         'z': zs, 'toProject': toProject,
         'skipTransforms': jbool(skipTransforms)},
