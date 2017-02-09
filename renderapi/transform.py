@@ -8,10 +8,14 @@ TODO:
     interpolation functions
     Affine as subset of Polynomial2D
     approximation of other functions(TPS, meshtechniques) to Polynomial2D
+        ^ would this be better in Java using mpicbg implementation?
 '''
 import json
+import logging
 import numpy as np
 from .errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class EstimationError(Exception):
@@ -93,6 +97,12 @@ class Transform:
 
     def __repr__(self):
         return self.__str__()
+
+    def __eq__(self, other):
+        return self.__str__() == other.__str__()
+
+    def __hash__(self):
+        return hash((self.__str__()))
 
 
 class AffineModel(Transform):
@@ -354,7 +364,7 @@ def transformsum(transformlist, src=None):
     sumtform = Polynomial2DTransform(identity=True)
     for tform in transformlist:
         if isinstance(tform, list):
-            logging.debug('found transformlist!')
+            logger.debug('found transformlist!')
             sumtform = sumtform.concatenate(
                 transformsum(tform, src=src), srcpts=src)
         else:
