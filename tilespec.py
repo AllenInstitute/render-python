@@ -266,6 +266,9 @@ class Layout():
         d['pixelsize'] = self.pixelsize
         return d
     def from_dict(self,d):
+        if d is None:
+            d={}
+            
         self.sectionId = d.get('sectionId',None)
         self.cameraId = d.get('camera',None)
         self.scopeId = d.get('temca',None)
@@ -334,17 +337,17 @@ class TileSpec():
         thedict['transforms']={}
         thedict['transforms']['type']='list'
         #thedict['transforms']['specList']=[t.to_dict() for t in self.tforms]
-	thedict['transforms']['specList'] = []
-	for t in self.tforms:
-		strlist = {}
-		#added by sharmi - if your speclist contains a speclist (can happen if you run the optimization more than once)
-		if isinstance(t,list):
-			strlist['type'] = 'list'
-			strlist['specList'] = [tt.to_dict() for tt in t]
-			thedict['transforms']['specList'].append(strlist)
-		else:
-			thedict['transforms']['specList'].append(t.to_dict())
-		############################################################################################################
+        thedict['transforms']['specList'] = []
+        for t in self.tforms:
+            strlist = {}
+            #added by sharmi - if your speclist contains a speclist (can happen if you run the optimization more than once)
+            if isinstance(t,list):
+                strlist['type'] = 'list'
+                strlist['specList'] = [tt.to_dict() for tt in t]
+                thedict['transforms']['specList'].append(strlist)
+            else:
+                thedict['transforms']['specList'].append(t.to_dict())
+        ############################################################################################################
 
 
         thedict['inputfilters']={}
@@ -362,7 +365,7 @@ class TileSpec():
         self.maxint = d['maxIntensity']
         self.frameId = d.get('frameId',None)
         self.layout = Layout()
-        self.layout.from_dict(d['layout'])
+        self.layout.from_dict(d.get('layout',None))
         self.minX = d.get('minX',None)
         self.maxX = d.get('maxX',None)
         self.maxY = d.get('maxY',None)
