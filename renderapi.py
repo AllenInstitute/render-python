@@ -343,7 +343,26 @@ class Render(object):
             return r.json()
         except:
             print(r.text)
-            return None                        
+            return None  
+
+    def get_section_image_data(self,stack,z,scale=0.1,maxIntensity=None,minIntensity=None,host=None,port=None,owner=None,project=None,session=requests.session(),verbose=False):
+        (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
+        request_url = self.format_preamble(host,port,owner,project,stack)+"/z/%s/png-image?" % (z)
+        args = ['scale=%f'%scale]
+        if maxIntensity is not None:
+            args.append('maxIntensity=%f'%maxIntensity)
+        if minIntensity is not None:
+            args.append('minIntensity=%f'%minIntensity)
+        request_url+='&'.join(args)
+        r = session.get(request_url)
+        try:
+            img = Image.open(BytesIO(r.content))
+            array = np.asarray(img)
+            return array
+        except:
+            print (r.text)    
+            return None
+
     def get_tile_image_data(self,stack,tileId,normalizeForMatching=True,host=None,port=None,owner=None,project=None,session=requests.session(),verbose=False):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,project)
         request_url = self.format_preamble(host,port,owner,project,stack)+"/tile/%s/png-image" % (tileId)
@@ -635,6 +654,11 @@ class Render(object):
         (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,None)
         request_url = self.format_baseurl(host, port)+"/owner/%s/matchCollection/%s/group/%s/id/%s/matchesWith/%s/id/%s"%\
         (owner,matchCollection,pgroup,pid,qgroup,qid)
+        return self.process_simple_url_request(request_url, session)
+    def get_matches_involving_tile(self,matchCollection,group,id,owner=None,host=None,port=None,verbose=False,session=requests.session()):
+        (host,port,owner,project,client_scripts)=self.process_defaults(host,port,owner,None)
+        request_url = self.format_baseurl(host, port)+"/owner/%s/matchCollection/%s/group/%s/id/%s"%\
+        (owner,matchCollection,group,id)
         return self.process_simple_url_request(request_url, session)
 
     def get_matches_with_group(self,matchCollection,pgroup,owner=None,host=None,port=None,verbose=False,session=requests.session()):
