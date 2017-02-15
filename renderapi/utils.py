@@ -15,12 +15,12 @@ def jbool(val):
     return 'true' if val else 'false'
 
 
-def stripLogger(logger):
+def stripLogger(logger_tostrip):
     '''
     remove all handlers from a logger -- useful for redefining
     input:
-        logger: logging logger as from logging.getLogger
+        logger_tostrip: logging logger as from logging.getLogger
     '''
-    if logger.handlers:
-        for handler in logger.handlers:
-            logger.removeHandler(handler)
+    if logger_tostrip.handlers:
+        for handler in logger_tostrip.handlers:
+            logger_tostrip.removeHandler(handler)
