@@ -13,23 +13,10 @@ TODO:
 import json
 import logging
 import numpy as np
-from .errors import ConversionError
+from .errors import ConversionError, EstimationError
+from .utils import _load_dict, _load_json
 
 logger = logging.getLogger(__name__)
-
-
-class EstimationError(Exception):
-    pass
-
-
-def _load_dict(obj, d):
-    obj.__dict__.update({k: v for k, v in d.items()})
-
-
-def _load_json(obj, j):
-    with open(j, 'r') as f:
-        jd = json.load(f)
-    _load_dict(obj, jd)
 
 
 class TransformList:
