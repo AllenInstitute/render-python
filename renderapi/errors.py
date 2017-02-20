@@ -10,3 +10,11 @@ class ClientScriptError(Exception):
 
 class ConversionError(Exception):
     pass
+
+
+class EstimationError(Exception):
+    pass
+
+
+class SpecError(Exception):
+    pass
