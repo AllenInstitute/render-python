@@ -130,6 +130,7 @@ def create_stack(stack, cycleNumber=1, cycleStepNumber=1, render=None,
         logger.error(r.text)
 
 
+# FIXME multiple z indices require multiple params?
 def clone_stack(inputstack, outputstack, render=None, host=None, port=None,
                 owner=None, project=None, skipTransforms=False, toProject=None,
                 z=None, session=None, **kwargs):
@@ -159,3 +160,101 @@ def clone_stack(inputstack, outputstack, render=None, host=None, port=None,
                     data=json.dumps(sv.to_dict()))
 
     return r
+
+
+def get_z_values_for_stack(stack, project=None, host=None, port=None,
+                           owner=None, render=None,
+                           session=requests.session(), **kwargs):
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return get_z_values_for_stack(stack, **render.make_kwargs(
+            host=host, port=port, owner=owner, project=project,
+            session=session, **kwargs))
+
+    request_url = format_preamble(
+        host, port, owner, project, stack) + "/zValues/"
+    if verbose:
+        print request_url
+    r = session.get(request_url)
+    try:
+        return r.json()
+    except:
+        logger.error(r.text)
+
+
+def get_z_value_for_section(stack, sectionId, project=None,
+                            host=None, port=None, owner=None, render=None,
+                            session=requests.session(), **kwargs):
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return get_z_value_for_section(stack, sectionId, **render.make_kwargs(
+            host=host, port=port, owner=owner, project=project,
+            session=session, **kwargs))
+
+    request_url = format_preamble(
+        host, port, owner, project, stack) + "/section/%s/z" % (sectionId)
+    r = session.get(request_url)
+    try:
+        return r.json()
+    except:
+        logger.error(r.text)
+
+
+def put_resolved_tilespecs(stack, data, host=None, port=None,
+                           owner=None, project=None, render=None,
+                           session=requests.session(), **kwargs):
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return put_resolved_tilespecs(stack, data, **render.make_kwargs(
+            host=host, port=port, owner=owner, project=project,
+            session=session, **kwargs))
+
+    request_url = format_preamble(
+        host, port, owner, project, stack) + "/resolvedTiles"
+    r = session.put(request_url, data=data,
+                    headers={"content-type": "application/json",
+                             "Accept": "text/plain"})
+    return r
+
+
+def get_bounds_from_z(stack, z, host=None, port=None, owner=None,
+                      project=None, render=None,
+                      session=requests.session(), **kwargs):
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return get_bounds_from_z(stack, z, **render.make_kwargs(
+            host=host, port=port, owner=owner, project=project,
+            session=session, **kwargs))
+
+    request_url = format_preamble(
+        host, port, owner, project, stack) + '/z/%f/bounds' % (z)
+
+    r = session.get(request_url)
+    try:
+        return r.json()
+    except:
+        logger.error(r.text)
+
+
+def get_section_z_value(stack, sectionId, host=None, port=None,
+                        owner=None, project=None, render=None,
+                        session=requests.session(), **kwargs):
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return get_section_z_value(stack, sectionId, **render.make_kwargs(
+            host=host, port=port, owner=owner, project=project,
+            session=session, **kwargs))
+
+    request_url = format_preamble(
+        host, port, owner, project, stack) + "/section/%s/z" % sectionId
+    r = session.get(request_url)
+    try:
+        return float(r.json())
+    except:
+        logger.error(r.text)
+    return float(process_simple_url_request(request_url, session))
