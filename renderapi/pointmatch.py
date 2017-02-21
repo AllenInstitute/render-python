@@ -3,18 +3,19 @@
 Point Match APIs
 '''
 import requests
+import logging
 from .render import Render, format_baseurl
+
+logger = logging.getLogger(__name__)
 
 
 def get_matchcollection_owners(render=None, host=None, port=None,
-                               verbose=False, session=requests.session(),
-                               **kwargs):
+                               session=requests.session(), **kwargs):
     if render is not None:
         if not isinstance(render, Render):
             raise ValueError('invalid Render object specified!')
         return get_matchcollection_owners(**render.make_kwargs(
-            host=host, port=port, **{'verbose': verbose,
-                                     'session': session}))
+            host=host, port=port, **{'session': session}))
 
     request_url = format_baseurl(host, port) + \
         "/matchCollectionOwners"
@@ -22,17 +23,17 @@ def get_matchcollection_owners(render=None, host=None, port=None,
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def get_matchcollections(render=None, owner=None, host=None, port=None,
-                         verbose=False, session=requests.session(), **kwargs):
+                         session=requests.session(), **kwargs):
     if render is not None:
         if not isinstance(render, Render):
             raise ValueError('invalid Render object specified!')
         return get_matchcollections(**render.make_kwargs(
             owner=owner, host=host, port=port,
-            **{'verbose': verbose, 'session': session}))
+            **{'session': session}))
 
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollections" % owner
@@ -40,18 +41,17 @@ def get_matchcollections(render=None, owner=None, host=None, port=None,
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def get_match_groupIds(matchCollection, render=None, owner=None, host=None,
-                       port=None, verbose=False,
-                       session=requests.session()):
+                       port=None, session=requests.session()):
     if render is not None:
         if not isinstance(render, Render):
             raise ValueError('invalid Render object specified!')
         return get_match_groupIds(matchCollection, **render.make_kwargs(
             owner=owner, host=host, port=port,
-            **{'verbose': verbose, 'session': session}))
+            **{'session': session}))
 
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/groupIds" % (owner, matchCollection)
@@ -59,11 +59,11 @@ def get_match_groupIds(matchCollection, render=None, owner=None, host=None,
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def get_matches_outside_group(matchCollection, groupId, render=None,
-                              owner=None, host=None, port=None, verbose=False,
+                              owner=None, host=None, port=None,
                               session=requests.session(), **kwargs):
     if render is not None:
         if not isinstance(render, Render):
@@ -71,7 +71,7 @@ def get_matches_outside_group(matchCollection, groupId, render=None,
         return get_matches_outside_group(
             matchCollection, groupId, **render.make_kwargs(
                 owner=owner, host=host, port=port,
-                **{'verbose': verbose, 'session': session}))
+                **{'session': session}))
 
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/group/%s/matchesOutsideGroup" % (
@@ -80,11 +80,11 @@ def get_matches_outside_group(matchCollection, groupId, render=None,
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def get_matches_within_group(matchCollection, groupId, owner=None,
-                             host=None, port=None, verbose=False,
+                             host=None, port=None,
                              session=requests.session(), **kwargs):
     if render is not None:
         if not isinstance(render, Render):
@@ -92,7 +92,7 @@ def get_matches_within_group(matchCollection, groupId, owner=None,
         return get_matches_within_group(
             matchCollection, groupId, **render.make_kwargs(
                 owner=owner, host=host, port=port,
-                **{'verbose': verbose, 'session': session}))
+                **{'session': session}))
 
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/group/%s/matchesWithinGroup" % (
@@ -101,12 +101,12 @@ def get_matches_within_group(matchCollection, groupId, owner=None,
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def get_matches_from_group_to_group(matchCollection, pgroup, qgroup,
                                     render=None, owner=None, host=None,
-                                    port=None, verbose=False,
+                                    port=None,
                                     session=requests.session(), **kwargs):
     if render is not None:
         if not isinstance(render, Render):
@@ -114,7 +114,7 @@ def get_matches_from_group_to_group(matchCollection, pgroup, qgroup,
         return get_matches_from_group_to_group(
             matchCollection, pgroup, qgroup, **render.make_kwargs(
                 owner=owner, host=host, port=port,
-                **{'verbose': verbose, 'session': session}))
+                **{'session': session}))
 
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/group/%s/matchesWith/%s" % (
@@ -123,12 +123,12 @@ def get_matches_from_group_to_group(matchCollection, pgroup, qgroup,
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def get_matches_from_tile_to_tile(matchCollection, pgroup, pid,
                                   qgroup, qid, render=None, owner=None,
-                                  host=None, port=None, verbose=False,
+                                  host=None, port=None,
                                   session=requests.session(), **kwargs):
     if render is not None:
         if not isinstance(render, Render):
@@ -136,7 +136,7 @@ def get_matches_from_tile_to_tile(matchCollection, pgroup, pid,
         return get_matches_from_tile_to_tile(
             matchCollection, pgroup, pid, qgroup, qid, **render.make_kwargs(
                 owner=owner, host=host, port=port,
-                **{'verbose': verbose, 'session': session}))
+                **{'session': session}))
 
     request_url = format_baseurl(host, port) + \
         ("/owner/%s/matchCollection/%s/group/%s/id/%s/"
@@ -146,11 +146,11 @@ def get_matches_from_tile_to_tile(matchCollection, pgroup, pid,
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def get_matches_with_group(matchCollection, pgroup, render=None, owner=None,
-                           host=None, port=None, verbose=False,
+                           host=None, port=None,
                            session=requests.session(), **kwargs):
     if render is not None:
         if not isinstance(render, Render):
@@ -158,7 +158,7 @@ def get_matches_with_group(matchCollection, pgroup, render=None, owner=None,
         return get_matches_with_group(
             matchCollection, pgroup, **render.make_kwargs(
                 owner=owner, host=host, port=port,
-                **{'verbose': verbose, 'session': session}))
+                **{'session': session}))
 
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/pGroup/%s/matches/" % (
@@ -167,11 +167,11 @@ def get_matches_with_group(matchCollection, pgroup, render=None, owner=None,
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def get_match_groupIds_from_only(matchCollection, render=None, owner=None,
-                                 host=None, port=None, verbose=False,
+                                 host=None, port=None,
                                  session=requests.session(), **kwargs):
     if render is not None:
         if not isinstance(render, Render):
@@ -179,7 +179,7 @@ def get_match_groupIds_from_only(matchCollection, render=None, owner=None,
         return get_match_groupIds_from_only(
             matchCollection, **render.make_kwargs(
                 owner=owner, host=host, port=port,
-                **{'verbose': verbose, 'session': session}))
+                **{'session': session}))
 
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/pGroupIds" % (owner, matchCollection)
@@ -187,11 +187,11 @@ def get_match_groupIds_from_only(matchCollection, render=None, owner=None,
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def get_match_groupIds_to_only(matchCollection, render=None, owner=None,
-                               host=None, port=None, verbose=False,
+                               host=None, port=None,
                                session=requests.session(), **kwargs):
     if render is not None:
         if not isinstance(render, Render):
@@ -199,7 +199,7 @@ def get_match_groupIds_to_only(matchCollection, render=None, owner=None,
         return get_match_groupIds_to_only(
             matchCollection, **render.make_kwargs(
                 owner=owner, host=host, port=port,
-                **{'verbose': verbose, 'session': session}))
+                **{'session': session}))
 
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/qGroupIds" % (owner, matchCollection)
@@ -207,4 +207,4 @@ def get_match_groupIds_to_only(matchCollection, render=None, owner=None,
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)

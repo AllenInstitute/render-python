@@ -2,12 +2,16 @@
 '''
 render functions relying on render-ws client scripts
 '''
+import os
 import json
 from functools import partial
 import logging
 import subprocess
 from .render import Render
 from .stack import set_stack_state, make_stack_params
+
+# setup logger
+logger = logging.getLogger(__name__)
 
 try:
     from pathos.multiprocessing import ProcessingPool as Pool
@@ -20,7 +24,7 @@ except ImportError as e:
 
 def import_single_json_file(stack, jsonfile, render=None, transformFile=None,
                             client_scripts=None, host=None, port=None,
-                            owner=None, project=None, verbose=False, **kwargs):
+                            owner=None, project=None, **kwargs):
     '''
     calls client script to import given jsonfile:
         transformFile: ?
@@ -31,8 +35,7 @@ def import_single_json_file(stack, jsonfile, render=None, transformFile=None,
             raise ValueError('invalid Render object specified!')
         return import_single_json_file(stack, jsonfile, **render.make_kwargs(
             host=host, port=port, owner=owner, project=project,
-            client_scripts=client_scripts, **{'verbose': verbose,
-                                              'transformFile': None}))
+            client_scripts=client_scripts, **{'transformFile': None}))
 
     if transformFile is None:
         transform_params = []
@@ -45,18 +48,16 @@ def import_single_json_file(stack, jsonfile, render=None, transformFile=None,
         stack_params + \
         transform_params + \
         [jsonfile]
-    if verbose:
-        print cmd
+    logger.debug(cmd)
     proc = subprocess.Popen(cmd, env=my_env, stdout=subprocess.PIPE)
     proc.wait()
-    if verbose:
-        print proc.stdout.read()
+    logger.debug(proc.stdout.read())
 
 
 def import_jsonfiles_and_transforms_parallel_by_z(
         stack, jsonfiles, transformfiles, render=None, poolsize=20,
         client_scripts=None, host=None, port=None, owner=None,
-        project=None, close_stack=True, verbose=False, **kwargs):
+        project=None, close_stack=True, **kwargs):
     '''
     imports json files and transform files in parallel:
         jsonfiles: "list of tilespec" jsons to import
@@ -71,16 +72,14 @@ def import_jsonfiles_and_transforms_parallel_by_z(
         return import_jsonfiles_and_transforms_parallel_by_z(
             stack, jsonfile, transformfiles, **render.make_kwargs(
                 host=host, port=port, owner=owner, project=project,
-                client_scripts=client_scripts, **{'verbose': verbose,
-                                                  'close_stack': close_stack,
+                client_scripts=client_scripts, **{'close_stack': close_stack,
                                                   'poolsize': poolsize}))
 
     set_stack_state(stack, 'LOADING', host, port, owner, project)
     pool = Pool(poolsize)
     partial_import = partial(import_single_json_file, stack, render=render,
                              client_scripts=client_scripts, host=host,
-                             port=port, owner=owner, project=project,
-                             verbose=verbose)
+                             port=port, owner=owner, project=project)
     rs = pool.amap(partial_import, jsonfiles, transformfiles)
     rs.wait()
     if close_stack:
@@ -90,7 +89,7 @@ def import_jsonfiles_and_transforms_parallel_by_z(
 def import_jsonfiles_parallel(
         stack, jsonfiles, render=None, poolsize=20, transformFile=None,
         client_scripts=None, host=None, port=None, owner=None,
-        project=None, close_stack=True, verbose=False, **kwargs):
+        project=None, close_stack=True, **kwargs):
     '''
     import jsons using client script in parallel
         jsonfiles: list of jsonfiles to upload
@@ -105,7 +104,7 @@ def import_jsonfiles_parallel(
             stack, jsonfiles, **render.make_kwargs(
                 host=host, port=port, owner=owner,
                 project=project, client_scripts=client_scripts,
-                **{'verbose': verbose, 'close_stack': close_stack,
+                **{'close_stack': close_stack,
                    'poolsize': poolsize, 'transformFile': transformFile}))
 
     set_stack_state(stack, 'LOADING', host, port, owner, project)
@@ -114,7 +113,7 @@ def import_jsonfiles_parallel(
                              transformFile=transformFile,
                              client_scripts=client_scripts,
                              host=host, port=port, owner=owner,
-                             project=project, verbose=verbose)
+                             project=project)
     partial_import(jsonfiles[0])
     rs = pool.amap(partial_import, jsonfiles)
     rs.wait()
@@ -125,7 +124,7 @@ def import_jsonfiles_parallel(
 def import_jsonfiles(stack, jsonfiles, render=None, transformFile=None,
                      client_scripts=None, host=None, port=None,
                      owner=None, project=None, close_stack=True,
-                     verbose=False, **kwargs):
+                     **kwargs):
     '''
     import jsons using client script serially
         jsonfiles: iterator of filenames to be uploaded
@@ -139,7 +138,7 @@ def import_jsonfiles(stack, jsonfiles, render=None, transformFile=None,
             stack, jsonfiles, **render.make_kwargs(
                 host=host, port=port, owner=owner,
                 project=project, client_scripts=client_scripts,
-                **{'verbose': verbose, 'close_stack': close_stack,
+                **{'close_stack': close_stack,
                    'transformFile': transformFile}))
 
     set_stack_state(stack, 'LOADING', host, port, owner, project)
@@ -154,22 +153,20 @@ def import_jsonfiles(stack, jsonfiles, render=None, transformFile=None,
         stack_params + \
         transform_params + \
         jsonfiles
-    if verbose:
-        print cmd
+    logger.debug(cmd)
     proc = subprocess.Popen(cmd, env=my_env, stdout=subprocess.PIPE)
     proc.wait()
-    if verbose:
-        print proc.stdout.read()
+    logger.debug(proc.stdout.read())
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
 
 # FIXME paperweight for proper render_ws_client implemntation
-# TODO this should allow you to set validator parameters
 def import_jsonfiles_validate_client(stack, jsonfiles, render=None,
                                      transformFile=None, client_scripts=None,
                                      host=None, port=None, owner=None,
                                      project=None, close_stack=True, mem=6,
+                                     validator=None,
                                      **kwargs):
     '''
     Uses java client for parallelization and validation
@@ -186,11 +183,16 @@ def import_jsonfiles_validate_client(stack, jsonfiles, render=None,
 
     transform_params = (['--transformFile', transformFile]
                         if transformFile is not None else [])
-    validator_params = [
-        '--validatorClass',
-        'org.janelia.alignment.spec.validator.TemTileSpecValidator',
-        '--validatorData',
-        'minCoordinate:-500,maxCoordinate:50000,minSize:500,maxSize:10000']
+    if validator is None:
+        validator_params = [
+            '--validatorClass',
+            'org.janelia.alignment.spec.validator.TemTileSpecValidator',
+            '--validatorData',
+            'minCoordinate:-500,maxCoordinate:100000,'
+            'minSize:500,maxSize:10000']
+    else:
+        raise NotImplementedError('No custom validation handling!')
+
     my_env = os.environ.copy()
     stack_params = make_stack_params(host, port, owner, project, stack)
     cmd = [os.path.join(client_scripts, 'run_ws_client.sh')] + \
@@ -202,11 +204,14 @@ def import_jsonfiles_validate_client(stack, jsonfiles, render=None,
         jsonfiles
 
     set_stack_state(stack, 'LOADING', host, port, owner, project)
-    logging.debug(cmd)
+    logger.debug(cmd)
 
+    subprocess.call(cmd, env=my_env)
+
+    '''
     proc = subprocess.Popen(cmd, env=my_env, stdout=subprocess.PIPE)
     proc.wait()
-    logging.debug(proc.stdout.read())
-
+    logger.debug(proc.stdout.read())
+    '''
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)

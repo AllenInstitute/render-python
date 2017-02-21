@@ -4,22 +4,24 @@ import logging
 from time import strftime
 import requests
 from .render import Render, format_baseurl, format_preamble
+from .utils import jbool
+
+logger = logging.getLogger(__name__)
 
 
 class StackVersion:
-    def __init__(self, cycleNumber=1, cycleStepNumber=1, stackResolutionX=1,
-                 stackResolutionY=1, stackResolutionZ=1,
+    def __init__(self, cycleNumber=1, cycleStepNumber=1, stackResolutionX=0,
+                 stackResolutionY=0, stackResolutionZ=0,
                  materializedBoxRootPath=None, versionNotes="",
-                 createTimestamp=None):
+                 createTimestamp=None, **kwargs):
         self.cycleNumber = cycleNumber
         self.cycleStepNumber = cycleStepNumber
         self.stackResolutionX = stackResolutionX
         self.stackResolutionY = stackResolutionY
         self.stackResolutionZ = stackResolutionZ
         self.materializedBoxRootPath = materializedBoxRootPath
-        if createTimestamp is None:
-            createTimestamp = strftime('%Y-%M-%dT%H:%M:%S.00Z')
-        self.createTimestamp = createTimestamp
+        self.createTimestamp = (strftime('%Y-%M-%dT%H:%M:%S.00Z') if
+                                createTimestamp is None else createTimestamp)
         self.versionNotes = versionNotes
 
     def to_dict(self):
@@ -30,7 +32,7 @@ class StackVersion:
         d['stackResolutionY'] = self.stackResolutionY
         d['stackResolutionZ'] = self.stackResolutionZ
         d['createTimestamp'] = self.createTimestamp
-        d["materializedBoxRootPath"] = "string"
+        d["materializedBoxRootPath"] = self.materializedBoxRootPath
         d['mipmapPathBuilder'] = {'numberOfLevels': 0}
         d['versionNotes'] = self.versionNotes
         return d
@@ -40,9 +42,9 @@ class StackVersion:
             eval('self.%s=d[%s]' % (key, key))
 
 
-def set_stack_state(stack, render=None, state='LOADING', host=None, port=None,
-                    owner=None, project=None, session=requests.session(),
-                    verbose=False, **kwargs):
+def set_stack_state(stack, state='LOADING', host=None, port=None,
+                    owner=None, project=None, render=None,
+                    session=requests.session(), **kwargs):
 
     if render is not None:
         if not isinstance(render, Render):
@@ -50,19 +52,18 @@ def set_stack_state(stack, render=None, state='LOADING', host=None, port=None,
         return set_stack_state(
             stack, **render.make_kwargs(
                 host=host, port=port, owner=owner, project=project,
-                **{'verbose': verbose, 'state': state, 'session': session}))
+                **{'state': state, 'session': session}))
 
     assert state in ['LOADING', 'COMPLETE', 'OFFLINE']
     request_url = format_preamble(
         host, port, owner, project, stack) + "/state/%s" % state
-    if verbose:
-        request_url
+    logger.debug(request_url)
     r = session.put(request_url, data=None,
                     headers={"content-type": "application/json"})
     return r
 
 
-def likelyUniqueId(render=None, host=None, port=None,
+def likelyUniqueId(host=None, port=None, render=None,
                    session=requests.session(), **kwargs):
     '''return hex-code nearly-unique id from render server'''
     if render is not None:
@@ -72,8 +73,9 @@ def likelyUniqueId(render=None, host=None, port=None,
                               **{'session': session}))
 
     request_url = '{}/likelyUniqueId'.format(format_baseurl(host, port))
-    return session.get(request_url, data=None,
-                       headers={"content-type": "application/json"})
+    r = session.get(request_url, data=None,
+                    headers={"content-type": "text/plain"})
+    return r.text
 
 
 def make_stack_params(host, port, owner, project, stack):
@@ -99,12 +101,12 @@ def delete_stack(stack, render=None, host=None, port=None, owner=None,
 
     request_url = format_preamble(host, port, owner, project, stack)
     r = session.delete(request_url)
-    logging.debug(r.text)
+    logger.debug(r.text)
     return r
 
 
-def create_stack(self, stack, cycleNumber=1, cycleStepNumber=1,
-                 host=None, port=None, owner=None, project=None, verbose=False,
+def create_stack(stack, cycleNumber=1, cycleStepNumber=1, render=None,
+                 host=None, port=None, owner=None, project=None,
                  session=requests.session(), **kwargs):
     if render is not None:
         if not isinstance(render, Render):
@@ -112,13 +114,12 @@ def create_stack(self, stack, cycleNumber=1, cycleStepNumber=1,
         return create_stack(stack, **render.make_kwargs(
             host=host, port=port, owner=owner, project=project,
             **{'session': session, 'cycleNumber': cycleNumber,
-               'cycleStepNumber': cycleStepNumber, 'verbose': verbose}))
+               'cycleStepNumber': cycleStepNumber}))
 
     sv = StackVersion(
         cycleNumber=cycleNumber, cycleStepNumber=cycleStepNumber)
     request_url = format_preamble(host, port, owner, project, stack)
-    if verbose:
-        print "stack version2", request_url, sv.to_dict()
+    logger.debug("stack version {} {}".format(request_url, sv.to_dict()))
     payload = json.dumps(sv.to_dict())
     r = session.post(request_url, data=payload,
                      headers={"content-type": "application/json",
@@ -126,5 +127,134 @@ def create_stack(self, stack, cycleNumber=1, cycleStepNumber=1,
     try:
         return r
     except:
-        logging.error(r.text)
-        return None
+        logger.error(r.text)
+
+
+# FIXME multiple z indices require multiple params?
+def clone_stack(inputstack, outputstack, render=None, host=None, port=None,
+                owner=None, project=None, skipTransforms=False, toProject=None,
+                z=None, session=None, **kwargs):
+    '''
+    result:
+        cloned stack in LOADING state with tiles in layers specified by z'
+    '''
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return clone_stack(inputstack, outputstack, **render.make_kwargs(
+            host=host, port=port, owner=owner, project=project,
+            session=session, skipTransforms=skipTransforms,
+            toProject=toProject, **kwargs))
+
+    if z is not None:
+        zs = [float(i) for i in z]  # TODO test me
+    session = requests.session() if session is None else session
+    sv = StackVersion(**kwargs)
+    request_url = '{}/{}'.format(format_preamble(
+        host, port, owner, project, inputstack), outputstack)
+
+    logger.debug(request_url)
+    r = session.put(request_url, params={
+        'z': zs, 'toProject': toProject,
+        'skipTransforms': jbool(skipTransforms)},
+                    data=json.dumps(sv.to_dict()))
+
+    return r
+
+
+def get_z_values_for_stack(stack, project=None, host=None, port=None,
+                           owner=None, render=None,
+                           session=requests.session(), **kwargs):
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return get_z_values_for_stack(stack, **render.make_kwargs(
+            host=host, port=port, owner=owner, project=project,
+            session=session, **kwargs))
+
+    request_url = format_preamble(
+        host, port, owner, project, stack) + "/zValues/"
+    if verbose:
+        print request_url
+    r = session.get(request_url)
+    try:
+        return r.json()
+    except:
+        logger.error(r.text)
+
+
+def get_z_value_for_section(stack, sectionId, project=None,
+                            host=None, port=None, owner=None, render=None,
+                            session=requests.session(), **kwargs):
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return get_z_value_for_section(stack, sectionId, **render.make_kwargs(
+            host=host, port=port, owner=owner, project=project,
+            session=session, **kwargs))
+
+    request_url = format_preamble(
+        host, port, owner, project, stack) + "/section/%s/z" % (sectionId)
+    r = session.get(request_url)
+    try:
+        return r.json()
+    except:
+        logger.error(r.text)
+
+
+def put_resolved_tilespecs(stack, data, host=None, port=None,
+                           owner=None, project=None, render=None,
+                           session=requests.session(), **kwargs):
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return put_resolved_tilespecs(stack, data, **render.make_kwargs(
+            host=host, port=port, owner=owner, project=project,
+            session=session, **kwargs))
+
+    request_url = format_preamble(
+        host, port, owner, project, stack) + "/resolvedTiles"
+    r = session.put(request_url, data=data,
+                    headers={"content-type": "application/json",
+                             "Accept": "text/plain"})
+    return r
+
+
+def get_bounds_from_z(stack, z, host=None, port=None, owner=None,
+                      project=None, render=None,
+                      session=requests.session(), **kwargs):
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return get_bounds_from_z(stack, z, **render.make_kwargs(
+            host=host, port=port, owner=owner, project=project,
+            session=session, **kwargs))
+
+    request_url = format_preamble(
+        host, port, owner, project, stack) + '/z/%f/bounds' % (z)
+
+    r = session.get(request_url)
+    try:
+        return r.json()
+    except:
+        logger.error(r.text)
+
+
+def get_section_z_value(stack, sectionId, host=None, port=None,
+                        owner=None, project=None, render=None,
+                        session=requests.session(), **kwargs):
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return get_section_z_value(stack, sectionId, **render.make_kwargs(
+            host=host, port=port, owner=owner, project=project,
+            session=session, **kwargs))
+
+    request_url = format_preamble(
+        host, port, owner, project, stack) + "/section/%s/z" % sectionId
+    r = session.get(request_url)
+    try:
+        return float(r.json())
+    except:
+        logger.error(r.text)
+    return float(process_simple_url_request(request_url, session))

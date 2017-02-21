@@ -4,7 +4,10 @@ import io
 import requests
 from PIL import Image
 import numpy as np
+import logging
 from .render import Render, format_baseurl, format_preamble
+
+logger = logging.getLogger(__name__)
 
 # define acceptable image formats -- currently render generates png, jpeg, tiff
 IMAGE_FORMATS = {'png': 'png-image',
@@ -53,13 +56,13 @@ def get_bb_image(stack, z, x, y, width, height, render=None, scale=1.0,
         image = np.asarray(Image.open(io.BytesIO(r.content)))
         return image
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def get_tile_image_data(stack, tileId, render=None,
                         normalizeForMatching=True, host=None, port=None,
                         owner=None, project=None, img_format=None,
-                        session=requests.session(), verbose=False, **kwargs):
+                        session=requests.session(), **kwargs):
     '''
     render image from a tile with all transforms and return numpy array
     '''
@@ -80,13 +83,11 @@ def get_tile_image_data(stack, tileId, render=None,
         "/tile/%s/png-image" % (tileId)
     if normalizeForMatching:
         request_url += "?normalizeForMatching=true"
-    if verbose:
-        print request_url
+    logger.debug(request_url)
     r = session.get(request_url)
     try:
         img = Image.open(io.BytesIO(r.content))
         array = np.asarray(img)
         return array
     except:
-        logging.error(r.text)
-        return None
+        logger.error(r.text)
