@@ -5,5 +5,4 @@ setup(name='render-python',
 	author='Forrest Collman,Eric Perlman,Sharmi Seshamani',
 	author_email='forrest.collman@gmail.com',
 	url='https://github.com/fcollman/render-python',
-	packages = [''],
-	py_modules=['tilespec','renderapi'])
+	packages = ['renderapi'])
