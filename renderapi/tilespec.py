@@ -275,7 +275,7 @@ class Layout:
 class TileSpec:
     def __init__(self, tileId=None, z=None, width=None, height=None,
                  imageUrl=None, frameId=None, maskUrl=None,
-                 minint=0, maxint=65000, layout=Layout(), tforms=[],
+                 minint=0, maxint=65535, layout=Layout(), tforms=[],
                  inputfilters=[], scale3Url=None, scale2Url=None,
                  scale1Url=None, json=None):
         if json is not None:
