@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from .render import Render, format_baseurl, format_preamble
+from collections import OrderedDict
 import logging
 import requests
 import numpy as np
@@ -393,6 +394,60 @@ class TileSpec:
                 f = Filter()
                 f.from_dict(f)
                 self.inputfilters.append(f)
+
+
+class MipMapLevel:
+    def __init__(self, level, imageUrl=None, maskUrl=None):
+        self.level = level
+        self.imageUrl = imageUrl
+        self.maskUrl = maskUrl
+
+    def to_dict(self):
+        return dict(self.__iter__())
+
+    def _formatUrls(self):
+        d = {}
+        if self.imageUrl is not None:
+            d.update({'imageUrl': self.imageUrl})
+        if self.maskUrl is not None:
+            d.update({'maskUrl': self.maskUrl})
+        return d
+
+    def __iter__(self):
+        return iter([(self.level, self._formatUrls())])
+
+
+class ImagePyramid:
+    def __init__(self, mipMapLevels=[]):
+        self.mipMapLevels = mipMapLevels
+
+    def to_dict(self):
+        return dict(self.__iter__())
+
+    def to_ordered_dict(self, key=None):
+        '''defaults to order by mipmapLevel'''
+        return OrderedDict(sorted(
+            self.__iter__(), key=((lambda x: x[0]) if key
+                                  is None else key)))
+
+    def append(self, mmL):
+        self.mipMapLevels.append(mmL)
+
+    def update(self, mmL):
+        self.mipMapLevels = [
+            l for l in self.mipMapLevels if l.level != mmL.level]
+        self.append(mmL)
+
+    def get(self, to_get):
+        return self.to_dict()[to_get]  # TODO should this default
+
+    @property
+    def levels(self):
+        return [int(i.level) for i in self.mipMapLevels]
+
+    def __iter__(self):
+        return iter([
+            l for sl in [list(mmL) for mmL in self.mipMapLevels] for l in sl])
 
 
 def get_tile_spec(stack, tile, render=None, host=None, port=None, owner=None,
