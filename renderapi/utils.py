@@ -3,6 +3,7 @@
 utilities to make render/java/web/life interfacing easier
 '''
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
