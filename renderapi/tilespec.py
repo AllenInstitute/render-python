@@ -278,7 +278,7 @@ class TileSpec:
                  imageUrl=None, frameId=None, maskUrl=None,
                  minint=0, maxint=65535, layout=Layout(), tforms=[],
                  inputfilters=[], scale3Url=None, scale2Url=None,
-                 scale1Url=None, json=None):
+                 scale1Url=None, json=None, mipMapLevels=[]):
         if json is not None:
             self.from_dict(json)
         else:
@@ -287,17 +287,30 @@ class TileSpec:
             self.width = width
             self.height = height
             self.layout = layout
-            self.imageUrl = imageUrl
-            self.maskUrl = maskUrl
             self.minint = minint
             self.maxint = maxint
             self.tforms = tforms
             self.frameId = frameId
             self.layout = layout
             self.inputfilters = inputfilters
+
+            self.ip = ImagePyramid(mipMapLevels=mipMapLevels)
+            # legacy scaleXUrl
+            self.maskUrl = maskUrl
+            self.imageUrl = imageUrl
             self.scale3Url = scale3Url
             self.scale2Url = scale2Url
             self.scale1Url = scale1Url
+
+            if imageUrl is not None:
+                self.ip.update(MipMapLevel(
+                    0, imageUrl=imageUrl, maskUrl=maskUrl))
+            if scale1Url is not None:
+                self.ip.update(MipMapLevel(1, imageUrl=scale1Url))
+            if scale2Url is not None:
+                self.ip.update(MipMapLevel(2, imageUrl=scale2Url))
+            if scale3Url is not None:
+                self.ip.update(MipMapLevel(3, imageUrl=scale3Url))
 
     def to_dict(self):
         thedict = {}
@@ -310,6 +323,7 @@ class TileSpec:
         thedict['frameId'] = self.frameId
         if self.layout is not None:
             thedict['layout'] = self.layout.to_dict()
+        '''
         mipmapdict = {}
         mipmapdict['0'] = {}
         mipmapdict['0']['imageUrl'] = self.imageUrl
@@ -324,7 +338,8 @@ class TileSpec:
             mipmapdict['2']['imageUrl'] = self.scale2Url
         if self.maskUrl is not None:
             mipmapdict['0']['maskUrl'] = self.maskUrl
-        thedict['mipmapLevels'] = mipmapdict
+        '''
+        thedict['mipmapLevels'] = self.ip.to_ordered_dict()
         thedict['transforms'] = {}
         thedict['transforms']['type'] = 'list'
         # thedict['transforms']['specList']=[t.to_dict() for t in self.tforms]
@@ -361,6 +376,7 @@ class TileSpec:
         self.maxX = d.get('maxX', None)
         self.maxY = d.get('maxY', None)
         self.minY = d.get('minY', None)
+        # legacy scaleXUrl
         self.imageUrl = d['mipmapLevels']['0']['imageUrl']
         self.maskUrl = d['mipmapLevels']['0'].get('maskUrl', None)
         if d['mipmapLevels'].get('2', None) is not None:
@@ -375,6 +391,11 @@ class TileSpec:
             self.scale3Url = d['mipmapLevels']['3'].get('imageUrl', None)
         else:
             self.scale3Url = None
+
+        self.ip = ImagePyramid(mipMapLevels=[
+             MipMapLevel(
+                 int(l), imageUrl=v.get('imageUrl'), maskUrl=v.get('maskUrl'))
+             for l, v in d['mipmapLevels'].items()])
 
         self.tforms = []
         for t in d['transforms']['specList']:
@@ -488,8 +509,9 @@ def get_tile_specs_from_minmax_box(stack, z, xmin, xmax, ymin, ymax,
     width = xmax - xmin
     height = ymax - ymin
     return get_tile_specs_from_box(stack, z, x, y, width, height,
-                                   scale, host, port, owner, project,
-                                   session)
+                                   scale=scale, host=host, port=port,
+                                   owner=owner, project=project,
+                                   session=session)
 
 
 def get_tile_specs_from_box(stack, z, x, y, width, height, render=None,
