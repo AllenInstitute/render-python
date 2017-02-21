@@ -433,8 +433,8 @@ def get_tile_specs_from_minmax_box(stack, z, xmin, xmax, ymin, ymax,
     width = xmax - xmin
     height = ymax - ymin
     return get_tile_specs_from_box(stack, z, x, y, width, height,
-                                   scale, host, port, owner, project,
-                                   session)
+                                   scale=scale, host=host, port=port,
+                                   owner=owner, project=project, session=session)
 
 
 def get_tile_specs_from_box(stack, z, x, y, width, height, render=None,
