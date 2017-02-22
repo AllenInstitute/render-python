@@ -14,7 +14,10 @@ ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 #install gcc for pathos
 RUN apt-get install gcc -y
 RUN apt-get clean
-
+RUN pip install multiprocess
+RUN pip install pathos
+RUN uptime&&uptime&&uptime&&uptime&&uptime
 #install render python using pip from github
+
 RUN pip install -e git+https://github.com/fcollman/render-python.git@module#egg=render-python
 
