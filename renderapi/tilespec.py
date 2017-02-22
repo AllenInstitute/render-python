@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from .render import Render, format_baseurl, format_preamble
+from collections import OrderedDict
 import logging
 import requests
 import numpy as np
@@ -278,7 +279,7 @@ class TileSpec:
                  imageUrl=None, frameId=None, maskUrl=None,
                  minint=0, maxint=65535, layout=Layout(), tforms=[],
                  inputfilters=[], scale3Url=None, scale2Url=None,
-                 scale1Url=None, json=None):
+                 scale1Url=None, json=None, mipMapLevels=[]):
         if json is not None:
             self.from_dict(json)
         else:
@@ -287,17 +288,30 @@ class TileSpec:
             self.width = width
             self.height = height
             self.layout = layout
-            self.imageUrl = imageUrl
-            self.maskUrl = maskUrl
             self.minint = minint
             self.maxint = maxint
             self.tforms = tforms
             self.frameId = frameId
             self.layout = layout
             self.inputfilters = inputfilters
+
+            self.ip = ImagePyramid(mipMapLevels=mipMapLevels)
+            # legacy scaleXUrl
+            self.maskUrl = maskUrl
+            self.imageUrl = imageUrl
             self.scale3Url = scale3Url
             self.scale2Url = scale2Url
             self.scale1Url = scale1Url
+
+            if imageUrl is not None:
+                self.ip.update(MipMapLevel(
+                    0, imageUrl=imageUrl, maskUrl=maskUrl))
+            if scale1Url is not None:
+                self.ip.update(MipMapLevel(1, imageUrl=scale1Url))
+            if scale2Url is not None:
+                self.ip.update(MipMapLevel(2, imageUrl=scale2Url))
+            if scale3Url is not None:
+                self.ip.update(MipMapLevel(3, imageUrl=scale3Url))
 
     def to_dict(self):
         thedict = {}
@@ -310,21 +324,7 @@ class TileSpec:
         thedict['frameId'] = self.frameId
         if self.layout is not None:
             thedict['layout'] = self.layout.to_dict()
-        mipmapdict = {}
-        mipmapdict['0'] = {}
-        mipmapdict['0']['imageUrl'] = self.imageUrl
-        if self.scale1Url is not None:
-            mipmapdict['1'] = {}
-            mipmapdict['1']['imageUrl'] = self.scale1Url
-        if self.scale3Url is not None:
-            mipmapdict['3'] = {}
-            mipmapdict['3']['imageUrl'] = self.scale3Url
-        if self.scale2Url is not None:
-            mipmapdict['2'] = {}
-            mipmapdict['2']['imageUrl'] = self.scale2Url
-        if self.maskUrl is not None:
-            mipmapdict['0']['maskUrl'] = self.maskUrl
-        thedict['mipmapLevels'] = mipmapdict
+        thedict['mipmapLevels'] = self.ip.to_ordered_dict()
         thedict['transforms'] = {}
         thedict['transforms']['type'] = 'list'
         # thedict['transforms']['specList']=[t.to_dict() for t in self.tforms]
@@ -361,20 +361,10 @@ class TileSpec:
         self.maxX = d.get('maxX', None)
         self.maxY = d.get('maxY', None)
         self.minY = d.get('minY', None)
-        self.imageUrl = d['mipmapLevels']['0']['imageUrl']
-        self.maskUrl = d['mipmapLevels']['0'].get('maskUrl', None)
-        if d['mipmapLevels'].get('2', None) is not None:
-            self.scale2Url = d['mipmapLevels']['2'].get('imageUrl', None)
-        else:
-            self.scale2Url = None
-        if d['mipmapLevels'].get('1', None) is not None:
-            self.scale1Url = d['mipmapLevels']['1'].get('imageUrl', None)
-        else:
-            self.scale1Url = None
-        if d['mipmapLevels'].get('3', None) is not None:
-            self.scale3Url = d['mipmapLevels']['3'].get('imageUrl', None)
-        else:
-            self.scale3Url = None
+        self.ip = ImagePyramid(mipMapLevels=[
+             MipMapLevel(
+                 int(l), imageUrl=v.get('imageUrl'), maskUrl=v.get('maskUrl'))
+             for l, v in d['mipmapLevels'].items()])
 
         self.tforms = []
         for t in d['transforms']['specList']:
@@ -394,6 +384,60 @@ class TileSpec:
                 f = Filter()
                 f.from_dict(f)
                 self.inputfilters.append(f)
+
+
+class MipMapLevel:
+    def __init__(self, level, imageUrl=None, maskUrl=None):
+        self.level = level
+        self.imageUrl = imageUrl
+        self.maskUrl = maskUrl
+
+    def to_dict(self):
+        return dict(self.__iter__())
+
+    def _formatUrls(self):
+        d = {}
+        if self.imageUrl is not None:
+            d.update({'imageUrl': self.imageUrl})
+        if self.maskUrl is not None:
+            d.update({'maskUrl': self.maskUrl})
+        return d
+
+    def __iter__(self):
+        return iter([(self.level, self._formatUrls())])
+
+
+class ImagePyramid:
+    def __init__(self, mipMapLevels=[]):
+        self.mipMapLevels = mipMapLevels
+
+    def to_dict(self):
+        return dict(self.__iter__())
+
+    def to_ordered_dict(self, key=None):
+        '''defaults to order by mipmapLevel'''
+        return OrderedDict(sorted(
+            self.__iter__(), key=((lambda x: x[0]) if key
+                                  is None else key)))
+
+    def append(self, mmL):
+        self.mipMapLevels.append(mmL)
+
+    def update(self, mmL):
+        self.mipMapLevels = [
+            l for l in self.mipMapLevels if l.level != mmL.level]
+        self.append(mmL)
+
+    def get(self, to_get):
+        return self.to_dict()[to_get]  # TODO should this default
+
+    @property
+    def levels(self):
+        return [int(i.level) for i in self.mipMapLevels]
+
+    def __iter__(self):
+        return iter([
+            l for sl in [list(mmL) for mmL in self.mipMapLevels] for l in sl])
 
 
 def get_tile_spec(stack, tile, render=None, host=None, port=None, owner=None,
@@ -435,7 +479,8 @@ def get_tile_specs_from_minmax_box(stack, z, xmin, xmax, ymin, ymax,
     height = ymax - ymin
     return get_tile_specs_from_box(stack, z, x, y, width, height,
                                    scale=scale, host=host, port=port,
-                                   owner=owner, project=project, session=session)
+                                   owner=owner, project=project,
+                                   session=session)
 
 
 def get_tile_specs_from_box(stack, z, x, y, width, height, render=None,

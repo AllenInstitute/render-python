@@ -36,3 +36,7 @@ def _load_json(obj, j):
     with open(j, 'r') as f:
         jd = json.load(f)
     _load_dict(obj, jd)
+
+
+def defaultifNone(val, default=None):
+    return val if val is not None else default
