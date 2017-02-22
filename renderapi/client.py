@@ -114,7 +114,7 @@ def import_jsonfiles_parallel(
                              client_scripts=client_scripts,
                              host=host, port=port, owner=owner,
                              project=project)
-    partial_import(jsonfiles)
+    
     rs = pool.amap(partial_import, jsonfiles)
     rs.wait()
     if close_stack:
