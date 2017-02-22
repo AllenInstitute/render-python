@@ -49,6 +49,13 @@ class Render(object):
         processed_kwargs.update(kwargs)
         return processed_kwargs
 
+    def run(self, f, *args, **kwargs):
+        '''
+        run function from object
+            technically shorter than adding render=Render to kwargs
+        '''
+        return f(*args, **self.make_kwargs(**kwargs))
+
 
 class RenderClient(Render):
     '''Draft object for run_ws_client.sh calls'''
@@ -59,7 +66,8 @@ class RenderClient(Render):
         if client_script is None:
             raise ClientScriptError('No RenderClient script specified!')
         elif not os.path.isfile(client_script):
-            raise ClientScriptError('Client script {} not found!')
+            raise ClientScriptError('Client script {} not found!'.format(
+                client_script))
         if 'run_ws_client.sh' not in os.path.basename(client_script):
             logger.warning(
                 'Unrecognized client script {}!'.format(client_script))
@@ -191,8 +199,7 @@ def get_owners(host=None, port=None, render=None,
 
 
 def get_stack_metadata_by_owner(owner=None, host=None, port=None, render=None,
-                                session=requests.session(),
-                                verbose=False, **kwargs):
+                                session=requests.session(), **kwargs):
     if render is not None:
         if not isinstance(render, Render):
             raise ValueError('invalid Render object specified!')
@@ -202,8 +209,7 @@ def get_stack_metadata_by_owner(owner=None, host=None, port=None, render=None,
 
     request_url = "%s/owner/%s/stacks/" % (
         format_baseurl(host, port), owner)
-    if verbose:
-        logger.debug(request_url)
+    logger.debug(request_url)
     r = session.get(request_url)
     try:
         return r.json()
@@ -220,7 +226,8 @@ def get_projects_by_owner(owner=None, host=None, port=None, render=None,
             owner=owner, host=host, port=port,
             **{'session': session}))
 
-    metadata = get_stack_metadata_by_owner(owner)
+    metadata = get_stack_metadata_by_owner(owner=owner, host=host,
+                                           port=port, session=session)
     projects = list(set([m['stackId']['project'] for m in metadata]))
     return projects
 
@@ -235,7 +242,8 @@ def get_stacks_by_owner_project(owner=None, project=None, host=None,
             owner=owner, host=host, port=port, project=project,
             **{'session': session}))
 
-    metadata = get_stack_metadata_by_owner(owner)
+    metadata = get_stack_metadata_by_owner(owner=owner, host=host,
+                                           port=port, session=session)
     stacks = ([m['stackId']['stack'] for m in metadata
                if m['stackId']['project'] == project])
     return stacks
