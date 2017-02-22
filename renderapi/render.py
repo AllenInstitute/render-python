@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 import logging
 import os
-import json
-import subprocess
-import sys
-import tempfile
 import requests
-import numpy as np
+from .utils import defaultifNone
+from .errors import ClientScriptError
+
+logger = logging.getLogger(__name__)
 
 
 class Render(object):
@@ -18,9 +17,9 @@ class Render(object):
         self.DEFAULT_OWNER = owner
         self.DEFAULT_CLIENT_SCRIPTS = client_scripts
 
-        logging.debug('Render object created with '
-                      'host={h}, port={p}, project={pr}, '
-                      'owner={o}, scripts={s}'.format(
+        logger.debug('Render object created with '
+                     'host={h}, port={p}, project={pr}, '
+                     'owner={o}, scripts={s}'.format(
                           h=self.DEFAULT_HOST, p=self.DEFAULT_PORT,
                           pr=self.DEFAULT_PROJECT, o=self.DEFAULT_OWNER,
                           s=self.DEFAULT_CLIENT_SCRIPTS))
@@ -50,173 +49,49 @@ class Render(object):
         processed_kwargs.update(kwargs)
         return processed_kwargs
 
-    def process_defaults(self, host, port, owner, project,
-                         client_scripts=None):
-        '''
-        utility function which will convert arguments to default arguments if
-            they are None allows Render object to be used with defaults if
-            lazy, but allows projects/hosts/owners to be changed from call
-            to call if desired.  used by many functions convert default None
-            arguments to default values.
-        '''
-        if host is None:
-            host = self.DEFAULT_HOST
-        if port is None:
-            port = self.DEFAULT_PORT
-        if owner is None:
-            owner = self.DEFAULT_OWNER
-        if project is None:
-            project = self.DEFAULT_PROJECT
-        if client_scripts is None:
-            client_scripts = self.DEFAULT_CLIENT_SCRIPTS
-        return (host, port, owner, project, client_scripts)
-
-    def get_z_values_for_stack(self, stack, project=None, host=None, port=None,
-                               owner=None, session=requests.session(),
-                               verbose=False):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project)
-        request_url = self.format_preamble(
-            host, port, owner, project, stack) + "/zValues/"
-        if verbose:
-            print request_url
-        r = session.get(request_url)
-        try:
-            return r.json()
-        except:
-            print(r.text)
-            return None
-
-    def get_z_value_for_section(self, stack, sectionId, project=None,
-                                host=None, port=None, owner=None,
-                                session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project)
-        request_url = self.format_preamble(
-            host, port, owner, project, stack) + "/section/%s/z" % (sectionId)
-        r = session.get(request_url)
-        try:
-            return r.json()
-        except:
-            print(r.text)
-            return None
-
-    def put_resolved_tilespecs(self, stack, data, host=None, port=None,
-                               owner=None, project=None,
-                               session=requests.session(), verbose=False):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project)
-        request_url = self.format_preamble(
-            host, port, owner, project, stack) + "/resolvedTiles"
-        if verbose:
-            print request_url
-
-        r = session.put(request_url, data=data,
-                        headers={"content-type": "application/json",
-                                 "Accept": "text/plain"})
-        return r
-
-    def get_bounds_from_z(self, stack, z, host=None, port=None, owner=None,
-                          project=None, session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project)
-        request_url = self.format_preamble(
-            host, port, owner, project, stack) + '/z/%f/bounds' % (z)
-        return self.process_simple_url_request(request_url, session)
-
-    #
-    # API for doing the bulk requests locally (i.e., to be run on the cluster)
-    # Full documentation here: http://wiki.int.janelia.org/wiki/display/flyTEM/Coordinate+Mapping+Tools
-    #
-
-    MAP_COORD_SCRIPT = "/groups/flyTEM/flyTEM/render/bin/map-coord.sh"
-    def batch_local_work(self, stack, z, data, host=None, port=None,
-                         owner=None, project=None, localToWorld=False,
-                         deleteTemp=True, threads=16):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project)
-        fromJson = tempfile.NamedTemporaryFile(
-            suffix=".json", mode='w', delete=False)
-        fromJson.write(data)
-        fromJson.flush()
-        fromJson.close()
-
-        toJson = tempfile.NamedTemporaryFile(
-            suffix=".json", mode='r', delete=False)
-        toJson.close()
-
-        #cmd = "%s --owner %s --project %s --stack %s --z %d --fromJson %s --toJson %s --baseDataUrl http://tem-services.int.janelia.org:8080/render-ws/v1 --numberOfThreads %d" % (MAP_COORD_SCRIPT, owner, project, stack, z, fromJson.name, toJson.name, threads)
-        cmd = ("%s --owner %s --project %s --stack %s --z %d --fromJson %s "
-               "--toJson %s --baseDataUrl http://10.40.3.162:8080/render-ws/v1 "
-               "--numberOfThreads %d") % (
-               MAP_COORD_SCRIPT, owner, project, stack, z,
-               fromJson.name, toJson.name, threads)
-
-        if localToWorld:
-            cmd = cmd + " --localToWorld"
-        try:
-            rc = subprocess.call(cmd, shell="True")
-            if rc != 0:
-                raise Exception("Invalid return code (%d): %s" % (rc, cmd))
-
-            with open(toJson.name) as f:
-                outdata = json.load(f)
-        except:
-            print("Unexpected error:", sys.exc_info()[0])
-            return json.loads("{}")
-
-        if deleteTemp:
-            os.unlink(fromJson.name)
-            os.unlink(toJson.name)
-
-        return outdata
-
-    def world_to_local_coordinates_batch_local(self, stack, z, data, host=None,
-                                               port=None, owner=None,
-                                               project=None):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project)
-        return batch_local_work(stack, z, data, host, port, owner, project,
-                                localToWorld=False)
-
-    def local_to_world_coordinates_batch_local(self, stack, z, data, host=None,
-                                               port=None, owner=None,
-                                               project=None):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project)
-        return batch_local_work(stack, z, data, host, port, owner, project,
-                                localToWorld=True)
-
-    def get_section_z_value(self, stack, sectionId, host=None, port=None,
-                            owner=None, project=None, verbose=False,
-                            session=requests.session()):
-        (host, port, owner, project, client_scripts) = self.process_defaults(
-            host, port, owner, project)
-        request_url = self.format_preamble(
-            host, port, owner, project, stack) + "/section/%s/z" % sectionId
-        return float(self.process_simple_url_request(request_url, session))
-
 
 class RenderClient(Render):
-    '''Draft object for render_webservice_client.sh calls'''
-    def __init__(self, client_script=None, *args, **kwargs):
+    '''Draft object for run_ws_client.sh calls'''
+    def __init__(self, client_script=None, memGB=None, *args, **kwargs):
         super(RenderClient, self).__init__(**kwargs)
+        # FIXME remove this when completed
+        logger.error('Client functionality not implemented!')
+        if client_script is None:
+            raise ClientScriptError('No RenderClient script specified!')
+        elif not os.path.isfile(client_script):
+            raise ClientScriptError('Client script {} not found!')
+        if 'run_ws_client.sh' not in os.path.basename(client_script):
+            logger.warning(
+                'Unrecognized client script {}!'.format(client_script))
         self.client_script = client_script
 
+        if memGB is None:
+            logger.warning(
+                'No default Java heap specified -- defaulting to 1G')
+            memGB = '1G'
+        self.memGB = memGB
+
     def make_kwargs(self, *args, **kwargs):
+        # hack to get dictionary defaults to work
+        client_script = defaultifNone(
+            kwargs.pop('client_script', None), self.client_script)
+        memGB = defaultifNone(kwargs.pop('memGB', None), self.memGB)
         return super(RenderClient, self).make_kwargs(
-            client_script=self.client_script, *args, **kwargs)
+            client_script=client_script,
+            memGB=memGB,
+            *args, **kwargs)
 
 
 def connect(host=None, port=None, owner=None, project=None,
-            client_scripts=None):
+            client_scripts=None, client_script=None, memGB=None, **kwargs):
     '''helper function to connect to a render instance'''
     if host is None:
         if 'RENDER_HOST' not in os.environ:
             host = str(raw_input("Enter Render Host: "))
             if host == '':
-                logging.critical('Render Host must not be empty!')
+                logger.critical('Render Host must not be empty!')
                 raise ValueError('Render Host must not be empty!')
+            # TODO more flexible server input
             # host = (host if host.startswith('http')
             #         else 'http://{}'.format(host))
         else:
@@ -227,7 +102,7 @@ def connect(host=None, port=None, owner=None, project=None,
             port = str(int(raw_input("Enter Render Port: ")))
             if port == '':
                 # TODO better (no) port handling
-                logging.critical('Render Port must not be empty!')
+                logger.critical('Render Port must not be empty!')
                 raise ValueError('Render Port must not be empty!')
         else:
             port = int(os.environ['RENDER_PORT'])
@@ -238,7 +113,7 @@ def connect(host=None, port=None, owner=None, project=None,
         else:
             project = str(os.environ['RENDER_PROJECT'])
         if project == '':
-            logging.critical('Render Project must not be empty!')
+            logger.critical('Render Project must not be empty!')
             raise ValueError('Render Project must not be empty!')
 
     if owner is None:
@@ -247,7 +122,7 @@ def connect(host=None, port=None, owner=None, project=None,
         else:
             owner = str(os.environ['RENDER_OWNER'])
         if owner == '':
-            logging.critical('Render Owner must not be empty!')
+            logger.critical('Render Owner must not be empty!')
             raise ValueError('Render Owner must not be empty!')
 
     # TODO should client_scripts be required?
@@ -258,13 +133,34 @@ def connect(host=None, port=None, owner=None, project=None,
         else:
             client_scripts = str(os.environ['RENDER_CLIENT_SCRIPTS'])
         if client_scripts == '':
-            logging.critical('Render Client Scripts must '
-                             'not be empty!')
+            logger.critical('Render Client Scripts must '
+                            'not be empty!')
             raise ValueError('Render Client Scripts must '
                              'not be empty!')
+    if client_script is None:
+        if 'RENDER_CLIENT_SCRIPT' not in os.environ:
+            # client_script = str(raw_input("Enter Render Client Script: "))
+            pass
+        else:
+            client_script = str(os.environ['RENDER_CLIENT_SCRIPT'])
 
-    return Render(host=host, port=port, owner=owner, project=project,
-                  client_scripts=client_scripts)
+    if memGB is None:
+        if 'RENDER_CLIENT_HEAP' not in os.environ:
+            pass
+        else:
+            memGB = str(os.environ['RENDER_CLIENT_HEAP'])
+
+    try:
+        return RenderClient(client_script=client_script, memGB=memGB,
+                            host=host, port=port,
+                            owner=owner, project=project,
+                            client_scripts=client_scripts)
+    except ClientScriptError as e:
+        logger.info(e)
+        logger.warning(
+            'Could not initiate render Client -- falling back to web')
+        return Render(host=host, port=port, owner=owner, project=project,
+                      client_scripts=client_scripts)
 
 
 def format_baseurl(host, port):
@@ -291,7 +187,7 @@ def get_owners(host=None, port=None, render=None,
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def get_stack_metadata_by_owner(owner=None, host=None, port=None, render=None,
@@ -307,12 +203,12 @@ def get_stack_metadata_by_owner(owner=None, host=None, port=None, render=None,
     request_url = "%s/owner/%s/stacks/" % (
         format_baseurl(host, port), owner)
     if verbose:
-        logging.debug(request_url)
+        logger.debug(request_url)
     r = session.get(request_url)
     try:
         return r.json()
     except:
-        logging.error(r.text)
+        logger.error(r.text)
 
 
 def get_projects_by_owner(owner=None, host=None, port=None, render=None,
