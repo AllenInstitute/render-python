@@ -323,22 +323,6 @@ class TileSpec:
         thedict['frameId'] = self.frameId
         if self.layout is not None:
             thedict['layout'] = self.layout.to_dict()
-        '''
-        mipmapdict = {}
-        mipmapdict['0'] = {}
-        mipmapdict['0']['imageUrl'] = self.imageUrl
-        if self.scale1Url is not None:
-            mipmapdict['1'] = {}
-            mipmapdict['1']['imageUrl'] = self.scale1Url
-        if self.scale3Url is not None:
-            mipmapdict['3'] = {}
-            mipmapdict['3']['imageUrl'] = self.scale3Url
-        if self.scale2Url is not None:
-            mipmapdict['2'] = {}
-            mipmapdict['2']['imageUrl'] = self.scale2Url
-        if self.maskUrl is not None:
-            mipmapdict['0']['maskUrl'] = self.maskUrl
-        '''
         thedict['mipmapLevels'] = self.ip.to_ordered_dict()
         thedict['transforms'] = {}
         thedict['transforms']['type'] = 'list'
@@ -376,22 +360,6 @@ class TileSpec:
         self.maxX = d.get('maxX', None)
         self.maxY = d.get('maxY', None)
         self.minY = d.get('minY', None)
-        # legacy scaleXUrl
-        self.imageUrl = d['mipmapLevels']['0']['imageUrl']
-        self.maskUrl = d['mipmapLevels']['0'].get('maskUrl', None)
-        if d['mipmapLevels'].get('2', None) is not None:
-            self.scale2Url = d['mipmapLevels']['2'].get('imageUrl', None)
-        else:
-            self.scale2Url = None
-        if d['mipmapLevels'].get('1', None) is not None:
-            self.scale1Url = d['mipmapLevels']['1'].get('imageUrl', None)
-        else:
-            self.scale1Url = None
-        if d['mipmapLevels'].get('3', None) is not None:
-            self.scale3Url = d['mipmapLevels']['3'].get('imageUrl', None)
-        else:
-            self.scale3Url = None
-
         self.ip = ImagePyramid(mipMapLevels=[
              MipMapLevel(
                  int(l), imageUrl=v.get('imageUrl'), maskUrl=v.get('maskUrl'))
