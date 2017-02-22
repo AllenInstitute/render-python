@@ -7,7 +7,9 @@ import json
 from functools import partial
 import logging
 import subprocess
-from .render import Render
+import tempfile
+from .errors import ClientScriptError
+from .render import Render, RenderClient
 from .stack import set_stack_state, make_stack_params
 
 # setup logger
@@ -94,7 +96,8 @@ def import_jsonfiles_parallel(
     import jsons using client script in parallel
         jsonfiles: list of jsonfiles to upload
         poolsize: number of upload processes spawned by multiprocessing pool
-        transformFile: a single json file containing transforms referenced in the jsonfiles
+        transformFile: a single json file containing transforms referenced
+            in the jsonfiles
     '''
     # process render-based default configuration
     if render is not None:
@@ -114,9 +117,9 @@ def import_jsonfiles_parallel(
                              client_scripts=client_scripts,
                              host=host, port=port, owner=owner,
                              project=project)
-    
+
     rs = pool.map(partial_import, jsonfiles)
-    
+
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
@@ -215,3 +218,223 @@ def import_jsonfiles_validate_client(stack, jsonfiles, render=None,
     '''
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
+
+
+def call_run_ws_client(className, add_args=[], renderclient=None,
+                       memGB=None, client_script=None, subprocess_mode=None,
+                       **kwargs):
+    '''
+    simple call for run_ws_client.sh -- all arguments set in add_args
+    '''
+    if renderclient is not None:
+        if isinstance(renderclient, RenderClient):
+            return call_run_ws_client(className, add_args=add_args,
+                                      subprocess_mode=subprocess_mode,
+                                      **renderclient.make_kwargs(
+                                          memGB=memGB,
+                                          client_script=client_script))
+
+    subprocess_modes = {'call': subprocess.call,
+                        'check_call': subprocess.check_call,
+                        'check_output': subprocess.check_output}
+    if subprocess_mode not in subprocess_modes:
+        logging.warning(
+            'Unknown subprocess mode {} specified -- '
+            'using default subprocess.call'.format(subprocess_mode))
+    return subprocess_modes.get(
+        subprocess_mode, subprocess.call)(
+            map(str, [client_script, memGB, className] + add_args))
+
+
+def get_param(var, flag):
+    return ([flag, var] if var is not None else [])
+
+
+def importJsonClient(stack, tileFiles=None, transformFile=None,
+                     subprocess_mode=None,
+                     host=None, port=None, owner=None, project=None,
+                     client_script=None, memGB=None,
+                     render=None, **kwargs):
+    '''run ImportJsonClient.java'''
+    if render is not None:
+        if isinstance(render, RenderClient):
+            return importJsonClient(
+                stack, tileFiles=tileFiles, transformFile=transformFile,
+                subprocess_mode=subprocess_mode, **render.make_kwargs(
+                    host=host, port=port, owner=owner, project=project,
+                    client_script=client_script, memGB=memGB, **kwargs))
+        elif not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+
+    argvs = (make_stack_params(host, port, owner, project, stack) +
+             (['--transformFile', transformFile] if transformFile else []) +
+             (tileFiles if isinstance(tileFiles, list)
+              else [tileFiles]))
+    call_run_ws_client('org.janelia.render.client.ImportJsonClient',
+                       add_args=argvs, subprocess_mode=subprocess_mode,
+                       client_script=client_script, memGB=memGB)
+
+
+def tilePairClient(stack, minz, maxz, outjson=None, delete_json=False,
+                   baseowner=None, baseproject=None, basestack=None,
+                   xyNeighborFactor=None, zNeighborDistance=None,
+                   excludeCornerNeighbors=None,
+                   excludeCompletelyObscuredTiles=None,
+                   excludeSameLayerNeighbors=None,
+                   excludeSameSectionNeighbors=None,
+                   excludePairsInMatchCollection=None,
+                   minx=None, maxx=None, miny=None, maxy=None,
+                   subprocess_mode=None,
+                   host=None, port=None, owner=None, project=None,
+                   client_script=None, memGB=None,
+                   render=None, **kwargs):
+    '''run TilePairClient.java'''
+    if render is not None:
+        if isinstance(render, RenderClient):
+            return tilePairClient(
+                stack, minz, maxz, outjson=outjson, delete_json=delete_json,
+                baseowner=baseowner, baseproject=baseproject,
+                basestack=basestack,
+                xyNeighborFactor=xyNeighborFactor,
+                zNeighborDistance=zNeighborDistance,
+                excludeCornerNeighbors=excludeCornerNeighbors,
+                excludeCompletelyObscuredTiles=excludeCompletelyObscuredTiles,
+                excludeSameLayerNeighbors=excludeSameLayerNeighbors,
+                excludeSameSectionNeighbors=excludeSameSectionNeighbors,
+                excludePairsInMatchCollection=excludePairsInMatchCollection,
+                minx=minx, maxx=maxx, miny=miny, maxy=maxy,
+                subprocess_mode=subprocess_mode, **render.make_kwargs(
+                    host=host, port=port, owner=owner, project=project,
+                    client_script=client_script, memGB=memGB, **kwargs))
+        elif not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+
+    if outjson is None:
+        tempjson = tempfile.NamedTemporaryFile(
+            suffix=".json", mode='r', delete=False)
+        tempjson.close()
+        delete_json = True
+        outjson = tempjson.name
+
+    argvs = (make_stack_params(host, port, owner, project, stack) +
+             get_param(baseowner, '--baseOwner') +
+             get_param(baseproject, '--baseProject') +
+             get_param(basestack, '--baseStack') +
+             ['--minZ', minz, '--maxZ', maxz] +
+             get_param(xyNeighborFactor, '--xyNeighborFactor') +
+             get_param(zNeighborDistance, '--zNeighborDistance') +
+             get_param(excludeCornerNeighbors, '--excludeCornerNeighbors') +
+             get_param(excludeCompletelyObscuredTiles,
+                       '--excludeCompletelyObscuredTiles') +
+             get_param(excludeSameLayerNeighbors,
+                       '--excludeSameLayerNeighbors') +
+             get_param(excludeSameSectionNeighbors,
+                       '--excludeSameSectionNeighbors') +
+             get_param(excludePairsInMatchCollection,
+                       '--excludePairsInMatchCollection') +
+             ['--toJson', outjson] +
+             get_param(minx, '--minX') + get_param(maxx, '--maxX') +
+             get_param(miny, '--minY') + get_param(maxy, '--maxY'))
+
+    call_run_ws_client('org.janelia.render.client.TilePairClient',
+                       memGB=memGB, client_script=client_script,
+                       subprocess_mode=subprocess_mode,
+                       add_args=argvs)
+
+    with open(outjson, 'r') as f:
+        jsondata = json.load(f)
+
+    if delete_json:
+        os.remove(outjson)
+    return jsondata
+
+
+def importTransformChangesClient(stack, targetStack, transformFile,
+                                 targetOwner=None, targetProject=None,
+                                 changeMode=None, subprocess_mode=None,
+                                 host=None, port=None, owner=None,
+                                 project=None, client_script=None, memGB=None,
+                                 render=None, **kwargs):
+    '''
+    run ImportTransformChangesClient.java
+    '''
+    if render is not None:
+        if isinstance(render, RenderClient):
+            return importTransformChangesClient(
+                stack, targetStack, transformFile, targetOwner=targetOwner,
+                targetProject=targetProject, changeMode=changeMode,
+                subprocess_mode=subprocess_mode, **render.make_kwargs(
+                    host=host, port=port, owner=owner, project=project,
+                    client_script=client_script, memGB=memGB, **kwargs))
+        elif not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+
+    if changeMode not in ['APPEND', 'REPLACE_LAST', 'REPLACE_ALL']:
+        raise ClientScriptError(
+            'changeMode {} is not valid!'.format(changeMode))
+
+    argvs = (make_stack_params(host, port, owner, project, stack) +
+             ['--stack', stack, '--targetStack', targetStack] +
+             ['--transformFile', transformFile] +
+             get_param(targetOwner, '--targetOwner') +
+             get_param(targetProject, '--targetProject') +
+             get_param(changeMode, '--changeMode'))
+    call_run_ws_client(
+        'org.janelia.render.client.ImportTransformChangesClient', memGB=memGB,
+        client_script=client_script, subprocess_mode=subprocess_mode,
+        add_args=argv)
+
+
+def coordinateClient(stack, z, fromJson=None, toJson=None, localToWorld=None,
+                     numberOfThreads=None, delete_fromJson=False,
+                     delete_toJson=False, subprocess_mode=None,
+                     host=None, port=None, owner=None,
+                     project=None, client_script=None, memGB=None,
+                     render=None, **kwargs):
+    '''
+    run CoordinateClient.java
+    '''
+    if render is not None:
+        if isinstance(render, RenderClient):
+            return coordinateClient(
+                stack, z, fromJson=fromJson, toJson=toJson,
+                localToWorld=localToWorld, numberOfThreads=numberOfThreads,
+                delete_toJson=delete_toJson, delete_fromJson=delete_fromJson,
+                subprocess_mode=subprocess_mode, **render.make_kwargs(
+                    host=host, port=port, owner=owner, project=project,
+                    client_script=client_script, memGB=memGB, **kwargs))
+        elif not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+
+    # TODO allow using array as input for mapping
+    if toJson is None:
+        tempjson = tempfile.NamedTemporaryFile(
+            suffix=".json", mode='r', delete=False)
+        tempjson.close()
+        delete_toJson = True
+        toJson = tempjson.name
+    if fromJson is None:
+        tempjson = tempfile.NamedTemporaryFile(
+            suffix=".json", mode='r', delete=False)
+        tempjson.write(input_array)
+        tempjson.flush()
+        tempjson.close()
+        delete_fromJson = True
+        fromJson = tempjson.name
+
+    argvs = (make_stack_params(host, port, owner, project, stack) +
+             ['--z', z, '--fromJson', fromJson, '--toJson', toJson] +
+             (['--localToWorld', jbool(localToWorld)]
+              if localToWorld is not None else []) +
+             get_param(numberOfThreads, '--numberOfThreads'))
+    call_run_ws_client('org.janelia.render.client.CoordinateClient')
+
+    with open(toJson, 'r') as f:
+        jsondata = json.load(f)
+
+    if delete_toJson:
+        os.remove(toJson)
+    if delete_fromJson:
+        os.remove(fromJson)
+
+    return jsondata
