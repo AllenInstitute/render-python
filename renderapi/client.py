@@ -257,13 +257,13 @@ def importJsonClient(stack, tileFiles=None, transformFile=None,
                      render=None, **kwargs):
     '''run ImportJsonClient.java'''
     if render is not None:
-        if isinstance(render, RenderClient):
+        if isinstance(render, Render):
             return importJsonClient(
                 stack, tileFiles=tileFiles, transformFile=transformFile,
                 subprocess_mode=subprocess_mode, **render.make_kwargs(
                     host=host, port=port, owner=owner, project=project,
                     client_script=client_script, memGB=memGB, **kwargs))
-        elif not isinstance(render, Render):
+        else:
             raise ValueError('invalid Render object specified!')
 
     argvs = (make_stack_params(host, port, owner, project, stack) +
@@ -290,7 +290,7 @@ def tilePairClient(stack, minz, maxz, outjson=None, delete_json=False,
                    render=None, **kwargs):
     '''run TilePairClient.java'''
     if render is not None:
-        if isinstance(render, RenderClient):
+        if isinstance(render, Render):
             return tilePairClient(
                 stack, minz, maxz, outjson=outjson, delete_json=delete_json,
                 baseowner=baseowner, baseproject=baseproject,
@@ -306,7 +306,7 @@ def tilePairClient(stack, minz, maxz, outjson=None, delete_json=False,
                 subprocess_mode=subprocess_mode, **render.make_kwargs(
                     host=host, port=port, owner=owner, project=project,
                     client_script=client_script, memGB=memGB, **kwargs))
-        elif not isinstance(render, Render):
+        else:
             raise ValueError('invalid Render object specified!')
 
     if outjson is None:
@@ -359,14 +359,14 @@ def importTransformChangesClient(stack, targetStack, transformFile,
     run ImportTransformChangesClient.java
     '''
     if render is not None:
-        if isinstance(render, RenderClient):
+        if isinstance(render, Render):
             return importTransformChangesClient(
                 stack, targetStack, transformFile, targetOwner=targetOwner,
                 targetProject=targetProject, changeMode=changeMode,
                 subprocess_mode=subprocess_mode, **render.make_kwargs(
                     host=host, port=port, owner=owner, project=project,
                     client_script=client_script, memGB=memGB, **kwargs))
-        elif not isinstance(render, Render):
+        else:
             raise ValueError('invalid Render object specified!')
 
     if changeMode not in ['APPEND', 'REPLACE_LAST', 'REPLACE_ALL']:
@@ -395,7 +395,7 @@ def coordinateClient(stack, z, fromJson=None, toJson=None, localToWorld=None,
     run CoordinateClient.java
     '''
     if render is not None:
-        if isinstance(render, RenderClient):
+        if isinstance(render, Render):
             return coordinateClient(
                 stack, z, fromJson=fromJson, toJson=toJson,
                 localToWorld=localToWorld, numberOfThreads=numberOfThreads,
@@ -403,7 +403,7 @@ def coordinateClient(stack, z, fromJson=None, toJson=None, localToWorld=None,
                 subprocess_mode=subprocess_mode, **render.make_kwargs(
                     host=host, port=port, owner=owner, project=project,
                     client_script=client_script, memGB=memGB, **kwargs))
-        elif not isinstance(render, Render):
+        else:
             raise ValueError('invalid Render object specified!')
 
     # TODO allow using array as input for mapping
