@@ -115,8 +115,8 @@ def import_jsonfiles_parallel(
                              host=host, port=port, owner=owner,
                              project=project)
     
-    rs = pool.amap(partial_import, jsonfiles)
-    rs.wait()
+    rs = pool.map(partial_import, jsonfiles)
+    
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
