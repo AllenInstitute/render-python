@@ -336,11 +336,11 @@ def get_stacks_by_owner_project(owner=None, project=None, host=None,
     if render is not None:
         if not isinstance(render, Render):
             raise ValueError('invalid Render object specified!')
-        return get_projects_by_owner(**render.make_kwargs(
+        return get_stacks_by_owner_project(**render.make_kwargs(
             owner=owner, host=host, port=port, project=project,
             **{'session': session}))
 
-    metadata = get_stacks_by_owner_project(owner=owner,host=host,port=port,session=session)
+    metadata = get_stack_metadata_by_owner(owner=owner,host=host,port=port,session=session)
     stacks = ([m['stackId']['stack'] for m in metadata
                if m['stackId']['project'] == project])
     return stacks
