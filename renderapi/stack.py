@@ -179,8 +179,7 @@ def get_z_values_for_stack(stack, project=None, host=None, port=None,
 
     request_url = format_preamble(
         host, port, owner, project, stack) + "/zValues/"
-    if verbose:
-        print request_url
+    logger.debug(request_url)
     r = session.get(request_url)
     try:
         return r.json()
