@@ -94,7 +94,7 @@ def import_jsonfiles_parallel(
     import jsons using client script in parallel
         jsonfiles: list of jsonfiles to upload
         poolsize: number of upload processes spawned by multiprocessing pool
-        transformFile: ?
+        transformFile: a single json file containing transforms referenced in the jsonfiles
     '''
     # process render-based default configuration
     if render is not None:
@@ -114,7 +114,7 @@ def import_jsonfiles_parallel(
                              client_scripts=client_scripts,
                              host=host, port=port, owner=owner,
                              project=project)
-    partial_import(jsonfiles[0])
+    partial_import(jsonfiles)
     rs = pool.amap(partial_import, jsonfiles)
     rs.wait()
     if close_stack:
