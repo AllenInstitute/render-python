@@ -91,7 +91,8 @@ class RenderClient(Render):
 
 
 def connect(host=None, port=None, owner=None, project=None,
-            client_scripts=None, client_script=None, memGB=None, **kwargs):
+            client_scripts=None, client_script=None, memGB=None,
+            json_dict=None, **kwargs):
     '''helper function to connect to a render instance'''
     if host is None:
         if 'RENDER_HOST' not in os.environ:

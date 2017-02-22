@@ -262,15 +262,16 @@ class Layout:
         return d
 
     def from_dict(self, d):
-        self.sectionId = d.get('sectionId', None)
-        self.cameraId = d.get('camera', None)
-        self.scopeId = d.get('temca', None)
-        self.imageRow = d.get('imageRow', None)
-        self.imageCol = d.get('imageCol', None)
-        self.stageX = d.get('stageX', None)
-        self.stageY = d.get('stageY', None)
-        self.rotation = d.get('rotation', None)
-        self.pixelsize = d.get('pixelsize', None)
+        if d is not None:
+            self.sectionId = d.get('sectionId', None)
+            self.cameraId = d.get('camera', None)
+            self.scopeId = d.get('temca', None)
+            self.imageRow = d.get('imageRow', None)
+            self.imageCol = d.get('imageCol', None)
+            self.stageX = d.get('stageX', None)
+            self.stageY = d.get('stageY', None)
+            self.rotation = d.get('rotation', None)
+            self.pixelsize = d.get('pixelsize', None)
 
 
 class TileSpec:
@@ -355,7 +356,7 @@ class TileSpec:
         self.maxint = d['maxIntensity']
         self.frameId = d.get('frameId', None)
         self.layout = Layout()
-        self.layout.from_dict(d['layout'])
+        self.layout.from_dict(d.get('layout',None))
         self.minX = d.get('minX', None)
         self.maxX = d.get('maxX', None)
         self.maxY = d.get('maxY', None)

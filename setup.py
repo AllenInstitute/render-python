@@ -1,4 +1,4 @@
-from distutils.core import setup
+from setuptools import setup
 setup(name='render-python',
       version='1.0',
       description=' a python API setup to interact via python with render '
