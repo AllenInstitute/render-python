@@ -45,7 +45,7 @@ def get_matchcollections(render=None, owner=None, host=None, port=None,
 
 
 def get_match_groupIds(matchCollection, render=None, owner=None, host=None,
-                       port=None, session=requests.session()):
+                       port=None, session=requests.session(),**kwargs):
     if render is not None:
         if not isinstance(render, Render):
             raise ValueError('invalid Render object specified!')
