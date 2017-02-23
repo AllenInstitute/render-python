@@ -346,9 +346,6 @@ class TileSpec:
                                                in self.inputfilters]
         return thedict
 
-    def __dict__(self):
-    	return self.to_dict()
-    	
     def from_dict(self, d):
         '''Method to load tilespec from json dictionary'''
         self.tileId = d['tileId']
