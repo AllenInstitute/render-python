@@ -17,6 +17,16 @@ class RenderEncoder(json.JSONEncoder):
             return obj.__dict__
 
 
+def renderdumps(obj, *args, **kwargs):
+    cls_ = kwargs.pop('cls', RenderEncoder)
+    return json.dumps(obj, *args, cls=cls_, **kwargs)
+
+
+def renderdump(obj, *args, **kwargs):
+    cls_ = kwargs.pop('cls', RenderEncoder)
+    return json.dump(obj, *args, cls=cls_, **kwargs)
+
+
 def jbool(val):
     '''return string representing java string values of py booleans'''
     if not isinstance(val, bool):
