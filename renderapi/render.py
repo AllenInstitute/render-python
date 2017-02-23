@@ -2,10 +2,11 @@
 import logging
 import os
 import requests
-from .utils import defaultifNone
+from .utils import defaultifNone, NullHandler
 from .errors import ClientScriptError
 
 logger = logging.getLogger(__name__)
+logger.addHandler(NullHandler())
 
 
 class Render(object):
