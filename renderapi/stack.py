@@ -10,15 +10,18 @@ logger = logging.getLogger(__name__)
 
 
 class StackVersion:
-    def __init__(self, cycleNumber=1, cycleStepNumber=1, stackResolutionX=1.0,
-                 stackResolutionY=1.0, stackResolutionZ=1.0,
-                 materializedBoxRootPath=None, versionNotes="",
+    def __init__(self, cycleNumber=None, cycleStepNumber=None,
+                 stackResolutionX=None, stackResolutionY=None,
+                 stackResolutionZ=None,
+                 materializedBoxRootPath=None, mipmapPathBuilder=None,
+                 versionNotes=None,
                  createTimestamp=None, **kwargs):
         self.cycleNumber = cycleNumber
         self.cycleStepNumber = cycleStepNumber
         self.stackResolutionX = stackResolutionX
         self.stackResolutionY = stackResolutionY
         self.stackResolutionZ = stackResolutionZ
+        self.mipmapPathBuilder = mipmapPathBuilder
         self.materializedBoxRootPath = materializedBoxRootPath
         self.createTimestamp = (strftime('%Y-%M-%dT%H:%M:%S.00Z') if
                                 createTimestamp is None else createTimestamp)
@@ -26,20 +29,28 @@ class StackVersion:
 
     def to_dict(self):
         d = {}
-        d['cycleNumber'] = self.cycleNumber
-        d['cycleStepNumber'] = self.cycleStepNumber
-        d['stackResolutionX'] = self.stackResolutionX
-        d['stackResolutionY'] = self.stackResolutionY
-        d['stackResolutionZ'] = self.stackResolutionZ
-        d['createTimestamp'] = self.createTimestamp
-        d["materializedBoxRootPath"] = self.materializedBoxRootPath
-        d['mipmapPathBuilder'] = {'numberOfLevels': 0}
-        d['versionNotes'] = self.versionNotes
+        d.update(({'cycleNumber': self.cycleNumber}
+                  if self.cycleNumber is not None else {}))
+        d.update(({'cycleStepNumber': self.cycleStepNumber}
+                  if self.cycleStepNumber is not None else {}))
+        d.update(({'stackResolutionX': self.stackResolutionX}
+                  if self.stackResolutionX is not None else {}))
+        d.update(({'stackResolutionY': self.stackResolutionY}
+                  if self.stackResolutionY is not None else {}))
+        d.update(({'stackResolutionZ': self.stackResolutionZ}
+                  if self.stackResolutionZ is not None else {}))
+        d.update(({'createTimestamp': self.createTimestamp}
+                  if self.createTimestamp is not None else {}))
+        d.update(({'mipmapPathBuilder': self.mipmapPathBuilder}
+                  if self.mipmapPathBuilder is not None else {}))
+        d.update(({'versionNotes': self.versionNotes}
+                  if self.versionNotes is not None else {}))
+        d.update(({'materializedBoxRootPath': self.materializedBoxRootPath}
+                  if self.materializedBoxRootPath is not None else {}))
         return d
 
     def from_dict(self, d):
-        for key in d.keys():
-            eval('self.%s=d[%s]' % (key, key))
+        self.__dict__.update({k: v for k, v in d.items()})
 
 
 def set_stack_state(stack, state='LOADING', host=None, port=None,
@@ -105,19 +116,21 @@ def delete_stack(stack, render=None, host=None, port=None, owner=None,
     return r
 
 
-def create_stack(stack, cycleNumber=1, cycleStepNumber=1, 
-                stackResolutionX=1.0, stackResolutionY=1.0,stackResolutionZ=1.0,
-                render=None,
+def create_stack(stack, cycleNumber=None, cycleStepNumber=None,
+                 stackResolutionX=None, stackResolutionY=None,
+                 stackResolutionZ=None,
                  host=None, port=None, owner=None, project=None,
-                 session=requests.session(), **kwargs):
+                 session=requests.session(), render=None, **kwargs):
     if render is not None:
         if not isinstance(render, Render):
             raise ValueError('invalid Render object specified!')
-        return create_stack(stack, **render.make_kwargs(
-            host=host, port=port, owner=owner, project=project,
-            **{'session': session, 'cycleNumber': cycleNumber,
-               'cycleStepNumber': cycleStepNumber,'stackResolutionX':stackResolutionX,
-               'stackResolutionY':stackResolutionY,'stackResolutionZ':stackResolutionZ}))
+        return create_stack(
+            stack, cycleNumber=cycleNumber, cycleStepNumber=cycleStepNumber,
+            stackResolutionX=stackResolutionX,
+            stackResolutionY=stackResolutionY,
+            stackResolutionZ=stackResolutionZ, **render.make_kwargs(
+                host=host, port=port, owner=owner, project=project,
+                **{'session': session}))
 
     sv = StackVersion(
         cycleNumber=cycleNumber, cycleStepNumber=cycleStepNumber,
