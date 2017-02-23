@@ -356,7 +356,7 @@ class TileSpec:
         self.maxint = d['maxIntensity']
         self.frameId = d.get('frameId', None)
         self.layout = Layout()
-        self.layout.from_dict(d.get('layout',None))
+        self.layout.from_dict(d.get('layout', None))
         self.minX = d.get('minX', None)
         self.maxX = d.get('maxX', None)
         self.maxY = d.get('maxY', None)
