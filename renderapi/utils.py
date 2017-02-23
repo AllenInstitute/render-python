@@ -7,6 +7,13 @@ import json
 
 logger = logging.getLogger(__name__)
 
+class RenderEncoder(json.JSONEncoder):
+	def default(self,obj):
+		to_dict = getattr(obj, "to_dict", None)
+		if callable(to_dict):
+			return obj.to_dict()
+		else:
+			return obj.__dict__
 
 def jbool(val):
     '''return string representing java string values of py booleans'''

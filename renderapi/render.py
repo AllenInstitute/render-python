@@ -206,7 +206,7 @@ def get_stack_metadata_by_owner(owner=None, host=None, port=None, render=None,
             raise ValueError('invalid Render object specified!')
         return get_stack_metadata_by_owner(**render.make_kwargs(
             owner=owner, host=host, port=port,
-            **{'session': session, 'verbose': verbose}))
+            **{'session': session}))
 
     request_url = "%s/owner/%s/stacks/" % (
         format_baseurl(host, port), owner)
