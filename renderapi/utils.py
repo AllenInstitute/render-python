@@ -46,16 +46,5 @@ def stripLogger(logger_tostrip):
             logger_tostrip.removeHandler(handler)
 
 
-def _load_dict(obj, d):
-    obj.__dict__.update({k: v for k, v in d.items()})
-
-
-def _load_json(obj, j):
-    '''load object from dictionary-style json'''
-    with open(j, 'r') as f:
-        jd = json.load(f)
-    _load_dict(obj, jd)
-
-
 def defaultifNone(val, default=None):
     return val if val is not None else default
