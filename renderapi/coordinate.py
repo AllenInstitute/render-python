@@ -7,6 +7,7 @@ from .render import Render, format_preamble
 import logging
 import requests
 import json
+import numpy as np
 logger = logging.getLogger(__name__)
 
 
