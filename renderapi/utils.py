@@ -7,7 +7,7 @@ import json
 
 logger = logging.getLogger(__name__)
 
-class RenderEncoder(json.JSONencoder):
+class RenderEncoder(json.JSONEncoder):
 	def default(self,obj):
 		to_dict = getattr(obj, "to_dict", None)
 		if callable(to_dict):
