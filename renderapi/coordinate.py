@@ -6,7 +6,7 @@ coordinate mapping functions for render api
 from .render import Render, format_preamble
 import logging
 import requests
-
+import json
 logger = logging.getLogger(__name__)
 
 
@@ -98,6 +98,7 @@ def world_to_local_coordinates_array(stack, dataarray, tileId, z=0,
                                      owner=None, project=None,
                                      session=requests.session(), **kwargs):
     ''''''
+
     if render is not None:
         if not isinstance(render, Render):
             raise ValueError('invalid Render object specified!')
