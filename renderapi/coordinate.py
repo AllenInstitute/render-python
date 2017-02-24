@@ -100,7 +100,7 @@ def package_point_match_data_into_json(dataarray,tileId,local_or_world='local'):
         d['tileId'] = tileId
         d[local_or_world] = [dataarray[i, 0], dataarray[i, 1]]
         dlist.append(d)
-    return = json.dumps(dlist)
+    return json.dumps(dlist)
 
 def unpackage_point_match_data_from_json(json_answer,local_or_world='local'):
     answer = np.zeros((len(json_answer,2)))
