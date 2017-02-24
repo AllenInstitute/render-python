@@ -107,12 +107,20 @@ def package_point_match_data_into_json(dataarray,tileId,local_or_world='local'):
         dlist.append(d)
     return json.dumps(dlist)
 
-def unpackage_point_match_data_from_json(json_answer,local_or_world='local'):
+def unpackage_world_to_local_point_match_from_json(json_answer,tileId):
     answer = np.zeros((len(json_answer),2))
-    if type(json_answer[0]) == list:
-        json_answer = json_answer[0]
+    for i, local_answer in enumerate(json_answer):
+        coord = next(ans for ans in local_answer if ans['tileId']==tileId)
+        c=coord['local']
+        answer[i, 0] = c[0]
+        answer[i, 1] = c[1]
+    return answer
+
+def unpackage_local_to_world_point_match_from_json(json_answer):
+    logger.debug("json_answer_length %d"%len(json_answer))
+    answer = np.zeros((len(json_answer),2))
     for i, coord in enumerate(json_answer):
-        c = coord[local_or_world]
+        c = coord['world']
         answer[i, 0] = c[0]
         answer[i, 1] = c[1]
     return answer
@@ -145,8 +153,9 @@ def world_to_local_coordinates_array(stack, dataarray, tileId, z,
                                                        host=host,port=port,
                                                        owner=owner,project=project,
                                                        session=session)
+    #print json_answer
     #try:
-    return unpackage_point_match_data_from_json(json_answer,'local')
+    return unpackage_world_to_local_point_match_from_json(json_answer,tileId)
     #except:
     #    logger.error('could not unpackage world_to_local answer')
     #    logger.error(json_answer)
@@ -177,7 +186,7 @@ def local_to_world_coordinates_array(stack, dataarray, tileId, z,
                                                        host=host,port=port,owner=owner,
                                                        project=project,session=session)
     #try:
-    return unpackage_point_match_data_from_json(json_answer,'world')
+    return unpackage_local_to_world_point_match_from_json(json_answer)
     #except:
     #    logger.error('could not unpackage local_to_world answer')
     #    logger.error(json_answer)
