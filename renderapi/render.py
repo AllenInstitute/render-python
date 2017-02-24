@@ -179,7 +179,12 @@ def renderaccess(f):
     def wrapper(*args, **kwargs):
         render = kwargs.pop('render', None)
         if render is not None:
-            return (f(*args, **render.make_kwargs(**kwargs)))
+            if isinstance(render, Render):
+                return (f(*args, **render.make_kwargs(**kwargs)))
+            else:
+                raise ValueError(
+                    'invalid Render object type  {} specified!'.format(
+                        type(render)))
         else:
             return f(*args, **kwargs)
     return wrapper
