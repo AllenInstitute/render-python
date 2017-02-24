@@ -218,7 +218,7 @@ def import_matches(matchCollection,data,render=None,owner=None,host=None,port=No
                 owner=owner, host=host, port=port,
                 **{'session': session}))
 
-    request_url =self.format_baseurl(host, port)+"/owner/%s/matchCollection/%s/matches"%(owner,matchCollection)
+    request_url =format_baseurl(host, port)+"/owner/%s/matchCollection/%s/matches"%(owner,matchCollection)
     logger.debug(request_url)
     r = session.put(request_url, data=data, headers={"content-type":"application/json","Accept":"application/json"})
     return r
