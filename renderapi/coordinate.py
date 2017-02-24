@@ -191,7 +191,10 @@ def map_coordinates_clientside(stack,jsondata,tileId,z,host,port,owner,project,c
     call_run_ws_client('org.janelia.render.client', add_args=args, client_script=client_script)
 
     #return the json results
-    return json.load(open(json_outpath,'r'))
+    try:
+        return json.load(open(json_outpath,'r'))
+    except:
+        logger.error('failed to load json after map_coordinates_clientside:\n%s'%json.dumps(jsondata))
 
 def world_to_local_coordinates_clientside(stack,jsondata,tileId,z,render=None,
                                           host=None,port=None,owner=None,
