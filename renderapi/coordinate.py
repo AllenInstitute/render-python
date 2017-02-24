@@ -210,7 +210,7 @@ def world_to_local_coordinates_clientside(stack,jsondata,tileId,z,render=None,
                 client_script=client_script,
                 **{'session': session,'number_of_threads':20}))
 
-    return map_coordinates_clientside(stack,jsondata,tileId,z,host,port,owner,project,client_script,isLocalToWorld=False,number_of_threads=number_of_threads):
+    return map_coordinates_clientside(stack,jsondata,tileId,z,host,port,owner,project,client_script,isLocalToWorld=False,number_of_threads=number_of_threads)
 
 def local_to_world_coordinates_clientside(stack,jsondata,tileId,z,render=None,
                                           host=None,port=None,owner=None,
@@ -226,4 +226,4 @@ def local_to_world_coordinates_clientside(stack,jsondata,tileId,z,render=None,
                 client_script=client_script,
                 **{'session': session,'number_of_threads':20}))
 
-    return map_coordinates_clientside(stack,jsondata,tileId,z,host,port,owner,project,client_script,isLocalToWorld=True,number_of_threads=number_of_threads):
+    return map_coordinates_clientside(stack,jsondata,tileId,z,host,port,owner,project,client_script,isLocalToWorld=True,number_of_threads=number_of_threads)
