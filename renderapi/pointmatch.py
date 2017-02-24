@@ -208,3 +208,17 @@ def get_match_groupIds_to_only(matchCollection, render=None, owner=None,
         return r.json()
     except:
         logger.error(r.text)
+
+def import_matches(matchCollection,data,render=None,owner=None,host=None,port=None,session=requests.session(),**kwargs):
+    if render is not None:
+        if not isinstance(render, Render):
+            raise ValueError('invalid Render object specified!')
+        return import_matches(
+            matchCollection, data, **render.make_kwargs(
+                owner=owner, host=host, port=port,
+                **{'session': session}))
+
+    request_url =self.format_baseurl(host, port)+"/owner/%s/matchCollection/%s/matches"%(owner,matchCollection)
+    logger.debug(request_url)
+    r = session.put(request_url, data=data, headers={"content-type":"application/json","Accept":"application/json"})
+    return r
