@@ -8,6 +8,7 @@ from .client import call_run_ws_client
 import requests
 import json
 import numpy as np
+import logging
 logger = logging.getLogger(__name__)
 
 
