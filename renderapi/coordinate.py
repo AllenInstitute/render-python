@@ -3,24 +3,19 @@
 coordinate mapping functions for render api
 '''
 
-from .render import Render, format_preamble
+from .render import Render, format_preamble, renderaccess
 import logging
 import requests
 import json
 logger = logging.getLogger(__name__)
 
 
-def world_to_local_coordinates(stack, z, x, y, render=None, host=None,
+@renderaccess
+def world_to_local_coordinates(stack, z, x, y, host=None,
                                port=None, owner=None, project=None,
-                               session=requests.session(), **kwargs):
+                               session=requests.session(),
+                               render=None, **kwargs):
     ''''''
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return world_to_local_coordinates(stack, z, x, y, **render.make_kwargs(
-            host=host, port=port, owner=owner, project=project,
-            **{'session': session}))
-
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%d/world-to-local-coordinates/%f,%f" % (z, x, y)
@@ -31,18 +26,12 @@ def world_to_local_coordinates(stack, z, x, y, render=None, host=None,
         logger.error(r.text)
 
 
-def local_to_world_coordinates(stack, tileId, x, y, render=None,
+@renderaccess
+def local_to_world_coordinates(stack, tileId, x, y,
                                host=None, port=None, owner=None, project=None,
-                               session=requests.session(), **kwargs):
+                               session=requests.session(),
+                               render=None, **kwargs):
     ''''''
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return local_to_world_coordinates(
-            stack, tileId, x, y, **render.make_kwargs(
-                host=host, port=port, owner=owner, project=project,
-                **{'session': session}))
-
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/tile/%s/local-to-world-coordinates/%f,%f" % (tileId, x, y)
@@ -53,18 +42,12 @@ def local_to_world_coordinates(stack, tileId, x, y, render=None,
         logger.error(r.text)
 
 
-def world_to_local_coordinates_batch(stack, z, data, render=None, host=None,
+@renderaccess
+def world_to_local_coordinates_batch(stack, z, data, host=None,
                                      port=None, owner=None, project=None,
-                                     session=requests.session(), **kwargs):
+                                     session=requests.session(),
+                                     render=None, **kwargs):
     ''''''
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return world_to_local_coordinates_batch(
-            stack, z, data, **render.make_kwargs(
-                host=host, port=port, owner=owner, project=project,
-                **{'session': session}))
-
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%d/world-to-local-coordinates" % (z)
@@ -74,17 +57,11 @@ def world_to_local_coordinates_batch(stack, z, data, render=None, host=None,
 
 
 # FIXME different inputs than world_to_local?
-def local_to_world_coordinates_batch(stack, data, z, render=None, host=None,
+@renderaccess
+def local_to_world_coordinates_batch(stack, data, z, host=None,
                                      port=None, owner=None, project=None,
-                                     session=requests.session(), **kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return local_to_world_coordinates_batch(
-            stack, data, z, **render.make_kwargs(
-                host=host, port=port, owner=owner, project=project,
-                **{'session': session}))
-
+                                     session=requests.session(),
+                                     render=None, **kwargs):
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%d/local-to-world-coordinates" % (z)
@@ -93,19 +70,13 @@ def local_to_world_coordinates_batch(stack, data, z, render=None, host=None,
     return r.json()
 
 
+@renderaccess
 def world_to_local_coordinates_array(stack, dataarray, tileId, z=0,
-                                     render=None, host=None, port=None,
+                                     host=None, port=None,
                                      owner=None, project=None,
-                                     session=requests.session(), **kwargs):
+                                     session=requests.session(),
+                                     render=None, **kwargs):
     ''''''
-
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return world_to_local_coordinates_array(
-            stack, dataarray, tileId, **render.make_kwargs(
-                host=host, port=port, owner=owner, project=project,
-                **{'session': session, 'z': z}))
 
     request_url = format_preamble(
         host, port, owner, project, stack) + \
@@ -131,19 +102,13 @@ def world_to_local_coordinates_array(stack, dataarray, tileId, z=0,
         logger.error(json_answer)
 
 
+@renderaccess
 def local_to_world_coordinates_array(stack, dataarray, tileId, z=0,
-                                     render=None, host=None, port=None,
+                                     host=None, port=None,
                                      owner=None, project=None,
-                                     session=requests.session(), **kwargs):
+                                     session=requests.session(),
+                                     render=None, **kwargs):
     ''''''
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return local_to_world_coordinates_array(
-            stack, dataarray, tileId, **render.make_kwargs(
-                host=host, port=port, owner=owner, project=project,
-                **{'session': session, 'z': z}))
-
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%d/local-to-world-coordinates" % (z)

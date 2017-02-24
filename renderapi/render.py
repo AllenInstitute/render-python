@@ -180,7 +180,7 @@ def renderaccess(f):
         render = kwargs.pop('render', None)
         if render is not None:
             if isinstance(render, Render):
-                return (f(*args, **render.make_kwargs(**kwargs)))
+                return f(*args, **render.make_kwargs(**kwargs))
             else:
                 raise ValueError(
                     'invalid Render object type  {} specified!'.format(
