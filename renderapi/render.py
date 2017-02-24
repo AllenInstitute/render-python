@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import logging
 import os
+from functools import wraps
 import requests
 from .utils import defaultifNone, NullHandler
 from .errors import ClientScriptError
@@ -171,6 +172,17 @@ def connect(host=None, port=None, owner=None, project=None,
             'Could not initiate render Client -- falling back to web')
         return Render(host=host, port=port, owner=owner, project=project,
                       client_scripts=client_scripts)
+
+
+def renderaccess(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        render = kwargs.pop('render', None)
+        if render is not None:
+            return (f(*args, **render.make_kwargs(**kwargs)))
+        else:
+            return f(*args, **kwargs)
+    return wrapper
 
 
 def format_baseurl(host, port):
