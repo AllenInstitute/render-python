@@ -200,15 +200,9 @@ def format_preamble(host, port, owner, project, stack):
     return preamble
 
 
-def get_owners(host=None, port=None, render=None,
-               session=requests.session(), **kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return get_owners(**render.make_kwargs(
-            host=host, port=port,
-            **{'session': session}))
-
+@renderaccess
+def get_owners(host=None, port=None, session=requests.session(),
+               render=None, **kwargs):
     request_url = "%s/owners/" % format_baseurl(host, port)
     r = session.get(request_url)
     try:
@@ -217,15 +211,10 @@ def get_owners(host=None, port=None, render=None,
         logger.error(r.text)
 
 
-def get_stack_metadata_by_owner(owner=None, host=None, port=None, render=None,
-                                session=requests.session(), **kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return get_stack_metadata_by_owner(**render.make_kwargs(
-            owner=owner, host=host, port=port,
-            **{'session': session}))
-
+@renderaccess
+def get_stack_metadata_by_owner(owner=None, host=None, port=None,
+                                session=requests.session(),
+                                render=None, **kwargs):
     request_url = "%s/owner/%s/stacks/" % (
         format_baseurl(host, port), owner)
     logger.debug(request_url)
@@ -236,31 +225,19 @@ def get_stack_metadata_by_owner(owner=None, host=None, port=None, render=None,
         logger.error(r.text)
 
 
-def get_projects_by_owner(owner=None, host=None, port=None, render=None,
-                          session=requests.session(), **kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return get_projects_by_owner(**render.make_kwargs(
-            owner=owner, host=host, port=port,
-            **{'session': session}))
-
+@renderaccess
+def get_projects_by_owner(owner=None, host=None, port=None,
+                          session=requests.session(), render=None, **kwargs):
     metadata = get_stack_metadata_by_owner(owner=owner, host=host,
                                            port=port, session=session)
     projects = list(set([m['stackId']['project'] for m in metadata]))
     return projects
 
 
+@renderaccess
 def get_stacks_by_owner_project(owner=None, project=None, host=None,
-                                port=None, render=None,
-                                session=requests.session(), **kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return get_stacks_by_owner_project(**render.make_kwargs(
-            owner=owner, host=host, port=port, project=project,
-            **{'session': session}))
-
+                                port=None, session=requests.session(),
+                                render=None, **kwargs):
     metadata = get_stack_metadata_by_owner(owner=owner, host=host,
                                            port=port, session=session)
     stacks = ([m['stackId']['stack'] for m in metadata
