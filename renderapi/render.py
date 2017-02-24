@@ -149,9 +149,10 @@ def connect(host=None, port=None, owner=None, project=None,
     if client_script is None:
         if 'RENDER_CLIENT_SCRIPT' not in os.environ:
             # client_script = str(raw_input("Enter Render Client Script: "))
+            client_script=os.path.join(client_scripts,'run_ws_client.sh')
             pass
         else:
-            client_script = str(os.environ['RENDER_CLIENT_SCRIPT'])
+            client_script = str(os.environ['RENDER_CLIENT_SCRIPT'])            
 
     if memGB is None:
         if 'RENDER_CLIENT_HEAP' not in os.environ:
