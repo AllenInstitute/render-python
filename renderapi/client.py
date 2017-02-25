@@ -8,8 +8,9 @@ from functools import partial
 import logging
 import subprocess
 import tempfile
+from .utils import jbool, renderdump
 from .errors import ClientScriptError
-from .render import Render, RenderClient
+from .render import Render, RenderClient, renderaccess
 from .stack import set_stack_state, make_stack_params
 
 # setup logger
@@ -19,26 +20,19 @@ try:
     from pathos.multiprocessing import ProcessingPool as Pool
     has_pathos = True
 except ImportError as e:
-    logging.warning(e)
+    logger.warning(e)
     has_pathos = False
     from multiprocessing import Pool
 
 
-def import_single_json_file(stack, jsonfile, render=None, transformFile=None,
+@renderaccess
+def import_single_json_file(stack, jsonfile, transformFile=None,
                             client_scripts=None, host=None, port=None,
-                            owner=None, project=None, **kwargs):
+                            owner=None, project=None, render=None, **kwargs):
     '''
     calls client script to import given jsonfile:
         transformFile: ?
     '''
-    # process render-based default configuration
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return import_single_json_file(stack, jsonfile, **render.make_kwargs(
-            host=host, port=port, owner=owner, project=project,
-            client_scripts=client_scripts, **{'transformFile': None}))
-
     if transformFile is None:
         transform_params = []
     else:
@@ -56,10 +50,11 @@ def import_single_json_file(stack, jsonfile, render=None, transformFile=None,
     logger.debug(proc.stdout.read())
 
 
+@renderaccess
 def import_jsonfiles_and_transforms_parallel_by_z(
-        stack, jsonfiles, transformfiles, render=None, poolsize=20,
+        stack, jsonfiles, transformfiles, poolsize=20,
         client_scripts=None, host=None, port=None, owner=None,
-        project=None, close_stack=True, **kwargs):
+        project=None, close_stack=True, render=None, **kwargs):
     '''
     imports json files and transform files in parallel:
         jsonfiles: "list of tilespec" jsons to import
@@ -67,16 +62,6 @@ def import_jsonfiles_and_transforms_parallel_by_z(
         poolsize: number of processes for multiprocessing pool
         close_stack: mark render stack as COMPLETE after successful import
     '''
-    # process render-based default configuration
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return import_jsonfiles_and_transforms_parallel_by_z(
-            stack, jsonfile, transformfiles, **render.make_kwargs(
-                host=host, port=port, owner=owner, project=project,
-                client_scripts=client_scripts, **{'close_stack': close_stack,
-                                                  'poolsize': poolsize}))
-
     set_stack_state(stack, 'LOADING', host, port, owner, project)
     pool = Pool(poolsize)
     partial_import = partial(import_single_json_file, stack, render=render,
@@ -88,10 +73,11 @@ def import_jsonfiles_and_transforms_parallel_by_z(
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
 
+@renderaccess
 def import_jsonfiles_parallel(
-        stack, jsonfiles, render=None, poolsize=20, transformFile=None,
+        stack, jsonfiles, poolsize=20, transformFile=None,
         client_scripts=None, host=None, port=None, owner=None,
-        project=None, close_stack=True, **kwargs):
+        project=None, close_stack=True, render=None, **kwargs):
     '''
     import jsons using client script in parallel
         jsonfiles: list of jsonfiles to upload
@@ -99,17 +85,6 @@ def import_jsonfiles_parallel(
         transformFile: a single json file containing transforms referenced
             in the jsonfiles
     '''
-    # process render-based default configuration
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return import_jsonfiles_parallel(
-            stack, jsonfiles, **render.make_kwargs(
-                host=host, port=port, owner=owner,
-                project=project, client_scripts=client_scripts,
-                **{'close_stack': close_stack,
-                   'poolsize': poolsize, 'transformFile': transformFile}))
-
     set_stack_state(stack, 'LOADING', host, port, owner, project)
     pool = Pool(poolsize)
     partial_import = partial(import_single_json_file, stack, render=render,
@@ -124,26 +99,17 @@ def import_jsonfiles_parallel(
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
 
-def import_jsonfiles(stack, jsonfiles, render=None, transformFile=None,
+@renderaccess
+def import_jsonfiles(stack, jsonfiles, transformFile=None,
                      client_scripts=None, host=None, port=None,
                      owner=None, project=None, close_stack=True,
-                     **kwargs):
+                     render=None, **kwargs):
     '''
     import jsons using client script serially
         jsonfiles: iterator of filenames to be uploaded
         transformFile: ?
         close_stack: ?
     '''
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return import_jsonfiles(
-            stack, jsonfiles, **render.make_kwargs(
-                host=host, port=port, owner=owner,
-                project=project, client_scripts=client_scripts,
-                **{'close_stack': close_stack,
-                   'transformFile': transformFile}))
-
     set_stack_state(stack, 'LOADING', host, port, owner, project)
     if transformFile is None:
         transform_params = []
@@ -164,26 +130,16 @@ def import_jsonfiles(stack, jsonfiles, render=None, transformFile=None,
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
 
-# FIXME paperweight for proper render_ws_client implemntation
-def import_jsonfiles_validate_client(stack, jsonfiles, render=None,
+@renderaccess
+def import_jsonfiles_validate_client(stack, jsonfiles,
                                      transformFile=None, client_scripts=None,
                                      host=None, port=None, owner=None,
                                      project=None, close_stack=True, mem=6,
                                      validator=None,
-                                     **kwargs):
+                                     render=None, **kwargs):
     '''
     Uses java client for parallelization and validation
     '''
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return import_jsonfiles_validate_client(
-            stack, jsonfiles, **render.make_kwargs(
-                host=host, port=port, owner=owner,
-                project=project, client_scripts=client_scripts,
-                **{'close_stack': close_stack, 'mem': mem,
-                   'transformFile': transformFile}))
-
     transform_params = (['--transformFile', transformFile]
                         if transformFile is not None else [])
     if validator is None:
@@ -220,6 +176,78 @@ def import_jsonfiles_validate_client(stack, jsonfiles, render=None,
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
 
+@renderaccess
+def import_tilespecs(stack, tilespecs, sharedTransforms=None,
+                     subprocess_mode=None, host=None, port=None,
+                     owner=None, project=None, client_script=None,
+                     memGB=None, render=None, **kwargs):
+    '''
+    input:
+         tilespecs -- list of tilespecs
+    '''
+    tempjson = tempfile.NamedTemporaryFile(
+        suffix=".json", mode='r', delete=False)
+    tempjson.close()
+    tsjson = tempjson.name
+    with open(tsjson, 'w') as f:
+        renderdump(tilespecs, f)
+
+    if sharedTransforms is not None:
+        tempjson = tempfile.NamedTemporaryFile(
+            suffix=".json", mode='r', delete=False)
+        tempjson.close()
+        trjson = tempjson.name
+        with open(trjson, 'w') as f:
+            renderdump(sharedTransforms, f)
+
+    importJsonClient(stack, tileFiles=[tsjson], transformFile=(
+                         trjson if sharedTransforms is not None else None),
+                     subprocess_mode=subprocess_mode, host=host, port=port,
+                     owner=owner, project=project,
+                     client_script=client_script, memGB=memGB)
+
+    os.remove(tsjson)
+    os.remove(trjson)
+
+
+@renderaccess
+def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
+                              subprocess_mode=None, poolsize=20,
+                              close_stack=True, host=None, port=None,
+                              owner=None, project=None,
+                              client_script=None, memGB=None, render=None,
+                              **kwargs):
+    set_stack_state(stack, 'LOADING', host, port, owner, project)
+    pool = Pool(poolsize)
+    partial_import = partial(
+        import_tilespecs, stack, sharedTransforms=sharedTransforms,
+        subprocess_mode=subprocess_mode, **render.make_kwargs(
+            host=host, port=port, owner=owner, project=project,
+            client_script=client_script, memGB=memGB, **kwargs))
+
+    # TODO this is a weird way to do splits.... is that okay?
+    tilespec_groups = [tilespecs[i::poolsize] for i in xrange(poolsize)]
+    rs = pool.map(partial_import, tilespec_groups)
+
+    if close_stack:
+        set_stack_state(stack, 'COMPLETE', host, port, owner, project)
+
+
+# TODO handle fromJson and toJson persistence in these calls
+@renderaccess
+def local_to_world_array():
+    '''placeholder function for coordinateClient localtoworld'''
+    raise NotImplementedError('Whoops')
+    pass
+
+
+@renderaccess
+def world_to_local_array():
+    '''placeholder function for coordinateClient worldtolocal'''
+    raise NotImplementedError('Whoops.')
+    pass
+
+
 def call_run_ws_client(className, add_args=[], renderclient=None,
                        memGB=None, client_script=None, subprocess_mode=None,
                        **kwargs):
@@ -238,7 +266,7 @@ def call_run_ws_client(className, add_args=[], renderclient=None,
                         'check_call': subprocess.check_call,
                         'check_output': subprocess.check_output}
     if subprocess_mode not in subprocess_modes:
-        logging.warning(
+        logger.warning(
             'Unknown subprocess mode {} specified -- '
             'using default subprocess.call'.format(subprocess_mode))
     return subprocess_modes.get(
@@ -250,22 +278,13 @@ def get_param(var, flag):
     return ([flag, var] if var is not None else [])
 
 
+@renderaccess
 def importJsonClient(stack, tileFiles=None, transformFile=None,
                      subprocess_mode=None,
                      host=None, port=None, owner=None, project=None,
                      client_script=None, memGB=None,
                      render=None, **kwargs):
     '''run ImportJsonClient.java'''
-    if render is not None:
-        if isinstance(render, Render):
-            return importJsonClient(
-                stack, tileFiles=tileFiles, transformFile=transformFile,
-                subprocess_mode=subprocess_mode, **render.make_kwargs(
-                    host=host, port=port, owner=owner, project=project,
-                    client_script=client_script, memGB=memGB, **kwargs))
-        else:
-            raise ValueError('invalid Render object specified!')
-
     argvs = (make_stack_params(host, port, owner, project, stack) +
              (['--transformFile', transformFile] if transformFile else []) +
              (tileFiles if isinstance(tileFiles, list)
@@ -275,6 +294,7 @@ def importJsonClient(stack, tileFiles=None, transformFile=None,
                        client_script=client_script, memGB=memGB)
 
 
+@renderaccess
 def tilePairClient(stack, minz, maxz, outjson=None, delete_json=False,
                    baseowner=None, baseproject=None, basestack=None,
                    xyNeighborFactor=None, zNeighborDistance=None,
@@ -289,26 +309,6 @@ def tilePairClient(stack, minz, maxz, outjson=None, delete_json=False,
                    client_script=None, memGB=None,
                    render=None, **kwargs):
     '''run TilePairClient.java'''
-    if render is not None:
-        if isinstance(render, Render):
-            return tilePairClient(
-                stack, minz, maxz, outjson=outjson, delete_json=delete_json,
-                baseowner=baseowner, baseproject=baseproject,
-                basestack=basestack,
-                xyNeighborFactor=xyNeighborFactor,
-                zNeighborDistance=zNeighborDistance,
-                excludeCornerNeighbors=excludeCornerNeighbors,
-                excludeCompletelyObscuredTiles=excludeCompletelyObscuredTiles,
-                excludeSameLayerNeighbors=excludeSameLayerNeighbors,
-                excludeSameSectionNeighbors=excludeSameSectionNeighbors,
-                excludePairsInMatchCollection=excludePairsInMatchCollection,
-                minx=minx, maxx=maxx, miny=miny, maxy=maxy,
-                subprocess_mode=subprocess_mode, **render.make_kwargs(
-                    host=host, port=port, owner=owner, project=project,
-                    client_script=client_script, memGB=memGB, **kwargs))
-        else:
-            raise ValueError('invalid Render object specified!')
-
     if outjson is None:
         tempjson = tempfile.NamedTemporaryFile(
             suffix=".json", mode='r', delete=False)
@@ -349,6 +349,7 @@ def tilePairClient(stack, minz, maxz, outjson=None, delete_json=False,
     return jsondata
 
 
+@renderaccess
 def importTransformChangesClient(stack, targetStack, transformFile,
                                  targetOwner=None, targetProject=None,
                                  changeMode=None, subprocess_mode=None,
@@ -358,17 +359,6 @@ def importTransformChangesClient(stack, targetStack, transformFile,
     '''
     run ImportTransformChangesClient.java
     '''
-    if render is not None:
-        if isinstance(render, Render):
-            return importTransformChangesClient(
-                stack, targetStack, transformFile, targetOwner=targetOwner,
-                targetProject=targetProject, changeMode=changeMode,
-                subprocess_mode=subprocess_mode, **render.make_kwargs(
-                    host=host, port=port, owner=owner, project=project,
-                    client_script=client_script, memGB=memGB, **kwargs))
-        else:
-            raise ValueError('invalid Render object specified!')
-
     if changeMode not in ['APPEND', 'REPLACE_LAST', 'REPLACE_ALL']:
         raise ClientScriptError(
             'changeMode {} is not valid!'.format(changeMode))
@@ -385,43 +375,22 @@ def importTransformChangesClient(stack, targetStack, transformFile,
         add_args=argv)
 
 
+@renderaccess
 def coordinateClient(stack, z, fromJson=None, toJson=None, localToWorld=None,
-                     numberOfThreads=None, delete_fromJson=False,
-                     delete_toJson=False, subprocess_mode=None,
+                     numberOfThreads=None, subprocess_mode=None,
                      host=None, port=None, owner=None,
                      project=None, client_script=None, memGB=None,
                      render=None, **kwargs):
     '''
     run CoordinateClient.java
+    expects:
+        fromJson -- json in format defined by list of
+            coordinate dictionaries (world) or
+            list of list of coordinate dictionaries (local)
+        toJson -- json to save results of mapping
+        localToWorld -- flag defaults to accepting world coordinates
+        numberOfThreads -- java-based threads for client script
     '''
-    if render is not None:
-        if isinstance(render, Render):
-            return coordinateClient(
-                stack, z, fromJson=fromJson, toJson=toJson,
-                localToWorld=localToWorld, numberOfThreads=numberOfThreads,
-                delete_toJson=delete_toJson, delete_fromJson=delete_fromJson,
-                subprocess_mode=subprocess_mode, **render.make_kwargs(
-                    host=host, port=port, owner=owner, project=project,
-                    client_script=client_script, memGB=memGB, **kwargs))
-        else:
-            raise ValueError('invalid Render object specified!')
-
-    # TODO allow using array as input for mapping
-    if toJson is None:
-        tempjson = tempfile.NamedTemporaryFile(
-            suffix=".json", mode='r', delete=False)
-        tempjson.close()
-        delete_toJson = True
-        toJson = tempjson.name
-    if fromJson is None:
-        tempjson = tempfile.NamedTemporaryFile(
-            suffix=".json", mode='r', delete=False)
-        tempjson.write(input_array)
-        tempjson.flush()
-        tempjson.close()
-        delete_fromJson = True
-        fromJson = tempjson.name
-
     argvs = (make_stack_params(host, port, owner, project, stack) +
              ['--z', z, '--fromJson', fromJson, '--toJson', toJson] +
              (['--localToWorld', jbool(localToWorld)]
@@ -431,10 +400,5 @@ def coordinateClient(stack, z, fromJson=None, toJson=None, localToWorld=None,
 
     with open(toJson, 'r') as f:
         jsondata = json.load(f)
-
-    if delete_toJson:
-        os.remove(toJson)
-    if delete_fromJson:
-        os.remove(fromJson)
 
     return jsondata
