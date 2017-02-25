@@ -395,7 +395,9 @@ def coordinateClient(stack, z, fromJson=None, toJson=None, localToWorld=None,
              ['--z', z, '--fromJson', fromJson, '--toJson', toJson] +
              (['--localToWorld'] if localToWorld else []) +
              get_param(numberOfThreads, '--numberOfThreads'))
-    call_run_ws_client('org.janelia.render.client.CoordinateClient')
+    call_run_ws_client('org.janelia.render.client.CoordinateClient',
+                       memGB=memGB, client_script=client_script,
+                       subprocess_mode=subprocess_mode, add_args=argvs)
 
     with open(toJson, 'r') as f:
         jsondata = json.load(f)
