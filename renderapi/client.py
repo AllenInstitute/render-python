@@ -261,7 +261,7 @@ def call_run_ws_client(className, add_args=[], renderclient=None,
                                       **renderclient.make_kwargs(
                                           memGB=memGB,
                                           client_script=client_script))
-    
+
     subprocess_modes = {'call': subprocess.call,
                         'check_call': subprocess.check_call,
                         'check_output': subprocess.check_output}
@@ -393,8 +393,7 @@ def coordinateClient(stack, z, fromJson=None, toJson=None, localToWorld=None,
     '''
     argvs = (make_stack_params(host, port, owner, project, stack) +
              ['--z', z, '--fromJson', fromJson, '--toJson', toJson] +
-             (['--localToWorld', jbool(localToWorld)]
-              if localToWorld is not None else []) +
+             (['--localToWorld'] if localToWorld else []) +
              get_param(numberOfThreads, '--numberOfThreads'))
     call_run_ws_client('org.janelia.render.client.CoordinateClient')
 
