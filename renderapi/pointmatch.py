@@ -144,3 +144,14 @@ def get_match_groupIds_to_only(matchCollection, render=None, owner=None,
         return r.json()
     except:
         logger.error(r.text)
+
+
+@renderaccess
+def import_matches(matchCollection, data, owner=None, host=None, port=None,
+                   session=requests.session(), render=None, **kwargs):
+    request_url = format_baseurl(host, port) + \
+        "/owner/%s/matchCollection/%s/matches" % (owner, matchCollection)
+    logger.debug(request_url)
+    r = session.put(request_url, data=data, headers={
+        "content-type": "application/json", "Accept": "application/json"})
+    return r

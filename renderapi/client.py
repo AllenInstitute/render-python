@@ -261,7 +261,7 @@ def call_run_ws_client(className, add_args=[], renderclient=None,
                                       **renderclient.make_kwargs(
                                           memGB=memGB,
                                           client_script=client_script))
-
+    
     subprocess_modes = {'call': subprocess.call,
                         'check_call': subprocess.check_call,
                         'check_output': subprocess.check_output}
