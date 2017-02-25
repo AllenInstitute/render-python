@@ -177,7 +177,7 @@ def connect(host=None, port=None, owner=None, project=None,
 def renderaccess(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
-        render = kwargs.pop('render', None)
+        render = kwargs.get('render')
         if render is not None:
             if isinstance(render, Render):
                 return f(*args, **render.make_kwargs(**kwargs))
