@@ -102,9 +102,8 @@ def connect(host=None, port=None, owner=None, project=None,
             if host == '':
                 logger.critical('Render Host must not be empty!')
                 raise ValueError('Render Host must not be empty!')
-            # TODO more flexible server input
-            # host = (host if host.startswith('http')
-            #         else 'http://{}'.format(host))
+            host = (host if host.startswith('http')
+                    else 'http://{}'.format(host))
         else:
             host = os.environ['RENDER_HOST']
 
@@ -191,7 +190,9 @@ def renderaccess(f):
 
 
 def format_baseurl(host, port):
-    return 'http://%s:%d/render-ws/v1' % (host, port)
+    # return 'http://%s:%d/render-ws/v1' % (host, port)
+    server = '{}{}'.format(host, ('' if port is None else ':{}'.format(port)))
+    return '{}/render-ws/v1'.format(server)
 
 
 def format_preamble(host, port, owner, project, stack):
