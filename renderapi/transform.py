@@ -14,7 +14,6 @@ import json
 import logging
 import numpy as np
 from .errors import ConversionError, EstimationError
-from .utils import _load_dict, _load_json
 
 logger = logging.getLogger(__name__)
 
