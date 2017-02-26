@@ -249,7 +249,7 @@ def world_to_local_array():
 
 
 def call_run_ws_client(className, add_args=[], renderclient=None,
-                       memGB=None, client_script=None, subprocess_mode=None,
+                       memGB='1G', client_script=None, subprocess_mode=None,
                        **kwargs):
     '''
     simple call for run_ws_client.sh -- all arguments set in add_args
