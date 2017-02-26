@@ -101,9 +101,16 @@ def delete_stack(stack, host=None, port=None, owner=None,
 @renderaccess
 def create_stack(stack, cycleNumber=None, cycleStepNumber=None,
                  stackResolutionX=None, stackResolutionY=None,
-                 stackResolutionZ=None,
+                 stackResolutionZ=None, force_resolution=True,
                  host=None, port=None, owner=None, project=None,
                  session=requests.session(), render=None, **kwargs):
+    if force_resolution:
+        stackResolutionX, stackResolutionY, stackResolutionZ = [
+            (1.0 if res is None else res)
+            for res in [stackResolutionX, stackResolutionY, stackResolutionZ]]
+        logger.debug('forcing resolution x:{}, y:{}, z:{}'.format(
+            stackResolutionX, stackResolutionY, stackResolutionZ))
+
     sv = StackVersion(
         cycleNumber=cycleNumber, cycleStepNumber=cycleStepNumber,
         stackResolutionX=stackResolutionX, stackResolutionY=stackResolutionY,
