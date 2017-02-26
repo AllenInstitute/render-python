@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 import logging
 import os
+from functools import wraps
 import requests
-from .utils import defaultifNone
+from .utils import defaultifNone, NullHandler
 from .errors import ClientScriptError
 
 logger = logging.getLogger(__name__)
+logger.addHandler(NullHandler())
 
 
 class Render(object):
@@ -100,9 +102,8 @@ def connect(host=None, port=None, owner=None, project=None,
             if host == '':
                 logger.critical('Render Host must not be empty!')
                 raise ValueError('Render Host must not be empty!')
-            # TODO more flexible server input
-            # host = (host if host.startswith('http')
-            #         else 'http://{}'.format(host))
+            host = (host if host.startswith('http')
+                    else 'http://{}'.format(host))
         else:
             host = os.environ['RENDER_HOST']
 
@@ -149,10 +150,9 @@ def connect(host=None, port=None, owner=None, project=None,
     if client_script is None:
         if 'RENDER_CLIENT_SCRIPT' not in os.environ:
             # client_script = str(raw_input("Enter Render Client Script: "))
-            client_script=os.path.join(client_scripts,'run_ws_client.sh')
-            pass
+            client_script = os.path.join(client_scripts, 'run_ws_client.sh')
         else:
-            client_script = str(os.environ['RENDER_CLIENT_SCRIPT'])            
+            client_script = str(os.environ['RENDER_CLIENT_SCRIPT'])
 
     if memGB is None:
         if 'RENDER_CLIENT_HEAP' not in os.environ:
@@ -173,8 +173,26 @@ def connect(host=None, port=None, owner=None, project=None,
                       client_scripts=client_scripts)
 
 
+def renderaccess(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        render = kwargs.get('render')
+        if render is not None:
+            if isinstance(render, Render):
+                return f(*args, **render.make_kwargs(**kwargs))
+            else:
+                raise ValueError(
+                    'invalid Render object type  {} specified!'.format(
+                        type(render)))
+        else:
+            return f(*args, **kwargs)
+    return wrapper
+
+
 def format_baseurl(host, port):
-    return 'http://%s:%d/render-ws/v1' % (host, port)
+    # return 'http://%s:%d/render-ws/v1' % (host, port)
+    server = '{}{}'.format(host, ('' if port is None else ':{}'.format(port)))
+    return '{}/render-ws/v1'.format(server)
 
 
 def format_preamble(host, port, owner, project, stack):
@@ -183,15 +201,9 @@ def format_preamble(host, port, owner, project, stack):
     return preamble
 
 
-def get_owners(host=None, port=None, render=None,
-               session=requests.session(), **kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return get_owners(**render.make_kwargs(
-            host=host, port=port,
-            **{'session': session}))
-
+@renderaccess
+def get_owners(host=None, port=None, session=requests.session(),
+               render=None, **kwargs):
     request_url = "%s/owners/" % format_baseurl(host, port)
     r = session.get(request_url)
     try:
@@ -200,15 +212,10 @@ def get_owners(host=None, port=None, render=None,
         logger.error(r.text)
 
 
-def get_stack_metadata_by_owner(owner=None, host=None, port=None, render=None,
-                                session=requests.session(), **kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return get_stack_metadata_by_owner(**render.make_kwargs(
-            owner=owner, host=host, port=port,
-            **{'session': session}))
-
+@renderaccess
+def get_stack_metadata_by_owner(owner=None, host=None, port=None,
+                                session=requests.session(),
+                                render=None, **kwargs):
     request_url = "%s/owner/%s/stacks/" % (
         format_baseurl(host, port), owner)
     logger.debug(request_url)
@@ -219,31 +226,19 @@ def get_stack_metadata_by_owner(owner=None, host=None, port=None, render=None,
         logger.error(r.text)
 
 
-def get_projects_by_owner(owner=None, host=None, port=None, render=None,
-                          session=requests.session(), **kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return get_projects_by_owner(**render.make_kwargs(
-            owner=owner, host=host, port=port,
-            **{'session': session}))
-
+@renderaccess
+def get_projects_by_owner(owner=None, host=None, port=None,
+                          session=requests.session(), render=None, **kwargs):
     metadata = get_stack_metadata_by_owner(owner=owner, host=host,
                                            port=port, session=session)
     projects = list(set([m['stackId']['project'] for m in metadata]))
     return projects
 
 
+@renderaccess
 def get_stacks_by_owner_project(owner=None, project=None, host=None,
-                                port=None, render=None,
-                                session=requests.session(), **kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return get_stacks_by_owner_project(**render.make_kwargs(
-            owner=owner, host=host, port=port, project=project,
-            **{'session': session}))
-
+                                port=None, session=requests.session(),
+                                render=None, **kwargs):
     metadata = get_stack_metadata_by_owner(owner=owner, host=host,
                                            port=port, session=session)
     stacks = ([m['stackId']['stack'] for m in metadata

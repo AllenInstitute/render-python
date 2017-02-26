@@ -3,22 +3,25 @@ import json
 import logging
 from time import strftime
 import requests
-from .render import Render, format_baseurl, format_preamble
+from .render import Render, format_baseurl, format_preamble, renderaccess
 from .utils import jbool
 
 logger = logging.getLogger(__name__)
 
 
 class StackVersion:
-    def __init__(self, cycleNumber=1, cycleStepNumber=1, stackResolutionX=1.0,
-                 stackResolutionY=1.0, stackResolutionZ=1.0,
-                 materializedBoxRootPath=None, versionNotes="",
+    def __init__(self, cycleNumber=None, cycleStepNumber=None,
+                 stackResolutionX=None, stackResolutionY=None,
+                 stackResolutionZ=None,
+                 materializedBoxRootPath=None, mipmapPathBuilder=None,
+                 versionNotes=None,
                  createTimestamp=None, **kwargs):
         self.cycleNumber = cycleNumber
         self.cycleStepNumber = cycleStepNumber
         self.stackResolutionX = stackResolutionX
         self.stackResolutionY = stackResolutionY
         self.stackResolutionZ = stackResolutionZ
+        self.mipmapPathBuilder = mipmapPathBuilder
         self.materializedBoxRootPath = materializedBoxRootPath
         self.createTimestamp = (strftime('%Y-%M-%dT%H:%M:%S.00Z') if
                                 createTimestamp is None else createTimestamp)
@@ -26,34 +29,34 @@ class StackVersion:
 
     def to_dict(self):
         d = {}
-        d['cycleNumber'] = self.cycleNumber
-        d['cycleStepNumber'] = self.cycleStepNumber
-        d['stackResolutionX'] = self.stackResolutionX
-        d['stackResolutionY'] = self.stackResolutionY
-        d['stackResolutionZ'] = self.stackResolutionZ
-        d['createTimestamp'] = self.createTimestamp
-        d["materializedBoxRootPath"] = self.materializedBoxRootPath
-        d['mipmapPathBuilder'] = {'numberOfLevels': 0}
-        d['versionNotes'] = self.versionNotes
+        d.update(({'cycleNumber': self.cycleNumber}
+                  if self.cycleNumber is not None else {}))
+        d.update(({'cycleStepNumber': self.cycleStepNumber}
+                  if self.cycleStepNumber is not None else {}))
+        d.update(({'stackResolutionX': self.stackResolutionX}
+                  if self.stackResolutionX is not None else {}))
+        d.update(({'stackResolutionY': self.stackResolutionY}
+                  if self.stackResolutionY is not None else {}))
+        d.update(({'stackResolutionZ': self.stackResolutionZ}
+                  if self.stackResolutionZ is not None else {}))
+        d.update(({'createTimestamp': self.createTimestamp}
+                  if self.createTimestamp is not None else {}))
+        d.update(({'mipmapPathBuilder': self.mipmapPathBuilder}
+                  if self.mipmapPathBuilder is not None else {}))
+        d.update(({'versionNotes': self.versionNotes}
+                  if self.versionNotes is not None else {}))
+        d.update(({'materializedBoxRootPath': self.materializedBoxRootPath}
+                  if self.materializedBoxRootPath is not None else {}))
         return d
 
     def from_dict(self, d):
-        for key in d.keys():
-            eval('self.%s=d[%s]' % (key, key))
+        self.__dict__.update({k: v for k, v in d.items()})
 
 
+@renderaccess
 def set_stack_state(stack, state='LOADING', host=None, port=None,
-                    owner=None, project=None, render=None,
-                    session=requests.session(), **kwargs):
-
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return set_stack_state(
-            stack, **render.make_kwargs(
-                host=host, port=port, owner=owner, project=project,
-                **{'state': state, 'session': session}))
-
+                    owner=None, project=None,
+                    session=requests.session(),  render=None, **kwargs):
     assert state in ['LOADING', 'COMPLETE', 'OFFLINE']
     request_url = format_preamble(
         host, port, owner, project, stack) + "/state/%s" % state
@@ -63,15 +66,10 @@ def set_stack_state(stack, state='LOADING', host=None, port=None,
     return r
 
 
-def likelyUniqueId(host=None, port=None, render=None,
-                   session=requests.session(), **kwargs):
+@renderaccess
+def likelyUniqueId(host=None, port=None,
+                   session=requests.session(), render=None, **kwargs):
     '''return hex-code nearly-unique id from render server'''
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return likelyUniqueId(**render.make_kwargs(host=host, port=port,
-                              **{'session': session}))
-
     request_url = '{}/likelyUniqueId'.format(format_baseurl(host, port))
     r = session.get(request_url, data=None,
                     headers={"content-type": "text/plain"})
@@ -90,34 +88,28 @@ def make_stack_params(host, port, owner, project, stack):
     return stack_params
 
 
-def delete_stack(stack, render=None, host=None, port=None, owner=None,
-                 project=None, session=requests.session(), **kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return delete_stack(stack, **render.make_kwargs(
-            host=host, port=port, owner=owner, project=project,
-            **{'session': session}))
-
+@renderaccess
+def delete_stack(stack, host=None, port=None, owner=None,
+                 project=None, session=requests.session(),
+                 render=None, **kwargs):
     request_url = format_preamble(host, port, owner, project, stack)
     r = session.delete(request_url)
     logger.debug(r.text)
     return r
 
 
-def create_stack(stack, cycleNumber=1, cycleStepNumber=1, 
-                stackResolutionX=1.0, stackResolutionY=1.0,stackResolutionZ=1.0,
-                render=None,
+@renderaccess
+def create_stack(stack, cycleNumber=None, cycleStepNumber=None,
+                 stackResolutionX=None, stackResolutionY=None,
+                 stackResolutionZ=None, force_resolution=True,
                  host=None, port=None, owner=None, project=None,
-                 session=requests.session(), **kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return create_stack(stack, **render.make_kwargs(
-            host=host, port=port, owner=owner, project=project,
-            **{'session': session, 'cycleNumber': cycleNumber,
-               'cycleStepNumber': cycleStepNumber,'stackResolutionX':stackResolutionX,
-               'stackResolutionY':stackResolutionY,'stackResolutionZ':stackResolutionZ}))
+                 session=requests.session(), render=None, **kwargs):
+    if force_resolution:
+        stackResolutionX, stackResolutionY, stackResolutionZ = [
+            (1.0 if res is None else res)
+            for res in [stackResolutionX, stackResolutionY, stackResolutionZ]]
+        logger.debug('forcing resolution x:{}, y:{}, z:{}'.format(
+            stackResolutionX, stackResolutionY, stackResolutionZ))
 
     sv = StackVersion(
         cycleNumber=cycleNumber, cycleStepNumber=cycleStepNumber,
@@ -136,21 +128,14 @@ def create_stack(stack, cycleNumber=1, cycleStepNumber=1,
 
 
 # FIXME multiple z indices require multiple params?
-def clone_stack(inputstack, outputstack, render=None, host=None, port=None,
+@renderaccess
+def clone_stack(inputstack, outputstack, host=None, port=None,
                 owner=None, project=None, skipTransforms=False, toProject=None,
-                z=None, session=None, **kwargs):
+                z=None, session=None, render=None, **kwargs):
     '''
     result:
         cloned stack in LOADING state with tiles in layers specified by z'
     '''
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return clone_stack(inputstack, outputstack, **render.make_kwargs(
-            host=host, port=port, owner=owner, project=project,
-            session=session, skipTransforms=skipTransforms,
-            toProject=toProject, **kwargs))
-
     if z is not None:
         zs = [float(i) for i in z]  # TODO test me
     session = requests.session() if session is None else session
@@ -167,16 +152,10 @@ def clone_stack(inputstack, outputstack, render=None, host=None, port=None,
     return r
 
 
+@renderaccess
 def get_z_values_for_stack(stack, project=None, host=None, port=None,
-                           owner=None, render=None,
-                           session=requests.session(), **kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return get_z_values_for_stack(stack, **render.make_kwargs(
-            host=host, port=port, owner=owner, project=project,
-            session=session, **kwargs))
-
+                           owner=None, session=requests.session(),
+                           render=None, **kwargs):
     request_url = format_preamble(
         host, port, owner, project, stack) + "/zValues/"
     logger.debug(request_url)
@@ -187,16 +166,10 @@ def get_z_values_for_stack(stack, project=None, host=None, port=None,
         logger.error(r.text)
 
 
+@renderaccess
 def get_z_value_for_section(stack, sectionId, project=None,
-                            host=None, port=None, owner=None, render=None,
-                            session=requests.session(), **kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return get_z_value_for_section(stack, sectionId, **render.make_kwargs(
-            host=host, port=port, owner=owner, project=project,
-            session=session, **kwargs))
-
+                            host=None, port=None, owner=None,
+                            session=requests.session(), render=None, **kwargs):
     request_url = format_preamble(
         host, port, owner, project, stack) + "/section/%s/z" % (sectionId)
     r = session.get(request_url)
@@ -206,16 +179,10 @@ def get_z_value_for_section(stack, sectionId, project=None,
         logger.error(r.text)
 
 
+@renderaccess
 def put_resolved_tilespecs(stack, data, host=None, port=None,
-                           owner=None, project=None, render=None,
-                           session=requests.session(), **kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return put_resolved_tilespecs(stack, data, **render.make_kwargs(
-            host=host, port=port, owner=owner, project=project,
-            session=session, **kwargs))
-
+                           owner=None, project=None,
+                           session=requests.session(), render=None, **kwargs):
     request_url = format_preamble(
         host, port, owner, project, stack) + "/resolvedTiles"
     r = session.put(request_url, data=data,
@@ -224,16 +191,10 @@ def put_resolved_tilespecs(stack, data, host=None, port=None,
     return r
 
 
+@renderaccess
 def get_bounds_from_z(stack, z, host=None, port=None, owner=None,
-                      project=None, render=None,
-                      session=requests.session(), **kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return get_bounds_from_z(stack, z, **render.make_kwargs(
-            host=host, port=port, owner=owner, project=project,
-            session=session, **kwargs))
-
+                      project=None, session=requests.session(),
+                      render=None, **kwargs):
     request_url = format_preamble(
         host, port, owner, project, stack) + '/z/%f/bounds' % (z)
 
@@ -244,16 +205,10 @@ def get_bounds_from_z(stack, z, host=None, port=None, owner=None,
         logger.error(r.text)
 
 
+@renderaccess
 def get_section_z_value(stack, sectionId, host=None, port=None,
-                        owner=None, project=None, render=None,
-                        session=requests.session(), **kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return get_section_z_value(stack, sectionId, **render.make_kwargs(
-            host=host, port=port, owner=owner, project=project,
-            session=session, **kwargs))
-
+                        owner=None, project=None, session=requests.session(),
+                        render=None, **kwargs):
     request_url = format_preamble(
         host, port, owner, project, stack) + "/section/%s/z" % sectionId
     r = session.get(request_url)

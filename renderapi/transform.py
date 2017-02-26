@@ -330,10 +330,9 @@ class Polynomial2DTransform(Transform):
         if order is None:
             order = max([self.order, othertform.order])
         # TODO define srcpts and dstpts
-        if srcpts is not None:
-            dstpts = othertform.tform(self.tform(srcpts))
-        else:
+        if srcpts is None:
             raise NotImplementedError('default source points unavailable!')
+        dstpts = othertform.tform(self.tform(srcpts))
         return Polynomial2DTransform(src=srcpts, dst=dstpts, order=order)
 
 

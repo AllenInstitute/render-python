@@ -35,6 +35,11 @@ def jbool(val):
     return 'true' if val else 'false'
 
 
+class NullHandler(logging.Handler):
+    def emit(self, record):
+        pass
+
+
 def stripLogger(logger_tostrip):
     '''
     remove all handlers from a logger -- useful for redefining

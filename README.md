@@ -12,3 +12,15 @@ modify the tilespecs to include paths to downsampled images, and then write thos
 
 [create_mipmaps.py](docs/examples/create_mipmaps.py) is a simple python program for using Pillow to create downsampled images from a single image that is included simply for reference.
 
+Render connection objects created with `renderapi.connect()` can default to environment variables.  Below is an example of the variables which can be sourced and added to ~/.bashrc or ~/.bash_profile.
+```
+    export RENDER_HOST="localhost"
+    export RENDER_PORT="8080"
+    export RENDER_PROJECT="YOURPROJECT"
+    export RENDER_OWNER="YOURNAME"
+    export RENDER_CLIENT_SCRIPTS=".../render/render-ws-java-client/src/main/scripts"
+    export RENDER_CLIENT_SCRIPT="$RENDER_CLIENT_SCRIPTS/run_ws_client.sh"
+    export RENDER_CLIENT_HEAP="1G"
+```
+
+[Usage examples for an Array Tomography workflow](https://github.com/fcollman/render-python-apps/tree/newrender) are available.
