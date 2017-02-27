@@ -3,6 +3,8 @@
 utilities to make render/java/web/life interfacing easier
 '''
 import logging
+import inspect
+import copy
 import json
 
 logger = logging.getLogger(__name__)
@@ -53,3 +55,14 @@ def stripLogger(logger_tostrip):
 
 def defaultifNone(val, default=None):
     return val if val is not None else default
+
+
+def fitargspec(f, oldargs, oldkwargs):
+    ''' fit function argspec given input args tuple and kwargs dict'''
+    args, varargs, keywords, defaults = inspect.getargspec(f)
+    num_expected_args = len(args) - len(defaults)
+    new_args = tuple(oldargs[:num_expected_args])
+    new_kwargs = copy.copy(oldkwargs)
+    for i, arg in enumerate(oldargs[num_expected_args:]):
+        new_kwargs.update({args[i + num_expected_args]: arg})
+    return new_args, new_kwargs

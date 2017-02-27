@@ -3,7 +3,7 @@ import logging
 import os
 from functools import wraps
 import requests
-from .utils import defaultifNone, NullHandler
+from .utils import defaultifNone, NullHandler, fitargspec
 from .errors import ClientScriptError
 
 logger = logging.getLogger(__name__)
@@ -56,6 +56,7 @@ class Render(object):
         run function from object
             technically shorter than adding render=Render to kwargs
         '''
+        args, kwargs = fitargspec(f, args, kwargs)
         return f(*args, **self.make_kwargs(**kwargs))
 
 
@@ -176,6 +177,7 @@ def connect(host=None, port=None, owner=None, project=None,
 def renderaccess(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
+        args, kwargs = fitargspec(f, args, kwargs)
         render = kwargs.get('render')
         if render is not None:
             if isinstance(render, Render):
