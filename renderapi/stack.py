@@ -155,7 +155,9 @@ def clone_stack(inputstack, outputstack, host=None, port=None,
 def get_sectionData_for_stack(stack,project = None,
                               host = None,port = None,owner = None,
                               session=requests.session(),render =None,**kwargs):
-
+    '''result:
+     json dictionary metadata about sectionData for this stack
+    '''
     request_url = format_preamble(
         host,port,owner,project,stack)+"/sectionData"
     logger.debug(request_url)

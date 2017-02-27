@@ -56,7 +56,7 @@ class Render(object):
         run function from object
             technically shorter than adding render=Render to kwargs
         '''
-        args, kwargs = fitargspec(f, args, kwargs)
+        #args, kwargs = fitargspec(f, args, kwargs)
         return f(*args, **self.make_kwargs(**kwargs))
 
 
