@@ -183,7 +183,10 @@ def import_tilespecs(stack, tilespecs, sharedTransforms=None,
                      memGB=None, render=None, **kwargs):
     '''
     input:
+         stack -- stack to which tilespecs will be added
          tilespecs -- list of tilespecs
+         sharedTransforms -- list of shared
+             referenced transforms to be ingested
     '''
     tempjson = tempfile.NamedTemporaryFile(
         suffix=".json", mode='r', delete=False)
@@ -235,21 +238,45 @@ def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
 
 # TODO handle fromJson and toJson persistence in these calls
 @renderaccess
-def local_to_world_array():
-    '''placeholder function for coordinateClient localtoworld'''
+def local_to_world_array(stack, points, tileId, subprocess_mode=None,
+                         host=None, port=None, owner=None, project=None,
+                         client_script=None, memGB=None,
+                         render=None, **kwargs):
+    '''
+    placeholder function for coordinateClient localtoworld
+
+    inputs:
+        stack -- stack to which world coordinates are mapped
+        points -- local points to map to world
+        tileId -- tileId to which points correspond
+    outputs:
+        list of points in world coordinates corresponding to local points
+    '''
     raise NotImplementedError('Whoops')
     pass
 
 
 @renderaccess
-def world_to_local_array():
-    '''placeholder function for coordinateClient worldtolocal'''
+def world_to_local_array(stack, points, subprocess_mode=None,
+                         host=None, port=None, owner=None, project=None,
+                         client_script=None, memGB=None,
+                         render=None, **kwargs):
+    '''
+    placeholder function for coordinateClient worldtolocal
+
+    inputs:
+        stack -- stack to which world coordinates are mapped
+        points -- world points in stack to map to local
+    outputs:
+        list of list of dictionaries defining local coordinates
+            and tileIds corresponding to world point
+    '''
     raise NotImplementedError('Whoops.')
     pass
 
 
 def call_run_ws_client(className, add_args=[], renderclient=None,
-                       memGB='1G', client_script=None, subprocess_mode=None,
+                       memGB=None, client_script=None, subprocess_mode=None,
                        **kwargs):
     '''
     simple call for run_ws_client.sh -- all arguments set in add_args
@@ -261,6 +288,10 @@ def call_run_ws_client(className, add_args=[], renderclient=None,
                                       **renderclient.make_kwargs(
                                           memGB=memGB,
                                           client_script=client_script))
+    if memGB is None:
+        logger.warning('call_run_ws_client requires memory specification -- '
+                       'defaulting to 1G')
+        memGB = '1G'
 
     subprocess_modes = {'call': subprocess.call,
                         'check_call': subprocess.check_call,
