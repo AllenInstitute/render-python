@@ -94,20 +94,20 @@ class RenderClient(Render):
 
 
 def connect(host=None, port=None, owner=None, project=None,
-            client_scripts=None, client_script=None, memGB=None,
-            json_dict=None, **kwargs):
-    '''helper function to connect to a render instance'''
-    if host is None:
-        if 'RENDER_HOST' not in os.environ:
-            host = str(raw_input("Enter Render Host: "))
-            if host == '':
-                logger.critical('Render Host must not be empty!')
-                raise ValueError('Render Host must not be empty!')
-            host = (host if host.startswith('http')
-                    else 'http://{}'.format(host))
-        else:
-            host = os.environ['RENDER_HOST']
-
+           client_scripts=None, client_script=None, memGB=None,
+           json_dict=None, force_http=True, **kwargs):
+   '''helper function to connect to a render instance'''
+   if host is None:
+       if 'RENDER_HOST' not in os.environ:
+           host = str(raw_input("Enter Render Host: "))
+           if host == '':
+               logger.critical('Render Host must not be empty!')
+               raise ValueError('Render Host must not be empty!')
+       else:
+           host = os.environ['RENDER_HOST']
+   if force_http:
+       host = (host if host.startswith('http')
+               else 'http://{}'.format(host))
     if port is None:
         if 'RENDER_PORT' not in os.environ:
             port = str(int(raw_input("Enter Render Port: ")))
