@@ -256,7 +256,7 @@ def world_to_local_coordinates_clientside(stack, jsondata, z,
 
 
 @renderaccess
-def local_to_world_coordinates_clientside(stack, jsondata, tileId, z,
+def local_to_world_coordinates_clientside(stack, jsondata, z,
                                           host=None, port=None, owner=None,
                                           project=None, client_script=None,
                                           number_of_threads=20,
