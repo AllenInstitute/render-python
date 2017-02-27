@@ -151,15 +151,10 @@ def clone_stack(inputstack, outputstack, host=None, port=None,
 
     return r
 
+@renderaccess
 def get_sectionData_for_stack(stack,project = None,
-                              host = None,port = None,owner = None,render =None,
-                              session=requests.session(),**kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return get_sectionData_for_stack(stack, **render.make_kwargs(
-            host=host, port=port, owner=owner, project=project,
-            session=session, **kwargs))
+                              host = None,port = None,owner = None,
+                              session=requests.session(),render =None,**kwargs):
 
     request_url = format_preamble(
         host,port,owner,project,stack)+"/sectionData"
