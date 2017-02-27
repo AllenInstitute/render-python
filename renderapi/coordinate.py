@@ -46,7 +46,7 @@ def local_to_world_coordinates(stack, tileId, x, y,
 
 
 @renderaccess
-def world_to_local_coordinates_batch(stack, data, z, host=None,
+def world_to_local_coordinates_batch(stack, d, z, host=None,
                                      port=None, owner=None, project=None,
                                      execute_local=True,
                                      session=requests.session(),
@@ -56,20 +56,20 @@ def world_to_local_coordinates_batch(stack, data, z, host=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%s/world-to-local-coordinates" % (str(z))
-    r = session.put(request_url, data=data,
+    r = session.put(request_url, data=json.dumps(data),
                     headers={"content-type": "application/json"})
     return r.json()
 
 
 @renderaccess
-def local_to_world_coordinates_batch(stack, data, z, host=None,
+def local_to_world_coordinates_batch(stack, d, z, host=None,
                                      port=None, owner=None, project=None,
                                      session=requests.session(),
                                      render=None, **kwargs):
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%s/local-to-world-coordinates" % (str(z))
-    r = session.put(request_url, data=data,
+    r = session.put(request_url, data=json.dumps(d),
                     headers={"content-type": "application/json"})
     try:
         return r.json()
@@ -85,7 +85,7 @@ def package_point_match_data_into_json(dataarray, tileId,
         d['tileId'] = tileId
         d[local_or_world] = [dataarray[i, 0], dataarray[i, 1]]
         dlist.append(d)
-    return json.dumps(dlist)
+    return dlist
 
 
 def unpackage_world_to_local_point_match_from_json(json_answer, tileId):
@@ -217,12 +217,15 @@ def local_to_world_coordinates_array(stack, dataarray, tileId, z,
 
 def map_coordinates_clientside(stack, jsondata, z, host, port, owner,
                                project, client_script, isLocalToWorld=False,
-                               number_of_threads=20,memGB=1):
+                               number_of_threads=20,memGB='1G'):
     # write point match json to temp file on disk
     json_infile, json_inpath = tempfile.mkstemp(
         prefix='render_coordinates_in_', suffix='.json')
     with open(json_inpath, 'w') as fp:
-        fp.write(jsondata)
+        #d = json.loads(jsondata)
+        json.dump(jsondata,fp)
+        #fp.close()
+        #fp.write(jsondata)
 
     # json.dump(jsondata,open(json_inpath,'w'))
 
