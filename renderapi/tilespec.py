@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from .render import Render, format_baseurl, format_preamble
+from .render import Render, format_baseurl, format_preamble, renderaccess
 from collections import OrderedDict
 import logging
 import requests
@@ -440,16 +440,10 @@ class ImagePyramid:
             l for sl in [list(mmL) for mmL in self.mipMapLevels] for l in sl])
 
 
-def get_tile_spec(stack, tile, render=None, host=None, port=None, owner=None,
-                  project=None, session=requests.session(), **kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return get_tile_spec(
-            stack, tile, **render.make_kwargs(
-                host=host, port=port, owner=owner, project=project,
-                **{'session': session}))
-
+@renderaccess
+def get_tile_spec(stack, tile, host=None, port=None, owner=None,
+                  project=None, session=requests.session(),
+                  render=None, **kwargs):
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/tile/%s/render-parameters" % (tile)
@@ -461,18 +455,12 @@ def get_tile_spec(stack, tile, render=None, host=None, port=None, owner=None,
     return TileSpec(json=tilespec_json['tileSpecs'][0])
 
 
+@renderaccess
 def get_tile_specs_from_minmax_box(stack, z, xmin, xmax, ymin, ymax,
-                                   render=None, scale=1.0, host=None,
+                                   scale=1.0, host=None,
                                    port=None, owner=None, project=None,
-                                   session=requests.session(), **kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return get_tile_specs_from_minmax_box(
-            stack, z, xmin, xmax, ymin, ymax, **render.make_kwargs(
-                host=host, port=port, owner=owner, project=project,
-                **{'session': session}))
-
+                                   session=requests.session(),
+                                   render=None, **kwargs):
     x = xmin
     y = ymin
     width = xmax - xmin
@@ -483,18 +471,11 @@ def get_tile_specs_from_minmax_box(stack, z, xmin, xmax, ymin, ymax,
                                    session=session)
 
 
-def get_tile_specs_from_box(stack, z, x, y, width, height, render=None,
+@renderaccess
+def get_tile_specs_from_box(stack, z, x, y, width, height,
                             scale=1.0, host=None, port=None, owner=None,
                             project=None, session=requests.session(),
-                            **kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return get_tile_specs_from_box(
-            stack, z, x, y, width, height, **render.make_kwargs(
-                host=host, port=port, owner=owner, project=project,
-                **{'session': session}))
-
+                            render=None, **kwargs):
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%d/box/%d,%d,%d,%d,%3.2f/render-parameters" % (
@@ -509,17 +490,10 @@ def get_tile_specs_from_box(stack, z, x, y, width, height, render=None,
             for tilespec_json in tilespecs_json['tileSpecs']]
 
 
-def get_tile_specs_from_z(stack, z, render=None, host=None, port=None,
+@renderaccess
+def get_tile_specs_from_z(stack, z, host=None, port=None,
                           owner=None, project=None, session=requests.session(),
-                          **kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return get_tile_specs_from_z(
-            stack, z, **render.make_kwargs(
-                host=host, port=port, owner=owner, project=project,
-                **{'session': session}))
-
+                          render=None, **kwargs):
     request_url = format_preamble(
         host, port, owner, project, stack) + '/z/%f/tile-specs' % (z)
     logger.debug(request_url)

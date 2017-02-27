@@ -2,28 +2,23 @@
 '''
 coordinate mapping functions for render api
 '''
-
-from .render import Render, format_preamble
+from .render import Render, format_preamble, renderaccess
 from .client import call_run_ws_client
 import requests
 import json
 import numpy as np
 import logging
 import tempfile
+
 logger = logging.getLogger(__name__)
 
 
-def world_to_local_coordinates(stack, z, x, y, render=None, host=None,
+@renderaccess
+def world_to_local_coordinates(stack, z, x, y, host=None,
                                port=None, owner=None, project=None,
-                               session=requests.session(), **kwargs):
+                               session=requests.session(),
+                               render=None, **kwargs):
     ''''''
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return world_to_local_coordinates(stack, z, x, y, **render.make_kwargs(
-            host=host, port=port, owner=owner, project=project,
-            **{'session': session}))
-
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%d/world-to-local-coordinates/%f,%f" % (z, x, y)
@@ -34,18 +29,12 @@ def world_to_local_coordinates(stack, z, x, y, render=None, host=None,
         logger.error(r.text)
 
 
-def local_to_world_coordinates(stack, tileId, x, y, render=None,
+@renderaccess
+def local_to_world_coordinates(stack, tileId, x, y,
                                host=None, port=None, owner=None, project=None,
-                               session=requests.session(), **kwargs):
+                               session=requests.session(),
+                               render=None, **kwargs):
     ''''''
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return local_to_world_coordinates(
-            stack, tileId, x, y, **render.make_kwargs(
-                host=host, port=port, owner=owner, project=project,
-                **{'session': session}))
-
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/tile/%s/local-to-world-coordinates/%f,%f" % (tileId, x, y)
@@ -56,18 +45,14 @@ def local_to_world_coordinates(stack, tileId, x, y, render=None,
         logger.error(r.text)
 
 
-def world_to_local_coordinates_batch(stack, data,z, render=None, host=None,
-                                     port=None, owner=None, project=None, execute_local=True,
-                                     session=requests.session(), **kwargs):
-    ''''''
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return world_to_local_coordinates_batch(
-            stack, z, data, **render.make_kwargs(
-                host=host, port=port, owner=owner, project=project,
-                **{'session': session}))
+@renderaccess
+def world_to_local_coordinates_batch(stack, data, z, host=None,
+                                     port=None, owner=None, project=None,
+                                     execute_local=True,
+                                     session=requests.session(),
+                                     render=None, **kwargs):
 
+    ''''''
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%s/world-to-local-coordinates" % (str(z))
@@ -76,18 +61,11 @@ def world_to_local_coordinates_batch(stack, data,z, render=None, host=None,
     return r.json()
 
 
-# FIXME different inputs than world_to_local?
-def local_to_world_coordinates_batch(stack, data, z, render=None, host=None,
+@renderaccess
+def local_to_world_coordinates_batch(stack, data, z, host=None,
                                      port=None, owner=None, project=None,
-                                     session=requests.session(), **kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return local_to_world_coordinates_batch(
-            stack, data, z, **render.make_kwargs(
-                host=host, port=port, owner=owner, project=project,
-                **{'session': session}))
-
+                                     session=requests.session(),
+                                     render=None, **kwargs):
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%s/local-to-world-coordinates" % (str(z))
@@ -98,7 +76,9 @@ def local_to_world_coordinates_batch(stack, data, z, render=None, host=None,
     except:
         logger.error(r.text)
 
-def package_point_match_data_into_json(dataarray,tileId,local_or_world='local'):
+
+def package_point_match_data_into_json(dataarray, tileId,
+                                       local_or_world='local'):
     dlist = []
     for i in range(dataarray.shape[0]):
         d = {}
@@ -107,159 +87,195 @@ def package_point_match_data_into_json(dataarray,tileId,local_or_world='local'):
         dlist.append(d)
     return json.dumps(dlist)
 
-def unpackage_world_to_local_point_match_from_json(json_answer,tileId):
-    answer = np.zeros((len(json_answer),2))
+
+def unpackage_world_to_local_point_match_from_json(json_answer, tileId):
+    answer = np.zeros((len(json_answer), 2))
     for i, local_answer in enumerate(json_answer):
-        coord = next(ans for ans in local_answer if ans['tileId']==tileId)
-        c=coord['local']
+        coord = next(ans for ans in local_answer if ans['tileId'] == tileId)
+        c = coord['local']
         answer[i, 0] = c[0]
         answer[i, 1] = c[1]
     return answer
 
+
+@renderaccess
+def old_world_to_local_coordinates_array(stack, dataarray, tileId, z=0,
+                                         host=None, port=None,
+                                         owner=None, project=None,
+                                         session=requests.session(),
+                                         render=None, **kwargs):
+    ''''''
+
+    request_url = format_preamble(
+        host, port, owner, project, stack) + \
+        "/z/%d/world-to-local-coordinates" % (z)
+    dlist = []
+    for i in range(dataarray.shape[0]):
+        d = {}
+        d['tileId'] = tileId
+        d['world'] = [dataarray[i, 0], dataarray[i, 1]]
+        dlist.append(d)
+    jsondata = json.dumps(dlist)
+    r = session.put(request_url, data=jsondata,
+                    headers={"content-type": "application/json"})
+    json_answer = r.json()
+    try:
+        answer = np.zeros(dataarray.shape)
+        for i, coord in enumerate(json_answer):
+            c = coord['local']
+            answer[i, 0] = c[0]
+            answer[i, 1] = c[1]
+        return answer
+    except:
+        logger.error(json_answer)
+
+
 def unpackage_local_to_world_point_match_from_json(json_answer):
-    logger.debug("json_answer_length %d"%len(json_answer))
-    answer = np.zeros((len(json_answer),2))
+    logger.debug("json_answer_length %d" % len(json_answer))
+    answer = np.zeros((len(json_answer), 2))
     for i, coord in enumerate(json_answer):
         c = coord['world']
         answer[i, 0] = c[0]
         answer[i, 1] = c[1]
     return answer
 
+
+@renderaccess
 def world_to_local_coordinates_array(stack, dataarray, tileId, z,
                                      render=None, host=None, port=None,
-                                     owner=None, project=None, client_script = None,
-                                     doClientSide = False,number_of_threads=20,
+                                     owner=None, project=None,
+                                     client_script=None,
+                                     doClientSide=False, number_of_threads=20,
                                      session=requests.session(), **kwargs):
     ''''''
-
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return world_to_local_coordinates_array(
-            stack, dataarray, tileId, z, **render.make_kwargs(
-                host=host, port=port, owner=owner, project=project,
-                client_script = client_script,
-                **{'session': session,'doClientSide':doClientSide,'number_of_threads':20}))
-
-    jsondata =   package_point_match_data_into_json(dataarray,tileId,'world')
+    jsondata = package_point_match_data_into_json(dataarray, tileId, 'world')
     if doClientSide:
-        json_answer = world_to_local_coordinates_clientside(stack,jsondata,tileId,z,
-                                                            host=host,port=port,owner=owner,
-                                                            project=project,
-                                                            client_script=client_script,
-                                                            number_of_threads=number_of_threads)
+        json_answer = world_to_local_coordinates_clientside(
+            stack, jsondata, tileId, z, host=host, port=port, owner=owner,
+            project=project, client_script=client_script,
+            number_of_threads=number_of_threads)
     else:
-        json_answer = world_to_local_coordinates_batch(stack,jsondata,z,
-                                                       host=host,port=port,
-                                                       owner=owner,project=project,
-                                                       session=session)
-    #print json_answer
-    #try:
-    return unpackage_world_to_local_point_match_from_json(json_answer,tileId)
-    #except:
-    #    logger.error('could not unpackage world_to_local answer')
-    #    logger.error(json_answer)
+        json_answer = world_to_local_coordinates_batch(
+            stack, jsondata, z, host=host, port=port, owner=owner,
+            project=project, session=session)
+    return unpackage_world_to_local_point_match_from_json(json_answer, tileId)
 
+
+@renderaccess
+def old_local_to_world_coordinates_array(stack, dataarray, tileId, z=0,
+                                         host=None, port=None,
+                                         owner=None, project=None,
+                                         session=requests.session(),
+                                         render=None, **kwargs):
+    ''''''
+    request_url = format_preamble(
+        host, port, owner, project, stack) + \
+        "/z/%d/local-to-world-coordinates" % (z)
+    dlist = []
+    for i in range(dataarray.shape[0]):
+        d = {}
+        d['tileId'] = tileId
+        d['local'] = [dataarray[i, 0], dataarray[i, 1]]
+        dlist.append(d)
+    jsondata = json.dumps(dlist)
+    r = session.put(request_url, data=jsondata,
+                    headers={"content-type": "application/json"})
+    json_answer = r.json()
+    try:
+        answer = np.zeros(dataarray.shape)
+        print dataarray.shape
+        print len(json_answer)
+        for i, coord in enumerate(json_answer):
+            c = coord['world']
+            answer[i, 0] = c[0]
+            answer[i, 1] = c[1]
+        return answer
+    except:
+        logger.error(json_answer)
+
+
+@renderaccess
 def local_to_world_coordinates_array(stack, dataarray, tileId, z,
                                      render=None, host=None, port=None,
-                                     owner=None, project=None, client_script = None,
-                                     doClientSide = False, number_of_threads=20,
+                                     owner=None, project=None,
+                                     client_script=None,
+                                     doClientSide=False, number_of_threads=20,
                                      session=requests.session(), **kwargs):
     ''''''
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return local_to_world_coordinates_array(
-            stack, dataarray, tileId, z,**render.make_kwargs(
-                host=host, port=port, owner=owner, project=project,
-                client_script = client_script,
-                **{'session': session,'doClientSide':doClientSide,'number_of_threads':number_of_threads}))
-
-    jsondata = package_point_match_data_into_json(dataarray,tileId,'local')
+    jsondata = package_point_match_data_into_json(dataarray, tileId, 'local')
     if doClientSide:
-        json_answer = local_to_world_coordinates_clientside(stack,jsondata,tileId,z,
-                                                            host=host,port=port,owner=owner,project=project,
-                                                            client_script=client_script,
-                                                            number_of_threads=number_of_threads)
+        json_answer = local_to_world_coordinates_clientside(
+            stack, jsondata, tileId, z, host=host, port=port, owner=owner,
+            project=project, client_script=client_script,
+            number_of_threads=number_of_threads)
     else:
-        json_answer = local_to_world_coordinates_batch(stack,jsondata,z,
-                                                       host=host,port=port,owner=owner,
-                                                       project=project,session=session)
-    #try:
+        json_answer = local_to_world_coordinates_batch(
+            stack, jsondata, z, host=host, port=port, owner=owner,
+            project=project, session=session)
     return unpackage_local_to_world_point_match_from_json(json_answer)
-    #except:
-    #    logger.error('could not unpackage local_to_world answer')
-    #    logger.error(json_answer)
-
-def map_coordinates_clientside(stack,jsondata,tileId,z,host,port,owner,project,client_script,isLocalToWorld=False,number_of_threads=20):
-    #write point match json to temp file on disk
-    json_infile,json_inpath = tempfile.mkstemp(prefix='render_coordinates_in_',suffix='.json')
-    fp = open(json_inpath,'w')
-    fp.write(jsondata)
-    fp.close()
-
-    #json.dump(jsondata,open(json_inpath,'w'))
-
-    #get a temporary location for the output
-    json_outpath = tempfile.mktemp(prefix='render_coordinates_out_',suffix='.json')
 
 
+def map_coordinates_clientside(stack, jsondata, tileId, z, host, port, owner,
+                               project, client_script, isLocalToWorld=False,
+                               number_of_threads=20):
+    # write point match json to temp file on disk
+    json_infile, json_inpath = tempfile.mkstemp(
+        prefix='render_coordinates_in_', suffix='.json')
+    with open(json_inpath, 'w') as fp:
+        fp.write(jsondata)
 
-    #define arguments
-    args = ['--baseDataUrl','http://%s:%d/render-ws/v1'%(host,port),
-            '--owner',owner,
-            '--project',project,
-            '--stack',stack,
-            '--z',str(z),
-            '--fromJson',json_inpath,
-            '--toJson',json_outpath,
-            '--numberOfThreads',str(number_of_threads)]
+    # json.dump(jsondata,open(json_inpath,'w'))
+
+    # get a temporary location for the output
+    json_outpath = tempfile.mktemp(
+        prefix='render_coordinates_out_', suffix='.json')
+
+    # define arguments
+    args = ['--baseDataUrl', 'http://%s:%d/render-ws/v1' % (host, port),
+            '--owner', owner,
+            '--project', project,
+            '--stack', stack,
+            '--z', str(z),
+            '--fromJson', json_inpath,
+            '--toJson', json_outpath,
+            '--numberOfThreads', str(number_of_threads)]
     if isLocalToWorld:
-        args+=['--localToWorld']
+        args += ['--localToWorld']
 
-    #call the java client
-    call_run_ws_client('org.janelia.render.client.CoordinateClient', add_args=args, client_script=client_script)
+    # call the java client
+    call_run_ws_client('org.janelia.render.client.CoordinateClient',
+                       add_args=args, client_script=client_script)
 
-    #return the json results
-    #try:
-    return json.load(open(json_outpath,'r'))
-    #except:
-    #    logger.error('failed to load json after map_coordinates_clientside:\n%s'%json.dumps(jsondata))
+    # return the json results
+    return json.load(open(json_outpath, 'r'))
 
-def world_to_local_coordinates_clientside(stack,jsondata,tileId,z,render=None,
-                                          host=None,port=None,owner=None,
-                                          project=None,client_script=None,
+
+@renderaccess
+def world_to_local_coordinates_clientside(stack, jsondata, tileId, z,
+                                          host=None, port=None, owner=None,
+                                          project=None, client_script=None,
                                           number_of_threads=20,
-                                          session=requests.session(),**kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return world_to_local_coordinates_clientside(
-            stack, dataarray, tileId, z,**render.make_kwargs(
-                host=host, port=port, owner=owner, project=project,
-                client_script=client_script,
-                **{'session': session,'number_of_threads':20}))
+                                          session=requests.session(),
+                                          render=None, **kwargs):
 
-    return map_coordinates_clientside(stack,jsondata,tileId,z,
-                                      host=host,port=port,owner=owner,
-                                      project=project,client_script=client_script,
-                                      isLocalToWorld=False,number_of_threads=number_of_threads)
+    return map_coordinates_clientside(stack, jsondata, tileId, z,
+                                      host=host, port=port, owner=owner,
+                                      project=project,
+                                      client_script=client_script,
+                                      isLocalToWorld=False,
+                                      number_of_threads=number_of_threads)
 
-def local_to_world_coordinates_clientside(stack,jsondata,tileId,z,render=None,
-                                          host=None,port=None,owner=None,
-                                          project=None,client_script=None,
+
+@renderaccess
+def local_to_world_coordinates_clientside(stack, jsondata, tileId, z,
+                                          host=None, port=None, owner=None,
+                                          project=None, client_script=None,
                                           number_of_threads=20,
-                                          session=requests.session(),**kwargs):
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return local_to_world_coordinates_clientside(
-            stack, dataarray, tileId, z,**render.make_kwargs(
-                host=host, port=port, owner=owner, project=project,
-                client_script=client_script,
-                **{'session': session,'number_of_threads':20}))
-
-    return map_coordinates_clientside(stack,jsondata,tileId,z,
-                                      host=host,port=port,owner=owner,
-                                      project=project,client_script=client_script,
-                                      isLocalToWorld=True,number_of_threads=number_of_threads)
+                                          session=requests.session(),
+                                          render=None, **kwargs):
+    return map_coordinates_clientside(stack, jsondata, tileId, z,
+                                      host=host, port=port, owner=owner,
+                                      project=project,
+                                      client_script=client_script,
+                                      isLocalToWorld=True,
+                                      number_of_threads=number_of_threads)

@@ -5,7 +5,7 @@ import requests
 from PIL import Image
 import numpy as np
 import logging
-from .render import Render, format_baseurl, format_preamble
+from .render import Render, format_baseurl, format_preamble, renderaccess
 
 logger = logging.getLogger(__name__)
 
@@ -21,9 +21,11 @@ IMAGE_FORMATS = {'png': 'png-image',
                  None: 'png-image'}  # Default to png
 
 
-def get_bb_image(stack, z, x, y, width, height, render=None, scale=1.0,
+@renderaccess
+def get_bb_image(stack, z, x, y, width, height, scale=1.0,
                  host=None, port=None, owner=None, project=None,
-                 img_format=None, session=requests.session(), **kwargs):
+                 img_format=None, session=requests.session(),
+                 render=None, **kwargs):
     '''
     render image from a bounding box defined in xy and return numpy array:
         z: layer
@@ -32,16 +34,6 @@ def get_bb_image(stack, z, x, y, width, height, render=None, scale=1.0,
         width: extent to right in x
         height: extent down in y
     '''
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return get_bb_image(
-            stack, z, x, y, width, height,
-            **render.make_kwargs(
-                host=host, port=port, owner=owner, project=project,
-                **{'scale': scale, 'img_format': img_format,
-                   'session': session}))
-
     try:
         image_ext = IMAGE_FORMATS[img_format]
     except KeyError as e:
@@ -59,20 +51,14 @@ def get_bb_image(stack, z, x, y, width, height, render=None, scale=1.0,
         logger.error(r.text)
 
 
-def get_tile_image_data(stack, tileId, render=None,
-                        normalizeForMatching=True, host=None, port=None,
-                        owner=None, project=None, img_format=None,
-                        session=requests.session(), **kwargs):
+@renderaccess
+def get_tile_image_data(stack, tileId, normalizeForMatching=True,
+                        host=None, port=None, owner=None, project=None,
+                        img_format=None, session=requests.session(),
+                        render=None, **kwargs):
     '''
     render image from a tile with all transforms and return numpy array
     '''
-    if render is not None:
-        if not isinstance(render, Render):
-            raise ValueError('invalid Render object specified!')
-        return get_tile_image_data(stack, tileId, **render.make_kwargs(
-            host=host, port=port, owner=owner, project=project,
-            **{'img_format': img_format, 'session': session}))
-
     try:
         image_ext = IMAGE_FORMATS[img_format]
     except KeyError as e:

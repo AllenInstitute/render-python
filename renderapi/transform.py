@@ -275,13 +275,13 @@ class Polynomial2DTransform(Transform):
         dsList = datastring.split(' ')
         self.params = np.array(
             [[float(d) for d in dsList[:len(dsList)/2]],
-             [float(d) for d in dsList[len(dsList)/2]]])
+             [float(d) for d in dsList[len(dsList)/2:]]])
         self.dataString = datastring
 
     def _format_raveled_params(self, raveled_params):
         return np.array(
             [[float(d) for d in dsList[:len(raveled_params)/2]],
-             [float(d) for d in dsList[len(raveled_params)/2]]])
+             [float(d) for d in dsList[len(raveled_params)/2:]]])
 
     def tform(self, points):
         dst = np.zeros(points.shape)
@@ -330,10 +330,9 @@ class Polynomial2DTransform(Transform):
         if order is None:
             order = max([self.order, othertform.order])
         # TODO define srcpts and dstpts
-        if srcpts is not None:
-            dstpts = othertform.tform(self.tform(srcpts))
-        else:
+        if srcpts is None:
             raise NotImplementedError('default source points unavailable!')
+        dstpts = othertform.tform(self.tform(srcpts))
         return Polynomial2DTransform(src=srcpts, dst=dstpts, order=order)
 
 
