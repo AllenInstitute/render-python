@@ -151,7 +151,7 @@ def world_to_local_coordinates_array(stack, dataarray, tileId, z,
     jsondata = package_point_match_data_into_json(dataarray, tileId, 'world')
     if doClientSide:
         json_answer = world_to_local_coordinates_clientside(
-            stack, jsondata, tileId, z, host=host, port=port, owner=owner,
+            stack, jsondata, z, host=host, port=port, owner=owner,
             project=project, client_script=client_script,
             number_of_threads=number_of_threads)
     else:
@@ -205,7 +205,7 @@ def local_to_world_coordinates_array(stack, dataarray, tileId, z,
     jsondata = package_point_match_data_into_json(dataarray, tileId, 'local')
     if doClientSide:
         json_answer = local_to_world_coordinates_clientside(
-            stack, jsondata, tileId, z, host=host, port=port, owner=owner,
+            stack, jsondata, z, host=host, port=port, owner=owner,
             project=project, client_script=client_script,
             number_of_threads=number_of_threads)
     else:
@@ -215,9 +215,9 @@ def local_to_world_coordinates_array(stack, dataarray, tileId, z,
     return unpackage_local_to_world_point_match_from_json(json_answer)
 
 
-def map_coordinates_clientside(stack, jsondata, tileId, z, host, port, owner,
+def map_coordinates_clientside(stack, jsondata, z, host, port, owner,
                                project, client_script, isLocalToWorld=False,
-                               number_of_threads=20):
+                               number_of_threads=20,memGB=1):
     # write point match json to temp file on disk
     json_infile, json_inpath = tempfile.mkstemp(
         prefix='render_coordinates_in_', suffix='.json')
@@ -230,35 +230,24 @@ def map_coordinates_clientside(stack, jsondata, tileId, z, host, port, owner,
     json_outpath = tempfile.mktemp(
         prefix='render_coordinates_out_', suffix='.json')
 
-    # define arguments
-    args = ['--baseDataUrl', 'http://%s:%d/render-ws/v1' % (host, port),
-            '--owner', owner,
-            '--project', project,
-            '--stack', stack,
-            '--z', str(z),
-            '--fromJson', json_inpath,
-            '--toJson', json_outpath,
-            '--numberOfThreads', str(number_of_threads)]
-    if isLocalToWorld:
-        args += ['--localToWorld']
-
     # call the java client
-    call_run_ws_client('org.janelia.render.client.CoordinateClient',
-                       add_args=args, client_script=client_script)
+    renderapi.client.coordinateClient(stack, z, fromJson=json_inpath, toJson=json_outpath, localToWorld=isLocalToWorld,
+                     numberOfThreads=number_of_threads, host=host,port=port, owner=owner,project=project, client_script=client_script,
+                     memGB=memGB)
 
     # return the json results
     return json.load(open(json_outpath, 'r'))
 
 
 @renderaccess
-def world_to_local_coordinates_clientside(stack, jsondata, tileId, z,
+def world_to_local_coordinates_clientside(stack, jsondata, z,
                                           host=None, port=None, owner=None,
                                           project=None, client_script=None,
                                           number_of_threads=20,
                                           session=requests.session(),
                                           render=None, **kwargs):
 
-    return map_coordinates_clientside(stack, jsondata, tileId, z,
+    return map_coordinates_clientside(stack, jsondata, z,
                                       host=host, port=port, owner=owner,
                                       project=project,
                                       client_script=client_script,
