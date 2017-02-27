@@ -3,7 +3,7 @@
 coordinate mapping functions for render api
 '''
 from .render import Render, format_preamble, renderaccess
-from .client import call_run_ws_client
+from .client import call_run_ws_client,coordinateClient
 import requests
 import json
 import numpy as np
@@ -231,7 +231,7 @@ def map_coordinates_clientside(stack, jsondata, z, host, port, owner,
         prefix='render_coordinates_out_', suffix='.json')
 
     # call the java client
-    renderapi.client.coordinateClient(stack, z, fromJson=json_inpath, toJson=json_outpath, localToWorld=isLocalToWorld,
+    coordinateClient(stack, z, fromJson=json_inpath, toJson=json_outpath, localToWorld=isLocalToWorld,
                      numberOfThreads=number_of_threads, host=host,port=port, owner=owner,project=project, client_script=client_script,
                      memGB=memGB)
 
