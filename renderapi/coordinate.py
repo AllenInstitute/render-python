@@ -262,7 +262,7 @@ def local_to_world_coordinates_clientside(stack, jsondata, z,
                                           number_of_threads=20,
                                           session=requests.session(),
                                           render=None, **kwargs):
-    return map_coordinates_clientside(stack, jsondata, tileId, z,
+    return map_coordinates_clientside(stack, jsondata, z,
                                       host=host, port=port, owner=owner,
                                       project=project,
                                       client_script=client_script,
