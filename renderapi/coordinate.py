@@ -4,13 +4,16 @@ coordinate mapping functions for render api
 '''
 from .render import Render, format_preamble, renderaccess
 from .client import call_run_ws_client
+from .utils import NullHandler
 import requests
 import json
 import numpy as np
 import logging
 import tempfile
 
+
 logger = logging.getLogger(__name__)
+logger.addHandler(NullHandler())
 
 
 @renderaccess

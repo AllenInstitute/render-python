@@ -7,7 +7,13 @@ import inspect
 import copy
 import json
 
+
+class NullHandler(logging.Handler):
+    def emit(self, record):
+        pass
+
 logger = logging.getLogger(__name__)
+logger.addHandler(NullHandler())
 
 
 class RenderEncoder(json.JSONEncoder):
@@ -35,11 +41,6 @@ def jbool(val):
         logger.warning('Evaluating javastring of non-boolean {} {}'.format(
             type(val), val))
     return 'true' if val else 'false'
-
-
-class NullHandler(logging.Handler):
-    def emit(self, record):
-        pass
 
 
 def stripLogger(logger_tostrip):

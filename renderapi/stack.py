@@ -4,9 +4,10 @@ import logging
 from time import strftime
 import requests
 from .render import Render, format_baseurl, format_preamble, renderaccess
-from .utils import jbool
+from .utils import jbool, NullHandler
 
 logger = logging.getLogger(__name__)
+logger.addHandler(NullHandler())
 
 
 class StackVersion:
@@ -57,7 +58,7 @@ class StackVersion:
 def set_stack_state(stack, state='LOADING', host=None, port=None,
                     owner=None, project=None,
                     session=requests.session(),  render=None, **kwargs):
-    assert state in ['LOADING', 'COMPLETE', 'OFFLINE', 'READ_ONLY']
+    assert state in ['LOADING', 'COMPLETE', 'OFFLINE']
     request_url = format_preamble(
         host, port, owner, project, stack) + "/state/%s" % state
     logger.debug(request_url)
@@ -101,16 +102,9 @@ def delete_stack(stack, host=None, port=None, owner=None,
 @renderaccess
 def create_stack(stack, cycleNumber=None, cycleStepNumber=None,
                  stackResolutionX=None, stackResolutionY=None,
-                 stackResolutionZ=None, force_resolution=True,
+                 stackResolutionZ=None,
                  host=None, port=None, owner=None, project=None,
                  session=requests.session(), render=None, **kwargs):
-    if force_resolution:
-        stackResolutionX, stackResolutionY, stackResolutionZ = [
-            (1.0 if res is None else res)
-            for res in [stackResolutionX, stackResolutionY, stackResolutionZ]]
-        logger.debug('forcing resolution x:{}, y:{}, z:{}'.format(
-            stackResolutionX, stackResolutionY, stackResolutionZ))
-
     sv = StackVersion(
         cycleNumber=cycleNumber, cycleStepNumber=cycleStepNumber,
         stackResolutionX=stackResolutionX, stackResolutionY=stackResolutionY,
@@ -150,20 +144,6 @@ def clone_stack(inputstack, outputstack, host=None, port=None,
                     data=json.dumps(sv.to_dict()))
 
     return r
-
-@renderaccess
-def get_sectionData_for_stack(stack,project = None,
-                              host = None,port = None,owner = None,
-                              session=requests.session(),render =None,**kwargs):
-
-    request_url = format_preamble(
-        host,port,owner,project,stack)+"/sectionData"
-    logger.debug(request_url)
-    r = session.get(request_url)
-    try:
-        return r.json()
-    except:
-        logger.error(r.text)
 
 
 @renderaccess

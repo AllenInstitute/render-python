@@ -8,13 +8,14 @@ from functools import partial
 import logging
 import subprocess
 import tempfile
-from .utils import jbool, renderdump
+from .utils import jbool, renderdump, NullHandler
 from .errors import ClientScriptError
 from .render import Render, RenderClient, renderaccess
 from .stack import set_stack_state, make_stack_params
 
 # setup logger
 logger = logging.getLogger(__name__)
+logger.addHandler(NullHandler())
 
 try:
     from pathos.multiprocessing import ProcessingPool as Pool

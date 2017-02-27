@@ -184,7 +184,7 @@ def renderaccess(f):
                 return f(*args, **render.make_kwargs(**kwargs))
             else:
                 raise ValueError(
-                    'invalid Render object type  {} specified!'.format(
+                    'invalid Render object type {} specified!'.format(
                         type(render)))
         else:
             return f(*args, **kwargs)

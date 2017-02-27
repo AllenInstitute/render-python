@@ -6,8 +6,10 @@ from PIL import Image
 import numpy as np
 import logging
 from .render import Render, format_baseurl, format_preamble, renderaccess
+from .utils import NullHandler
 
 logger = logging.getLogger(__name__)
+logger.addHandler(NullHandler())
 
 # define acceptable image formats -- currently render generates png, jpeg, tiff
 IMAGE_FORMATS = {'png': 'png-image',

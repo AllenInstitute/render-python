@@ -14,8 +14,10 @@ import json
 import logging
 import numpy as np
 from .errors import ConversionError, EstimationError
+from .utils import NullHandler
 
 logger = logging.getLogger(__name__)
+logger.addHandler(NullHandler())
 
 
 class TransformList:

@@ -5,8 +5,10 @@ Point Match APIs
 import requests
 import logging
 from .render import Render, format_baseurl, renderaccess
+from .utils import NullHandler
 
 logger = logging.getLogger(__name__)
+logger.addHandler(NullHandler())
 
 
 @renderaccess
