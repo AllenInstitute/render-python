@@ -200,7 +200,7 @@ class Polynomial2DTransform(Transform):
 
     def __init__(self, dataString=None, src=None, dst=None, order=2,
                  force_polynomial=True, params=None, identity=False):
-        self.className = 'mpicbg.trakEM2.transform.PolynomialTransform2D'
+        self.className = 'mpicbg.trakem2.transform.PolynomialTransform2D'
         if dataString is not None:
             self._process_dataString(dataString)
         elif identity:
