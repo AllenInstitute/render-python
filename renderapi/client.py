@@ -210,7 +210,8 @@ def import_tilespecs(stack, tilespecs, sharedTransforms=None,
                      client_script=client_script, memGB=memGB)
 
     os.remove(tsjson)
-    os.remove(trjson)
+    if sharedTransforms is not None:
+        os.remove(trjson)
 
 
 @renderaccess
