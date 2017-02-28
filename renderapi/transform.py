@@ -198,7 +198,7 @@ class Polynomial2DTransform(Transform):
         fall back to Affine Model in special cases
         robustness in estimation
     '''
-    className = 'mpicbg.trakEM2.transform.PolynomialTransform2D'
+    className = 'mpicbg.trakem2.transform.PolynomialTransform2D'
 
     def __init__(self, dataString=None, src=None, dst=None, order=2,
                  force_polynomial=True, params=None, identity=False):
