@@ -213,8 +213,8 @@ class Polynomial2DTransform(Transform):
         if not force_polynomial and self.is_affine:
             # TODO try implement affine from poly (& vice versa)
             return AffineTransform(poly_params=self.params)
-    self.transformId = None
-    
+        self.transformId = None
+
     @property
     def is_affine(self):
         '''TODO allow default to Affine'''
