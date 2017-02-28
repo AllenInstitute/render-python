@@ -103,6 +103,7 @@ class AffineModel(Transform):
         self.B1 = B1
         self.className = 'mpicbg.trakem2.transform.AffineModel2D'
         self.load_M()
+        self.transformId = None
 
     def load_M(self):
         self.M = np.identity(3, np.double)
@@ -212,7 +213,8 @@ class Polynomial2DTransform(Transform):
         if not force_polynomial and self.is_affine:
             # TODO try implement affine from poly (& vice versa)
             return AffineTransform(poly_params=self.params)
-
+    self.transformId = None
+    
     @property
     def is_affine(self):
         '''TODO allow default to Affine'''
