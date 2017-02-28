@@ -56,7 +56,7 @@ class Render(object):
         run function from object
             technically shorter than adding render=Render to kwargs
         '''
-        # TODO WARNING I think renderaccess can default to
+        # FIXME WARNING I think renderaccess can default to
         # another render if defined in args (test/squash)
         kwargs['render'] = self
         return f(*args, **kwargs)

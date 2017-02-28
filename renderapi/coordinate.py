@@ -3,8 +3,8 @@
 coordinate mapping functions for render api
 '''
 from .render import Render, format_preamble, renderaccess
-from .client import call_run_ws_client
 from .utils import NullHandler
+from .client import call_run_ws_client, coordinateClient
 import requests
 import json
 import numpy as np
@@ -49,7 +49,7 @@ def local_to_world_coordinates(stack, tileId, x, y,
 
 
 @renderaccess
-def world_to_local_coordinates_batch(stack, data, z, host=None,
+def world_to_local_coordinates_batch(stack, d, z, host=None,
                                      port=None, owner=None, project=None,
                                      execute_local=True,
                                      session=requests.session(),
@@ -59,20 +59,20 @@ def world_to_local_coordinates_batch(stack, data, z, host=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%s/world-to-local-coordinates" % (str(z))
-    r = session.put(request_url, data=data,
+    r = session.put(request_url, data=json.dumps(data),
                     headers={"content-type": "application/json"})
     return r.json()
 
 
 @renderaccess
-def local_to_world_coordinates_batch(stack, data, z, host=None,
+def local_to_world_coordinates_batch(stack, d, z, host=None,
                                      port=None, owner=None, project=None,
                                      session=requests.session(),
                                      render=None, **kwargs):
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%s/local-to-world-coordinates" % (str(z))
-    r = session.put(request_url, data=data,
+    r = session.put(request_url, data=json.dumps(d),
                     headers={"content-type": "application/json"})
     try:
         return r.json()
@@ -88,7 +88,7 @@ def package_point_match_data_into_json(dataarray, tileId,
         d['tileId'] = tileId
         d[local_or_world] = [dataarray[i, 0], dataarray[i, 1]]
         dlist.append(d)
-    return json.dumps(dlist)
+    return dlist
 
 
 def unpackage_world_to_local_point_match_from_json(json_answer, tileId):
@@ -220,12 +220,15 @@ def local_to_world_coordinates_array(stack, dataarray, tileId, z,
 
 def map_coordinates_clientside(stack, jsondata, z, host, port, owner,
                                project, client_script, isLocalToWorld=False,
-                               number_of_threads=20,memGB=1):
+                               number_of_threads=20, memGB='1G'):
     # write point match json to temp file on disk
     json_infile, json_inpath = tempfile.mkstemp(
         prefix='render_coordinates_in_', suffix='.json')
     with open(json_inpath, 'w') as fp:
-        fp.write(jsondata)
+        # d = json.loads(jsondata)
+        json.dump(jsondata, fp)
+        # fp.close()
+        # fp.write(jsondata)
 
     # json.dump(jsondata,open(json_inpath,'w'))
 
@@ -234,9 +237,11 @@ def map_coordinates_clientside(stack, jsondata, z, host, port, owner,
         prefix='render_coordinates_out_', suffix='.json')
 
     # call the java client
-    renderapi.client.coordinateClient(stack, z, fromJson=json_inpath, toJson=json_outpath, localToWorld=isLocalToWorld,
-                     numberOfThreads=number_of_threads, host=host,port=port, owner=owner,project=project, client_script=client_script,
-                     memGB=memGB)
+    coordinateClient(stack, z, fromJson=json_inpath, toJson=json_outpath,
+                     localToWorld=isLocalToWorld,
+                     numberOfThreads=number_of_threads,
+                     host=host, port=port, owner=owner, project=project,
+                     client_script=client_script, memGB=memGB)
 
     # return the json results
     return json.load(open(json_outpath, 'r'))
@@ -259,13 +264,13 @@ def world_to_local_coordinates_clientside(stack, jsondata, z,
 
 
 @renderaccess
-def local_to_world_coordinates_clientside(stack, jsondata, tileId, z,
+def local_to_world_coordinates_clientside(stack, jsondata, z,
                                           host=None, port=None, owner=None,
                                           project=None, client_script=None,
                                           number_of_threads=20,
                                           session=requests.session(),
                                           render=None, **kwargs):
-    return map_coordinates_clientside(stack, jsondata, tileId, z,
+    return map_coordinates_clientside(stack, jsondata, z,
                                       host=host, port=port, owner=owner,
                                       project=project,
                                       client_script=client_script,
