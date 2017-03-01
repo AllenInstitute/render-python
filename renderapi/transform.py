@@ -19,6 +19,14 @@ from .utils import NullHandler
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
 
+# TODO preference for svd version?
+try:
+    from scipy.linalg import svd
+except ImportError as e:
+    logger.info(e)
+    logger.info('scipy-based linalg may lead to better parameter fitting')
+    from numpy.linalg import svd
+
 
 class TransformList:
     def __init__(self, tforms):
@@ -226,7 +234,7 @@ class Polynomial2DTransform(Transform):
     @property
     def order(self):
         no_coeffs = len(self.params.ravel())
-        return (abs(np.sqrt(4 * no_coeffs + 1)) - 3) / 2
+        return int((abs(np.sqrt(4 * no_coeffs + 1)) - 3) / 2)
 
     def estimate(self, src, dst, order=2, convergence_test=None):
         '''This is unreliable -- add tests to ensure repeatability'''
@@ -259,8 +267,10 @@ class Polynomial2DTransform(Transform):
 
         # right singular vector corresponding to smallest singular value
         # TODO implement tests for this
-        _, _, V = np.linalg.svd(A)
-        return (-V[-1, :-1] / V[-1, -1]).reshape((2, no_coeff // 2))
+        _, s, V = svd(A)
+        Vsm = V[np.argmin(s), :]  # never trust computers
+        return (-Vsm[:-1] / Vsm[-1]).reshape((2, no_coeff // 2))
+        # return (-V[-1, :-1] / V[-1, -1]).reshape((2, no_coeff // 2))
 
     def _process_params(self, params):
         '''
