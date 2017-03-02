@@ -294,8 +294,8 @@ class Polynomial2DTransform(Transform):
 
     def _format_raveled_params(self, raveled_params):
         return np.array(
-            [[float(d) for d in dsList[:len(raveled_params)/2]],
-             [float(d) for d in dsList[len(raveled_params)/2:]]])
+            [[float(d) for d in raveled_params[:len(raveled_params)/2]],
+             [float(d) for d in raveled_params[len(raveled_params)/2:]]])
 
     def tform(self, points):
         dst = np.zeros(points.shape)
@@ -323,9 +323,8 @@ class Polynomial2DTransform(Transform):
                 'transformation {} is order {} -- conversion to '
                 'order {} not supported'.format(
                     self.dataString, self.order, order))
-        new_params_raveled = self.params.ravel() + [
-            0 for i in range(self.coefficients(order) - self.coefficients())]
-        new_params = self._format_raveled_params(new_params_raveled)
+        new_params = np.zeros([2, self.coefficients(order)])
+        new_params[:self.params.shape[0], :self.params.shape[1]] = self.params
         return Polynomial2DTransform(params=new_params)
 
     def _fromAffine(self, aff):
