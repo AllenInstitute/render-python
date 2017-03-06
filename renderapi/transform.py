@@ -90,7 +90,6 @@ class Transform:
     def __hash__(self):
         return hash((self.__str__()))
 
-
 class AffineModel(Transform):
     className = 'mpicbg.trakem2.transform.AffineModel2D'
 
@@ -131,8 +130,38 @@ class AffineModel(Transform):
 
     def invert(self):
         Ai = AffineModel()
-        Ai.M = np.linalg.inv(self.M)
-        return Ai
+    
+    def fit(self,A,B):
+        assert A.shape[0] == B.shape[0]
+        assert A.shape[1] == 2
+        assert B.shape[1] == 2
+
+        N = A.shape[0]; # total points
+        
+        M = np.zeros((2*N,6))
+        Y = np.zeros((2*N,1))
+        for i in range(N):
+            M[2*i,:]=[A[i,0],A[i,1],0,0,1,0]
+            M[2*i+1,:]=[0,0,A[i,0],A[i,1],0,1]
+            Y[2*i]=B[i,0]
+            Y[2*i+1]=B[i,1]
+            
+        (Tvec,residuals,rank,s)=np.linalg.lstsq(M,Y)
+        return Tvec
+
+    def estimate(self, A,B):
+        
+        Tvec = self.fit(A,B)      
+        #t = numpy.array([Tvec[4,0],Tvec[5,0]])
+        #R = numpy.array([[Tvec[0,0],Tvec[1,0]],[Tvec[2,0],Tvec[3,0]]])
+        self.M00=Tvec[0,0]
+        self.M10=Tvec[2,0]
+        self.M01=Tvec[1,0]
+        self.M11=Tvec[3,0]
+        self.B0=Tvec[4,0]
+        self.B1=Tvec[5,0]
+        self.load_M()
+        return self.M
 
     def convert_to_point_vector(self, points):
         Np = points.shape[0]
@@ -226,8 +255,9 @@ class Polynomial2DTransform(Transform):
         no_coeffs = len(self.params.ravel())
         return (abs(np.sqrt(4 * no_coeffs + 1)) - 3) / 2
 
-    def estimate(self, src, dst, order=2, convergence_test=None):
+    def fit(self,src,dst,order=2):
         '''This is unreliable -- add tests to ensure repeatability'''
+
         xs = src[:, 0]
         ys = src[:, 1]
         xd = dst[:, 0]
@@ -259,6 +289,25 @@ class Polynomial2DTransform(Transform):
         # TODO implement tests for this
         _, _, V = np.linalg.svd(A)
         return (-V[-1, :-1] / V[-1, -1]).reshape((2, no_coeff // 2))
+
+    def estimate(self, src, dst,  order=2,convergence_test=None,max_tries =100):
+        old_params = self.params
+
+        params = fit(src,dst,**kwargs)
+        self._process_params(params)
+        if convergence_test is not None:
+            if(convergence_test(self)):
+                return params
+
+            for i in range(max_tries): 
+                params = fit(src,dst,**kwargs)
+                self._process_params(params) 
+                if convergence_test(self):
+                    return params
+            
+            raise EstimationError('could not find a converged estimate in %d tries'%max_tries)
+        else:
+            return params
 
     def _process_params(self, params):
         '''
