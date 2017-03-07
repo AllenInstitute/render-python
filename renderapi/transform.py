@@ -171,7 +171,7 @@ class AffineModel(Transform):
 
         assert(points.shape[1] == 2)
         Nd = 2
-        points = np.concatenate((points, zerovec), axis=1)
+        points = np.concatenate((points, onevec), axis=1)
         return points, Nd
 
     def convert_points_vector_to_array(self, points, Nd):
