@@ -28,8 +28,9 @@ RUN pip install shapely==1.6b2
 #only here for development purposes
 RUN uptime&&uptime&&uptime&&uptime&&uptime&&uptime&&uptime&&uptime
 RUN uptime&&uptime&&uptime&&uptime&&uptime&&uptime&&uptime
-RUN uptime&&uptime&&uptime&&uptime&&uptime
+RUN uptime&&uptime&&uptime&&uptime&&uptime&&uptime
 
 #install render python using pip from github
-RUN pip install -e git+https://github.com/fcollman/render-python.git@module#egg=render-python
+RUN pip install -e git+https://github.com/fcollman/render-python.git@master#egg=render-python
+
 
