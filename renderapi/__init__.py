@@ -6,6 +6,7 @@ from . import errors
 from . import stack
 from . import client
 from . import image
+from . import transform
 from . import pointmatch
 from . import coordinate
 from .render import connect
@@ -13,4 +14,4 @@ from .render import Render
 
 __all__ = ['render', 'client', 'tilespec', 'errors',
            'stack', 'image', 'pointmatch', 'coordinate',
-           'connect', 'Render']
+           'connect', 'transform','Render']
