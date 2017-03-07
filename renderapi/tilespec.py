@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from .render import Render, format_baseurl, format_preamble, renderaccess
-from .transform import Transform,AffineModel
+from .transform import Transform,AffineModel,ReferenceTransform
 from collections import OrderedDict
 import logging
 import requests
@@ -82,30 +82,12 @@ class Filter:
         self.classname = d['className']
         self.params = d['params']
 
-
-class ReferenceTransform:
-    def __init__(self, refId=None, json=None):
-        if json is not None:
-            self.from_dict(json)
-        else:
-            self.refId = refId
-
-    def to_dict(self):
-        d = {}
-        d['type'] = 'ref'
-        d['refId'] = self.refId
-        return d
-
-    def from_dict(self, d):
-        self.refId = d['refId']
-
-    def __str__(self):
-        return 'ReferenceTransform(%s)' % self.refId
-
-    def __repr__(self):
-        return self.__str__()
-
-
+class AffineModel(AffineModel):
+    pass
+class Transform(Transform):
+    pass
+class ReferenceTransform(ReferenceTransform):
+    pass
 
 
 class Layout:
