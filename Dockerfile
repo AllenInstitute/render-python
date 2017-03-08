@@ -15,6 +15,7 @@ ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 RUN apt-get install gcc -y
 RUN apt-get install build-essential -y
 RUN apt-get clean
+RUN pip install --upgrade pytest==3.0.6
 RUN pip install multiprocess
 RUN pip install pathos
 
