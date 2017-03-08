@@ -24,13 +24,10 @@ RUN /opt/conda/bin/conda install jupyter -y
 RUN apt-get install libgeos-dev -y
 RUN pip install shapely==1.6b2
 
-#stupid uptime calls to bypass caching on github pull
-#only here for development purposes
-RUN uptime&&uptime&&uptime&&uptime&&uptime&&uptime&&uptime&&uptime
-RUN uptime&&uptime&&uptime&&uptime&&uptime&&uptime&&uptime
-RUN uptime&&uptime&&uptime&&uptime&&uptime&&uptime
-
 #install render python using pip from github
-RUN pip install -e git+https://github.com/fcollman/render-python.git@master#egg=render-python
+#RUN pip install -e git+https://github.com/fcollman/render-python.git@master#egg=render-python
 
-
+RUN mkdir -p /usr/local/render-python
+COPY . /usr/local/render-python
+WORKDIR /usr/local/render-python
+RUN python setup.py install 
