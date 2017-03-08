@@ -16,4 +16,4 @@ setup(name='render-python',
       packages=['renderapi'],
       install_requires=required,
       setup_requires=['pytest-runner'],
-      test_require = test_required)
+      tests_require = test_required)
