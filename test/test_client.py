@@ -8,4 +8,4 @@ def test_render_client():
         'project':'renderproject',
         'client_scripts':'/path/to/client_scripts'
     }
-    r = renderapi.client.render(**args)
+    r = renderapi.render.client(**args)
