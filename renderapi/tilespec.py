@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from .render import Render, format_baseurl, format_preamble, renderaccess
 from .utils import NullHandler
+from .stack import get_z_values_for_stack
 from collections import OrderedDict
 import logging
 import requests
@@ -315,6 +316,15 @@ class TileSpec:
             if scale3Url is not None:
                 self.ip.update(MipMapLevel(3, imageUrl=scale3Url))
 
+    @property
+    def bbox(self):
+        '''bbox defined to fit shapely call'''
+        box = (self.minX, self.minY, self.maxX, self.maxY)
+        if any([v is None for v in box]):
+            logger.error(
+                'undefined bounding box for tile {}'.format(self.tileId))
+        return box
+
     def to_dict(self):
         thedict = {}
         thedict['tileId'] = self.tileId
@@ -510,3 +520,17 @@ def get_tile_specs_from_z(stack, z, host=None, port=None,
     else:
         return [TileSpec(json=tilespec_json)
                 for tilespec_json in tilespecs_json]
+
+
+@renderaccess
+def get_tile_specs_from_stack(stack, host=None, port=None,
+                              owner=None, project=None,
+                              session=requests.session(),
+                              render=None, **kwargs):
+    '''get flat list of tilespecs for stack using i for sl in l for i in sl'''
+    return [i for sl in [
+        get_tile_specs_from_z(stack, z, host=host, port=port,
+                              owner=owner, project=project, session=session)
+        for z in get_z_values_for_stack(stack, host=host, port=port,
+                                        owner=owner, project=project,
+                                        session=session)] for i in sl]
