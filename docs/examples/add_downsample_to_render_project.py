@@ -12,15 +12,15 @@ import requests
 from itertools import izip_longest
 import argparse
 
-def make_tilespecs_and_cmds(inputStack,outputStack,inputOwner,inputProject,outputProject,outputOwner,tilespecdir):
-    zvalues=renderapi.get_z_values_for_stack(inputStack,owner = inputOwner,project = inputProject)
+def make_tilespecs_and_cmds(render,inputStack,outputStack,inputOwner,inputProject,outputProject,outputOwner,tilespecdir):
+    zvalues=render.get_z_values_for_stack(inputStack,owner = inputOwner,project = inputProject)
     cmds = []
     tilespecpaths=[]
     for z in zvalues:
-        tiles_json = renderapi.get_tile_specs_from_z(inputStack,z,owner=inputOwner,project=inputProject)
-        tilespecs =[TileSpec() for tile in tiles_json]
+        tilespecs = render.get_tile_specs_from_z(inputStack,z,owner=inputOwner,project=inputProject)
+        
         for i,tilespec in enumerate(tilespecs):
-            tilespec.from_dict(tiles_json[i])
+            
             filepath=str(tilespec.imageUrl).lstrip('file:')
             fileparts=filepath.split(os.path.sep)[1:]
             downdir=os.path.join(os.path.sep,
@@ -60,13 +60,14 @@ def make_tilespecs_and_cmds(inputStack,outputStack,inputOwner,inputProject,outpu
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Take an existing render stack, and create a new render stack with downsampled tilespecs and create those downsampled tiles")
 
-    parser.add_argument('--renderbaseUrl',help="host name of the render server",default="http://ibs-forrestc-ux1:8080/render-ws/v1")
+    parser.add_argument('--renderHost',help="host name of the render server",default="ibs-forrestc-ux1")
+    parser.add_argument('--renderPort',help="port of the render server",default = 8080)
     parser.add_argument('--inputOwner',help="name of project owner to read project from",default = "Forrest")
     parser.add_argument('--outputOwner',help="name of project owner to upload edited tilespec with downsamples (Default to same as input)",default = None)
-    parser.add_argument('--inputProject',help="name of the input Project")
+    parser.add_argument('--inputProject',help="name of the input Project",required=True)
     parser.add_argument('--outputProject',help="name of the output Project (Default to same as input)",default=None)
-    parser.add_argument('--inputStack',help='name of stack to take in')
-    parser.add_argument('--outputStack',help='name of stack to upload to render') 
+    parser.add_argument('--inputStack',help='name of stack to take in',required=True)
+    parser.add_argument('--outputStack',help='name of stack to upload to render',required=True) 
     parser.add_argument('--outputTileSpecDir',help='location to save tilespecs before uploading to render (default to ',default='tilespec_downsampled')
     parser.add_argument('--client_scripts',help='path to render client scripts',default='/pipeline/render/render-ws-java-client/src/main/scripts')
     parser.add_argument('--ndvizBase',help="base url for ndviz surface",default="http://ibs-forrestc-ux1:8000/render/172.17.0.1:8081")
@@ -80,16 +81,16 @@ if __name__ == '__main__':
     if args.outputProject is None:
         args.outputProject = args.inputProject
 
+    render = renderapi.Render(args.renderHost,args.renderPort,args.inputOwner,args.inputProject)
     #create a new stack to upload to render
-    renderapi.create_stack(args.outputStack,owner=args.outputOwner,project=args.outputProject,verbose=args.verbose,client_scripts=args.client_scripts)
+    render.create_stack(args.outputStack,owner=args.outputOwner,project=args.outputProject,verbose=args.verbose,client_scripts=args.client_scripts)
 
     #go get the existing input tilespecs, make new tilespecs with downsampled URLS, save them to the tilespecpaths, and make a list of commands to make downsampled images
-    tilespecpaths,cmds = make_tilespecs_and_cmds(args.inputStack,args.outputStack,args.inputOwner,args.inputProject,args.outputProject,args.outputOwner,args.outputTileSpecDir)
+    tilespecpaths,cmds = make_tilespecs_and_cmds(render,args.inputStack,args.outputStack,args.inputOwner,args.inputProject,args.outputProject,args.outputOwner,args.outputTileSpecDir)
 
     #upload created tilespecs to render
-    renderapi.import_jsonfiles(args.outputStack,tilespecpaths,owner=args.outputOwner,project=args.outputProject,verbose=args.verbose,client_scripts=args.client_scripts)
+    render.import_jsonfiles_parallel(args.outputStack,tilespecpaths,owner=args.outputOwner,project=args.outputProject,verbose=args.verbose,client_scripts=args.client_scripts)
 
-    
     #launch jobs to create downsampled images
     groups = [(subprocess.Popen(cmd, stdout=subprocess.PIPE) for cmd in cmds)] * 48 # itertools' grouper recipe
     for processes in izip_longest(*groups): # run len(processes) == limit at a time
