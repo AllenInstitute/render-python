@@ -9,6 +9,7 @@ TODO:
     Affine as subset of Polynomial2D
     approximation of other functions(TPS, meshtechniques) to Polynomial2D
         ^ would this be better in Java using mpicbg implementation?
+    Allow reading datastring for Affine, Rigid, Translation into Affine
 '''
 import json
 import logging
@@ -24,7 +25,8 @@ try:
     from scipy.linalg import svd
 except ImportError as e:
     logger.info(e)
-    logger.info('scipy-based linalg may lead to better parameter fitting')
+    logger.info('scipy-based linalg may or may not lead '
+                'to better parameter fitting')
     from numpy.linalg import svd
 
 
@@ -115,6 +117,12 @@ class AffineModel(Transform):
         self.load_M()
         self.transformId = None
 
+    @property
+    def dataString(self):
+        return "%.10f %.10f %.10f %.10f %.10f %.10f" % (
+            self.M[0, 0], self.M[1, 0], self.M[0, 1],
+            self.M[1, 1], self.M[0, 2], self.M[1, 2])
+
     def load_M(self):
         self.M = np.identity(3, np.double)
         self.M[0, 0] = self.M00
@@ -124,6 +132,7 @@ class AffineModel(Transform):
         self.M[0, 2] = self.B0
         self.M[1, 2] = self.B1
 
+    '''
     def to_dict(self):
         d = {}
         d['type'] = 'leaf'
@@ -132,6 +141,7 @@ class AffineModel(Transform):
             self.M[0, 0], self.M[1, 0], self.M[0, 1],
             self.M[1, 1], self.M[0, 2], self.M[1, 2])
         return d
+    '''
 
     def from_dict(self, d):
         ds = d['dataString'].split()
@@ -193,6 +203,27 @@ class AffineModel(Transform):
         pt = np.dot(np.linalg.inv(self.M), points.T).T
         return self.convert_points_vector_to_array(pt, Nd)
 
+    @property
+    def scale(self):
+        '''tuple of scale for x, y'''
+        return tuple([np.sqrt(sum([i ** 2 for i in self.M[:, j]]))
+                      for j in self.M.shape[1]])[:2]
+
+    @property
+    def shear(self):
+        '''counter-clockwise shear angle'''
+        return np.atan2(-self.M[0, 1], self.M[1, 1]) - self.rotation
+
+    @property
+    def translation(self):
+        '''tuple of translation in x, y'''
+        return tuple(self.M[:2, 2])
+
+    @property
+    def rotation(self):
+        '''counter-clockwise rotation'''
+        return numpy.atan2(self.M[1, 0], self.M[0, 0])
+
     def __str__(self):
         return "M=[[%f,%f],[%f,%f]] B=[%f,%f]" % (
             self.M[0, 0], self.M[0, 1], self.M[1, 0],
@@ -205,6 +236,8 @@ class Polynomial2DTransform(Transform):
     TODO:
         fall back to Affine Model in special cases
         robustness in estimation
+
+        there is a hierarchy in the __init__ that should probably be defined
     '''
     className = 'mpicbg.trakem2.transform.PolynomialTransform2D'
 
