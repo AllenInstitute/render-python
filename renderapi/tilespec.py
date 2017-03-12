@@ -144,7 +144,6 @@ class TileSpec:
             self.maxint = maxint
             self.tforms = tforms
             self.frameId = frameId
-            self.layout = layout
             self.inputfilters = inputfilters
 
             self.ip = ImagePyramid(mipMapLevels=mipMapLevels)
