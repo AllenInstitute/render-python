@@ -89,7 +89,7 @@ class Filter:
 class Layout:
     def __init__(self, sectionId=None, scopeId=None, cameraId=None,
                  imageRow=None, imageCol=None, stageX=None, stageY=None,
-                 rotation=None, pixelsize=0.100):
+                 rotation=None, pixelsize=0.100, **kwargs):
         self.sectionId = str(sectionId)
         self.scopeId = str(scopeId)
         self.cameraId = str(cameraId)
@@ -129,9 +129,9 @@ class Layout:
 class TileSpec:
     def __init__(self, tileId=None, z=None, width=None, height=None,
                  imageUrl=None, frameId=None, maskUrl=None,
-                 minint=0, maxint=65535, layout=Layout(), tforms=[],
+                 minint=0, maxint=65535, layout=None, tforms=[],
                  inputfilters=[], scale3Url=None, scale2Url=None,
-                 scale1Url=None, json=None, mipMapLevels=[]):
+                 scale1Url=None, json=None, mipMapLevels=[], **kwargs):
         if json is not None:
             self.from_dict(json)
         else:
@@ -145,6 +145,7 @@ class TileSpec:
             self.tforms = tforms
             self.frameId = frameId
             self.inputfilters = inputfilters
+            self.layout = Layout(**kwargs) if layout is None else layout
 
             self.ip = ImagePyramid(mipMapLevels=mipMapLevels)
             # legacy scaleXUrl
