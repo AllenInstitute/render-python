@@ -207,6 +207,18 @@ def get_bounds_from_z(stack, z, host=None, port=None, owner=None,
 
 
 @renderaccess
+def get_stack_bounds(stack, host=None, port=None, owner=None, project=None,
+                     session=requests.session(), render=None, **kwargs):
+    request_url = format_preamble(
+        host, port, owner, project, stack) + '/bounds'
+    r = session.get(request_url)
+    try:
+        return r.json()
+    except:
+        logger.error(r.text)
+
+
+@renderaccess
 def get_section_z_value(stack, sectionId, host=None, port=None,
                         owner=None, project=None, session=requests.session(),
                         render=None, **kwargs):
