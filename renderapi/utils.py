@@ -7,7 +7,13 @@ import inspect
 import copy
 import json
 
+
+class NullHandler(logging.Handler):
+    def emit(self, record):
+        pass
+
 logger = logging.getLogger(__name__)
+logger.addHandler(NullHandler())
 
 
 class RenderEncoder(json.JSONEncoder):
@@ -37,11 +43,6 @@ def jbool(val):
     return 'true' if val else 'false'
 
 
-class NullHandler(logging.Handler):
-    def emit(self, record):
-        pass
-
-
 def stripLogger(logger_tostrip):
     '''
     remove all handlers from a logger -- useful for redefining
@@ -59,10 +60,15 @@ def defaultifNone(val, default=None):
 
 def fitargspec(f, oldargs, oldkwargs):
     ''' fit function argspec given input args tuple and kwargs dict'''
-    args, varargs, keywords, defaults = inspect.getargspec(f)
-    num_expected_args = len(args) - len(defaults)
-    new_args = tuple(oldargs[:num_expected_args])
-    new_kwargs = copy.copy(oldkwargs)
-    for i, arg in enumerate(oldargs[num_expected_args:]):
-        new_kwargs.update({args[i + num_expected_args]: arg})
-    return new_args, new_kwargs
+    try:
+        args, varargs, keywords, defaults = inspect.getargspec(f)
+        num_expected_args = len(args) - len(defaults)
+        new_args = tuple(oldargs[:num_expected_args])
+        new_kwargs = copy.copy(oldkwargs)
+        for i, arg in enumerate(oldargs[num_expected_args:]):
+            new_kwargs.update({args[i + num_expected_args]: arg})
+        return new_args, new_kwargs
+    except Exception as e:
+        logger.error('Cannot fit argspec for {}'.format(f))
+        logger.error(e)
+        return oldargs, oldkwargs

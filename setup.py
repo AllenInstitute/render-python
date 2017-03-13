@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from setuptools import setup
 
 with open('test/requirements.txt','r') as f:

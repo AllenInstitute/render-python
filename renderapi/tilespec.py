@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 from .render import Render, format_baseurl, format_preamble, renderaccess
-from .transform import Transform,AffineModel,ReferenceTransform
+from .utils import NullHandler
+from .stack import get_z_values_for_stack
+from .transform import Transform, AffineModel, ReferenceTransform
 from collections import OrderedDict
 import logging
 import requests
 import numpy as np
 
 logger = logging.getLogger(__name__)
+logger.addHandler(NullHandler())
 
 
 class ResolvedTileSpecMap:
@@ -82,18 +85,11 @@ class Filter:
         self.classname = d['className']
         self.params = d['params']
 
-class AffineModel(AffineModel):
-    pass
-class Transform(Transform):
-    pass
-class ReferenceTransform(ReferenceTransform):
-    pass
-
 
 class Layout:
     def __init__(self, sectionId=None, scopeId=None, cameraId=None,
                  imageRow=None, imageCol=None, stageX=None, stageY=None,
-                 rotation=None, pixelsize=0.100):
+                 rotation=None, pixelsize=0.100, **kwargs):
         self.sectionId = str(sectionId)
         self.scopeId = str(scopeId)
         self.cameraId = str(cameraId)
@@ -133,9 +129,9 @@ class Layout:
 class TileSpec:
     def __init__(self, tileId=None, z=None, width=None, height=None,
                  imageUrl=None, frameId=None, maskUrl=None,
-                 minint=0, maxint=65535, layout=Layout(), tforms=[],
+                 minint=0, maxint=65535, layout=None, tforms=[],
                  inputfilters=[], scale3Url=None, scale2Url=None,
-                 scale1Url=None, json=None, mipMapLevels=[]):
+                 scale1Url=None, json=None, mipMapLevels=[], **kwargs):
         if json is not None:
             self.from_dict(json)
         else:
@@ -148,8 +144,8 @@ class TileSpec:
             self.maxint = maxint
             self.tforms = tforms
             self.frameId = frameId
-            self.layout = layout
             self.inputfilters = inputfilters
+            self.layout = Layout(**kwargs) if layout is None else layout
 
             self.ip = ImagePyramid(mipMapLevels=mipMapLevels)
             # legacy scaleXUrl
@@ -168,6 +164,15 @@ class TileSpec:
                 self.ip.update(MipMapLevel(2, imageUrl=scale2Url))
             if scale3Url is not None:
                 self.ip.update(MipMapLevel(3, imageUrl=scale3Url))
+
+    @property
+    def bbox(self):
+        '''bbox defined to fit shapely call'''
+        box = (self.minX, self.minY, self.maxX, self.maxY)
+        if any([v is None for v in box]):
+            logger.error(
+                'undefined bounding box for tile {}'.format(self.tileId))
+        return box
 
     def to_dict(self):
         thedict = {}
@@ -364,3 +369,17 @@ def get_tile_specs_from_z(stack, z, host=None, port=None,
     else:
         return [TileSpec(json=tilespec_json)
                 for tilespec_json in tilespecs_json]
+
+
+@renderaccess
+def get_tile_specs_from_stack(stack, host=None, port=None,
+                              owner=None, project=None,
+                              session=requests.session(),
+                              render=None, **kwargs):
+    '''get flat list of tilespecs for stack using i for sl in l for i in sl'''
+    return [i for sl in [
+        get_tile_specs_from_z(stack, z, host=host, port=port,
+                              owner=owner, project=project, session=session)
+        for z in get_z_values_for_stack(stack, host=host, port=port,
+                                        owner=owner, project=project,
+                                        session=session)] for i in sl]

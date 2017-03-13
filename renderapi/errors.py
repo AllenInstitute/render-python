@@ -4,17 +4,21 @@ Custom errors for render api
 '''
 
 
-class ClientScriptError(Exception):
+class RenderError(Exception):
     pass
 
 
-class ConversionError(Exception):
+class ClientScriptError(RenderError):
     pass
 
 
-class EstimationError(Exception):
+class ConversionError(RenderError):
     pass
 
 
-class SpecError(Exception):
+class EstimationError(RenderError):
+    pass
+
+
+class SpecError(RenderError):
     pass

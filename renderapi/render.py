@@ -56,16 +56,16 @@ class Render(object):
         run function from object
             technically shorter than adding render=Render to kwargs
         '''
-        #args, kwargs = fitargspec(f, args, kwargs)
-        return f(*args, **self.make_kwargs(**kwargs))
+        # FIXME WARNING I think renderaccess can default to
+        # another render if defined in args (test/squash)
+        kwargs['render'] = self
+        return f(*args, **kwargs)
 
 
 class RenderClient(Render):
     '''Draft object for run_ws_client.sh calls'''
     def __init__(self, client_script=None, memGB=None, *args, **kwargs):
         super(RenderClient, self).__init__(**kwargs)
-        # FIXME remove this when completed
-        logger.error('Client functionality not implemented!')
         if client_script is None:
             raise ClientScriptError('No RenderClient script specified!')
         elif not os.path.isfile(client_script):
@@ -94,8 +94,8 @@ class RenderClient(Render):
 
 
 def connect(host=None, port=None, owner=None, project=None,
-           client_scripts=None, client_script=None, memGB=None,
-           json_dict=None, force_http=True, **kwargs):
+            client_scripts=None, client_script=None, memGB=None,
+            json_dict=None, force_http=True, **kwargs):
     '''helper function to connect to a render instance'''
     if host is None:
         if 'RENDER_HOST' not in os.environ:
@@ -106,8 +106,9 @@ def connect(host=None, port=None, owner=None, project=None,
         else:
             host = os.environ['RENDER_HOST']
     if force_http:
-       host = (host if host.startswith('http')
-               else 'http://{}'.format(host))
+        host = (host if host.startswith('http')
+                else 'http://{}'.format(host))
+
     if port is None:
         if 'RENDER_PORT' not in os.environ:
             port = str(int(raw_input("Enter Render Port: ")))
@@ -184,7 +185,7 @@ def renderaccess(f):
                 return f(*args, **render.make_kwargs(**kwargs))
             else:
                 raise ValueError(
-                    'invalid Render object type  {} specified!'.format(
+                    'invalid Render object type {} specified!'.format(
                         type(render)))
         else:
             return f(*args, **kwargs)

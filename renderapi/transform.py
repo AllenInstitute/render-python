@@ -9,13 +9,25 @@ TODO:
     Affine as subset of Polynomial2D
     approximation of other functions(TPS, meshtechniques) to Polynomial2D
         ^ would this be better in Java using mpicbg implementation?
+    Allow reading datastring for Affine, Rigid, Translation into Affine
 '''
 import json
 import logging
 import numpy as np
 from .errors import ConversionError, EstimationError
+from .utils import NullHandler
 
 logger = logging.getLogger(__name__)
+logger.addHandler(NullHandler())
+
+# TODO preference for svd version?
+try:
+    from scipy.linalg import svd
+except ImportError as e:
+    logger.info(e)
+    logger.info('scipy-based linalg may or may not lead '
+                'to better parameter fitting')
+    from numpy.linalg import svd
 
 
 class TransformList:
@@ -90,6 +102,7 @@ class Transform:
     def __hash__(self):
         return hash((self.__str__()))
 
+
 class AffineModel(Transform):
     className = 'mpicbg.trakem2.transform.AffineModel2D'
 
@@ -104,6 +117,12 @@ class AffineModel(Transform):
         self.load_M()
         self.transformId = None
 
+    @property
+    def dataString(self):
+        return "%.10f %.10f %.10f %.10f %.10f %.10f" % (
+            self.M[0, 0], self.M[1, 0], self.M[0, 1],
+            self.M[1, 1], self.M[0, 2], self.M[1, 2])
+
     def load_M(self):
         self.M = np.identity(3, np.double)
         self.M[0, 0] = self.M00
@@ -113,6 +132,7 @@ class AffineModel(Transform):
         self.M[0, 2] = self.B0
         self.M[1, 2] = self.B1
 
+    '''
     def to_dict(self):
         d = {}
         d['type'] = 'leaf'
@@ -121,6 +141,7 @@ class AffineModel(Transform):
             self.M[0, 0], self.M[1, 0], self.M[0, 1],
             self.M[1, 1], self.M[0, 2], self.M[1, 2])
         return d
+    '''
 
     def from_dict(self, d):
         ds = d['dataString'].split()
@@ -130,36 +151,35 @@ class AffineModel(Transform):
 
     def invert(self):
         Ai = AffineModel()
-    
-    def fit(self,A,B):
+
+    def fit(self, A, B):
         assert A.shape[0] == B.shape[0]
         assert A.shape[1] == 2
         assert B.shape[1] == 2
 
-        N = A.shape[0]; # total points
-        
-        M = np.zeros((2*N,6))
-        Y = np.zeros((2*N,1))
+        N = A.shape[0]  # total points
+
+        M = np.zeros((2 * N, 6))
+        Y = np.zeros((2 * N, 1))
         for i in range(N):
-            M[2*i,:]=[A[i,0],A[i,1],0,0,1,0]
-            M[2*i+1,:]=[0,0,A[i,0],A[i,1],0,1]
-            Y[2*i]=B[i,0]
-            Y[2*i+1]=B[i,1]
-            
-        (Tvec,residuals,rank,s)=np.linalg.lstsq(M,Y)
+            M[2 * i, :] = [A[i, 0], A[i, 1], 0, 0, 1, 0]
+            M[2 * i + 1, :] = [0, 0, A[i, 0], A[i, 1], 0, 1]
+            Y[2 * i] = B[i, 0]
+            Y[2 * i + 1] = B[i, 1]
+
+        (Tvec, residuals, rank, s) = np.linalg.lstsq(M, Y)
         return Tvec
 
-    def estimate(self, A,B):
-        
-        Tvec = self.fit(A,B)      
-        #t = numpy.array([Tvec[4,0],Tvec[5,0]])
-        #R = numpy.array([[Tvec[0,0],Tvec[1,0]],[Tvec[2,0],Tvec[3,0]]])
-        self.M00=Tvec[0,0]
-        self.M10=Tvec[2,0]
-        self.M01=Tvec[1,0]
-        self.M11=Tvec[3,0]
-        self.B0=Tvec[4,0]
-        self.B1=Tvec[5,0]
+    def estimate(self, A, B):
+        Tvec = self.fit(A, B)
+        # t = numpy.array([Tvec[4,0],Tvec[5,0]])
+        # R = numpy.array([[Tvec[0,0],Tvec[1,0]],[Tvec[2,0],Tvec[3,0]]])
+        self.M00 = Tvec[0, 0]
+        self.M10 = Tvec[2, 0]
+        self.M01 = Tvec[1, 0]
+        self.M11 = Tvec[3, 0]
+        self.B0 = Tvec[4, 0]
+        self.B1 = Tvec[5, 0]
         self.load_M()
         return self.M
 
@@ -212,6 +232,27 @@ class AffineModel(Transform):
         pt = np.dot(np.linalg.inv(self.M), points.T).T
         return self.convert_points_vector_to_array(pt, Nd)
 
+    @property
+    def scale(self):
+        '''tuple of scale for x, y'''
+        return tuple([np.sqrt(sum([i ** 2 for i in self.M[:, j]]))
+                      for j in self.M.shape[1]])[:2]
+
+    @property
+    def shear(self):
+        '''counter-clockwise shear angle'''
+        return np.atan2(-self.M[0, 1], self.M[1, 1]) - self.rotation
+
+    @property
+    def translation(self):
+        '''tuple of translation in x, y'''
+        return tuple(self.M[:2, 2])
+
+    @property
+    def rotation(self):
+        '''counter-clockwise rotation'''
+        return numpy.atan2(self.M[1, 0], self.M[0, 0])
+
     def __str__(self):
         return "M=[[%f,%f],[%f,%f]] B=[%f,%f]" % (
             self.M[0, 0], self.M[0, 1], self.M[1, 0],
@@ -224,8 +265,10 @@ class Polynomial2DTransform(Transform):
     TODO:
         fall back to Affine Model in special cases
         robustness in estimation
+
+        there is a hierarchy in the __init__ that should probably be defined
     '''
-    className = 'mpicbg.trakEM2.transform.PolynomialTransform2D'
+    className = 'mpicbg.trakem2.transform.PolynomialTransform2D'
 
     def __init__(self, dataString=None, src=None, dst=None, order=2,
                  force_polynomial=True, params=None, identity=False):
@@ -253,11 +296,10 @@ class Polynomial2DTransform(Transform):
     @property
     def order(self):
         no_coeffs = len(self.params.ravel())
-        return (abs(np.sqrt(4 * no_coeffs + 1)) - 3) / 2
+        return int((abs(np.sqrt(4 * no_coeffs + 1)) - 3) / 2)
 
-    def fit(self,src,dst,order=2):
+    def fit(self, src, dst, order=2):
         '''This is unreliable -- add tests to ensure repeatability'''
-
         xs = src[:, 0]
         ys = src[:, 1]
         xd = dst[:, 0]
@@ -287,25 +329,35 @@ class Polynomial2DTransform(Transform):
 
         # right singular vector corresponding to smallest singular value
         # TODO implement tests for this
-        _, _, V = np.linalg.svd(A)
-        return (-V[-1, :-1] / V[-1, -1]).reshape((2, no_coeff // 2))
+        _, s, V = svd(A)
+        Vsm = V[np.argmin(s), :]  # never trust computers
+        return (-Vsm[:-1] / Vsm[-1]).reshape((2, no_coeff // 2))
+        # return (-V[-1, :-1] / V[-1, -1]).reshape((2, no_coeff // 2))
 
-    def estimate(self, src, dst,  order=2,convergence_test=None,max_tries =100):
+    def estimate(self, src, dst, order=2,
+                 convergence_test=None, max_tries=100):
         old_params = self.params
 
-        params = fit(src,dst,**kwargs)
+        params = self.fit(src, dst, **kwargs)
+        if convergence_test is None:
+            return params
+        else:
+            # FIXME discuss plan for estimate vs fit & stability handling
+            raise NotImplementedError(
+                'Stability checking is unavailable')
         self._process_params(params)
         if convergence_test is not None:
             if(convergence_test(self)):
                 return params
 
-            for i in range(max_tries): 
-                params = fit(src,dst,**kwargs)
-                self._process_params(params) 
+            for i in range(max_tries):
+                params = fit(src, dst, **kwargs)
+                self._process_params(params)
                 if convergence_test(self):
                     return params
-            
-            raise EstimationError('could not find a converged estimate in %d tries'%max_tries)
+
+            raise EstimationError(
+                'could not find a converged estimate in %d tries' % max_tries)
         else:
             return params
 
@@ -331,8 +383,8 @@ class Polynomial2DTransform(Transform):
 
     def _format_raveled_params(self, raveled_params):
         return np.array(
-            [[float(d) for d in dsList[:len(raveled_params)/2]],
-             [float(d) for d in dsList[len(raveled_params)/2:]]])
+            [[float(d) for d in raveled_params[:len(raveled_params)/2]],
+             [float(d) for d in raveled_params[len(raveled_params)/2:]]])
 
     def tform(self, points):
         dst = np.zeros(points.shape)
@@ -360,9 +412,8 @@ class Polynomial2DTransform(Transform):
                 'transformation {} is order {} -- conversion to '
                 'order {} not supported'.format(
                     self.dataString, self.order, order))
-        new_params_raveled = self.params.ravel() + [
-            0 for i in range(self.coefficients(order) - self.coefficients())]
-        new_params = self._format_raveled_params(new_params_raveled)
+        new_params = np.zeros([2, self.coefficients(order)])
+        new_params[:self.params.shape[0], :self.params.shape[1]] = self.params
         return Polynomial2DTransform(params=new_params)
 
     def _fromAffine(self, aff):

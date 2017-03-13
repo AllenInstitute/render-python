@@ -3,14 +3,17 @@
 coordinate mapping functions for render api
 '''
 from .render import Render, format_preamble, renderaccess
-from .client import call_run_ws_client,coordinateClient
+from .utils import NullHandler
+from .client import call_run_ws_client, coordinateClient
 import requests
 import json
 import numpy as np
 import logging
 import tempfile
 
+
 logger = logging.getLogger(__name__)
+logger.addHandler(NullHandler())
 
 
 @renderaccess
@@ -217,15 +220,15 @@ def local_to_world_coordinates_array(stack, dataarray, tileId, z,
 
 def map_coordinates_clientside(stack, jsondata, z, host, port, owner,
                                project, client_script, isLocalToWorld=False,
-                               number_of_threads=20,memGB='1G'):
+                               number_of_threads=20, memGB='1G'):
     # write point match json to temp file on disk
     json_infile, json_inpath = tempfile.mkstemp(
         prefix='render_coordinates_in_', suffix='.json')
     with open(json_inpath, 'w') as fp:
-        #d = json.loads(jsondata)
-        json.dump(jsondata,fp)
-        #fp.close()
-        #fp.write(jsondata)
+        # d = json.loads(jsondata)
+        json.dump(jsondata, fp)
+        # fp.close()
+        # fp.write(jsondata)
 
     # json.dump(jsondata,open(json_inpath,'w'))
 
@@ -234,9 +237,11 @@ def map_coordinates_clientside(stack, jsondata, z, host, port, owner,
         prefix='render_coordinates_out_', suffix='.json')
 
     # call the java client
-    coordinateClient(stack, z, fromJson=json_inpath, toJson=json_outpath, localToWorld=isLocalToWorld,
-                     numberOfThreads=number_of_threads, host=host,port=port, owner=owner,project=project, client_script=client_script,
-                     memGB=memGB)
+    coordinateClient(stack, z, fromJson=json_inpath, toJson=json_outpath,
+                     localToWorld=isLocalToWorld,
+                     numberOfThreads=number_of_threads,
+                     host=host, port=port, owner=owner, project=project,
+                     client_script=client_script, memGB=memGB)
 
     # return the json results
     return json.load(open(json_outpath, 'r'))

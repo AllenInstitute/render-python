@@ -4,9 +4,10 @@ import logging
 from time import strftime
 import requests
 from .render import Render, format_baseurl, format_preamble, renderaccess
-from .utils import jbool
+from .utils import jbool, NullHandler
 
 logger = logging.getLogger(__name__)
+logger.addHandler(NullHandler())
 
 
 class StackVersion:
@@ -151,22 +152,6 @@ def clone_stack(inputstack, outputstack, host=None, port=None,
 
     return r
 
-@renderaccess
-def get_sectionData_for_stack(stack,project = None,
-                              host = None,port = None,owner = None,
-                              session=requests.session(),render =None,**kwargs):
-    '''result:
-     json dictionary metadata about sectionData for this stack
-    '''
-    request_url = format_preamble(
-        host,port,owner,project,stack)+"/sectionData"
-    logger.debug(request_url)
-    r = session.get(request_url)
-    try:
-        return r.json()
-    except:
-        logger.error(r.text)
-
 
 @renderaccess
 def get_z_values_for_stack(stack, project=None, host=None, port=None,
@@ -214,6 +199,18 @@ def get_bounds_from_z(stack, z, host=None, port=None, owner=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + '/z/%f/bounds' % (z)
 
+    r = session.get(request_url)
+    try:
+        return r.json()
+    except:
+        logger.error(r.text)
+
+
+@renderaccess
+def get_stack_bounds(stack, host=None, port=None, owner=None, project=None,
+                     session=requests.session(), render=None, **kwargs):
+    request_url = format_preamble(
+        host, port, owner, project, stack) + '/bounds'
     r = session.get(request_url)
     try:
         return r.json()
