@@ -59,19 +59,17 @@ class StackVersion:
 def set_stack_metadata(stack,sv,host=None,port=None,owner=None,
                                 project=None,session=requests.session(),
                                 render=None,**kwargs):
-    request_url = format_preamble(
-        host, port, owner, project,stack)
-    )
+    request_url = format_preamble(host, port, owner, project,stack)
     logger.debug(request_url)
-    return self.post_json(request_url,sv.to_dict())
+    return post_json(session,request_url,sv.to_dict())
 
 @renderaccess
 def get_stack_metadata(stack,host=None,port=None,owner=None,project=None,
                        session=requests.session(), render=None,**kwargs):
-    request_url = format_preamble(
-        host, port, owner, project,stack)
-    )
+    request_url = format_preamble(host, port, owner, project,stack)
+
     logger.debug(request_url)
+    r = session.get(request_url)
     try:
         sv= StackVersion()
         sv.from_dict(r.json()['currentVersion'])

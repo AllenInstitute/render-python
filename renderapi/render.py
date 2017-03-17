@@ -3,6 +3,7 @@ import logging
 import os
 from functools import wraps
 import requests
+import json
 from .utils import defaultifNone, NullHandler, fitargspec
 from .errors import ClientScriptError
 
@@ -192,8 +193,8 @@ def renderaccess(f):
     return wrapper
 
 
-def post_json(request,jsondict):
-    logger.debug(request_url)
+def post_json(session,request,jsondict):
+
     payload = json.dumps(jsondict)
     r = session.post(request, data=payload,
                          headers={"content-type": "application/json",
