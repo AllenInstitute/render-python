@@ -192,6 +192,17 @@ def renderaccess(f):
     return wrapper
 
 
+def post_json(request,jsondict):
+    logger.debug(request_url)
+    payload = json.dumps(jsondict)
+    r = session.post(request, data=payload,
+                         headers={"content-type": "application/json",
+                                  "Accept": "application/json"})
+    try:
+        return r
+    except:
+        logger.error(r.text)
+
 def format_baseurl(host, port):
     # return 'http://%s:%d/render-ws/v1' % (host, port)
     server = '{}{}'.format(host, ('' if port is None else ':{}'.format(port)))

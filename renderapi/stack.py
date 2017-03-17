@@ -3,7 +3,7 @@ import json
 import logging
 from time import strftime
 import requests
-from .render import Render, format_baseurl, format_preamble, renderaccess
+from .render import Render, format_baseurl, format_preamble, renderaccess, post_json
 from .utils import jbool, NullHandler
 
 logger = logging.getLogger(__name__)
@@ -52,6 +52,32 @@ class StackVersion:
 
     def from_dict(self, d):
         self.__dict__.update({k: v for k, v in d.items()})
+
+
+
+@renderaccess
+def set_stack_metadata(stack,sv,host=None,port=None,owner=None,
+                                project=None,session=requests.session(),
+                                render=None,**kwargs):
+    request_url = format_preamble(
+        host, port, owner, project,stack)
+    )
+    logger.debug(request_url)
+    return self.post_json(request_url,sv.to_dict())
+
+@renderaccess
+def get_stack_metadata(stack,host=None,port=None,owner=None,project=None,
+                       session=requests.session(), render=None,**kwargs):
+    request_url = format_preamble(
+        host, port, owner, project,stack)
+    )
+    logger.debug(request_url)
+    try:
+        sv= StackVersion()
+        sv.from_dict(r.json()['currentVersion'])
+        return sv
+    except:
+        logger.error(r.text)
 
 
 @renderaccess
