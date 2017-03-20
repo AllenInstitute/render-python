@@ -5,7 +5,7 @@ from time import strftime
 import requests
 from .render import Render, format_baseurl, format_preamble, renderaccess
 from .utils import jbool, NullHandler
-
+from .errors import RenderError
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
 
@@ -52,6 +52,33 @@ class StackVersion:
 
     def from_dict(self, d):
         self.__dict__.update({k: v for k, v in d.items()})
+
+
+
+
+@renderaccess
+def set_stack_metadata(stack,sv,host=None,port=None,owner=None,
+                                project=None,session=requests.session(),
+                                render=None,**kwargs):
+    request_url = format_preamble(host, port, owner, project,stack)
+    logger.debug(request_url)
+    return post_json(session,request_url,sv.to_dict())
+
+@renderaccess
+def get_stack_metadata(stack,host=None,port=None,owner=None,project=None,
+                       session=requests.session(), render=None,**kwargs):
+    request_url = format_preamble(host, port, owner, project,stack)
+
+    logger.debug(request_url)
+    r = session.get(request_url)
+    try:
+        sv= StackVersion()
+        sv.from_dict(r.json()['currentVersion'])
+        return sv
+    except:
+        logger.error(r.text)
+        raise RenderError(r.text)
+
 
 
 @renderaccess
@@ -165,19 +192,11 @@ def get_z_values_for_stack(stack, project=None, host=None, port=None,
         return r.json()
     except:
         logger.error(r.text)
+        raise RenderError(r.text)
 
 
-@renderaccess
-def get_z_value_for_section(stack, sectionId, project=None,
-                            host=None, port=None, owner=None,
-                            session=requests.session(), render=None, **kwargs):
-    request_url = format_preamble(
-        host, port, owner, project, stack) + "/section/%s/z" % (sectionId)
-    r = session.get(request_url)
-    try:
-        return r.json()
-    except:
-        logger.error(r.text)
+def get_z_value_for_section(stack, sectionId, **kwargs):
+    return get_section_z_value(stack,sectionId,**kwargs)
 
 
 @renderaccess
@@ -204,6 +223,7 @@ def get_bounds_from_z(stack, z, host=None, port=None, owner=None,
         return r.json()
     except:
         logger.error(r.text)
+        raise RenderError(r.text)
 
 
 @renderaccess
@@ -216,6 +236,7 @@ def get_stack_bounds(stack, host=None, port=None, owner=None, project=None,
         return r.json()
     except:
         logger.error(r.text)
+        raise RenderError(r.text)
 
 
 @renderaccess
@@ -229,4 +250,5 @@ def get_section_z_value(stack, sectionId, host=None, port=None,
         return float(r.json())
     except:
         logger.error(r.text)
+        raise RenderError(r.text)
     return float(process_simple_url_request(request_url, session))

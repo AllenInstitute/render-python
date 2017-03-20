@@ -2,7 +2,7 @@
 from .render import Render, format_baseurl, format_preamble, renderaccess
 from .utils import NullHandler
 from .stack import get_z_values_for_stack
-from .transform import Transform, AffineModel, ReferenceTransform
+from .transform import TransformList,load_transform_json
 from collections import OrderedDict
 import logging
 import requests
@@ -35,8 +35,7 @@ class ResolvedTileSpecMap:
             ts.from_dict(tsd)
             self.tilespecs.append(ts)
         for tfd in tfmap.values():
-            tf.Transform()
-            tf.from_dict(tfd)
+            tf=load_transform_json(tfd)
             self.transforms.append(tf)
 
 
@@ -62,11 +61,7 @@ class ResolvedTileSpecCollection:
             self.tilespecs.append(ts)
         for i in range(d['tranformCount']):
             tfd = d['transformSpecs'][i]
-            if tfd['className'] is 'mpicbg.trakem2.transform.AffineModel2D':
-                tf = AffineModel()
-            else:
-                tf = Transform()
-            tf.from_dict(tfd)
+            tf = load_transform_json(tfd)
             self.transforms.append(tf)
 
 
@@ -213,8 +208,8 @@ class TileSpec:
         self.z = d['z']
         self.width = d['width']
         self.height = d['height']
-        self.minint = d['minIntensity']
-        self.maxint = d['maxIntensity']
+        self.minint = d.get('minIntensity',None)
+        self.maxint = d.get('maxIntensity',None)
         self.frameId = d.get('frameId', None)
         self.layout = Layout()
         self.layout.from_dict(d.get('layout', None))
@@ -227,21 +222,12 @@ class TileSpec:
                  int(l), imageUrl=v.get('imageUrl'), maskUrl=v.get('maskUrl'))
              for l, v in d['mipmapLevels'].items()])
 
-        self.tforms = []
-        for t in d['transforms']['specList']:
-            if t['type'] == 'ref':
-                tf = ReferenceTransform(refId=t['refId'])
-            elif t['type'] == 'leaf':
-                if t['className'] == AffineModel.className:
-                    tf = AffineModel()
-                    tf.from_dict(t)
-                else:
-                    tf = Transform(json=t)
-                self.tforms.append(tf)
+        tfl = TransformList(json=d['transforms'])
+        self.tforms = tfl.tforms
+
         self.inputfilters = []
         if d.get('inputfilters', None) is not None:
             for f in d['inputfilters']['specList']:
-                f['type']
                 f = Filter()
                 f.from_dict(f)
                 self.inputfilters.append(f)

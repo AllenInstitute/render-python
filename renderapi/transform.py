@@ -14,7 +14,7 @@ TODO:
 import json
 import logging
 import numpy as np
-from .errors import ConversionError, EstimationError
+from .errors import ConversionError, EstimationError, RenderError
 from .utils import NullHandler
 
 logger = logging.getLogger(__name__)
@@ -30,17 +30,59 @@ except ImportError as e:
     from numpy.linalg import svd
 
 
+
 class TransformList:
-    def __init__(self, tforms):
-        self.tforms = tforms
+    def __init__(self,tforms=None,transformId=None,json=None):
+        if json is not None:
+            self.from_dict(json)
+        else:
+            if tforms is None:
+                self.tforms = []
+            else:
+                assert(type(tforms)==list)
+                self.tforms = tforms
+            self.transformId = transformId
 
     def to_dict(self):
-        return {'type': 'list',
-                'specList': [tform.to_dict() for tform in self.tforms]}
+        d= {}
+        d['type'] = 'list'
+        d['specList'] =[tform.to_dict() for tform in self.tforms]
+        if self.transformId is not None:
+            d['id'] = self.transformId
+        return d
 
     def to_json(self):
         return json.dumps(self.to_dict())
 
+    def from_dict(self,d):
+        self.tforms=[]
+        if d is not None:
+            self.transformId = d.get('id',None)
+            for td in d['specList']:
+                self.tforms.append(load_transform_json(td))
+        return self.tforms
+
+def load_transform_json(d):
+    type = d.get('type','leaf')
+    if type=='leaf':
+        return load_leaf_json(d)
+    elif type == 'list':
+        return TransformList(json=d)
+    elif type == 'ref':
+        return ReferenceTransform(json=d)
+    raise RenderError("Unknown Transform Type %s"%type)
+
+def load_leaf_json(d):
+    type = d.get('type','leaf')
+    assert(type=='leaf')
+    cls = d['className']
+
+    if cls==AffineModel.className:
+        return AffineModel(json=d)
+    elif cls==Polynomial2DTransform.className:
+        return Polynomial2DTransform(json=d)
+    else:
+        return Transform(json=d)
 
 class ReferenceTransform:
     def __init__(self, refId=None, json=None):
@@ -65,7 +107,7 @@ class ReferenceTransform:
         return self.__str__()
 
 
-class Transform:
+class Transform(object):
     def __init__(self, className=None, dataString=None,
                  transformId=None, json=None):
         if json is not None:
@@ -85,9 +127,11 @@ class Transform:
         return d
 
     def from_dict(self, d):
-        self.dataString = d['dataString']
         self.className = d['className']
         self.transformId = d.get('transformId', None)
+        self._process_dataString(d['dataString'])
+    def _process_dataString(self,datastring):
+        self.dataString = datastring
 
     def __str__(self):
         return 'className:%s\ndataString:%s' % (
@@ -106,22 +150,41 @@ class Transform:
 class AffineModel(Transform):
     className = 'mpicbg.trakem2.transform.AffineModel2D'
 
-    def __init__(self, M00=1.0, M01=0.0, M10=0.0, M11=1.0, B0=0.0, B1=0.0):
-        self.M00 = M00
-        self.M01 = M01
-        self.M10 = M10
-        self.M11 = M11
-        self.B0 = B0
-        self.B1 = B1
-        self.className = 'mpicbg.trakem2.transform.AffineModel2D'
-        self.load_M()
-        self.transformId = None
+    def __init__(self, M00=1.0, M01=0.0, M10=0.0, M11=1.0, B0=0.0, B1=0.0,
+                 json=None):
+        if json is not None:
+            self.from_dict(json)
+        else:
+            self.M00 = M00
+            self.M01 = M01
+            self.M10 = M10
+            self.M11 = M11
+            self.B0 = B0
+            self.B1 = B1
+            self.className = 'mpicbg.trakem2.transform.AffineModel2D'
+            self.load_M()
+            self.transformId = None
+
 
     @property
     def dataString(self):
         return "%.10f %.10f %.10f %.10f %.10f %.10f" % (
             self.M[0, 0], self.M[1, 0], self.M[0, 1],
             self.M[1, 1], self.M[0, 2], self.M[1, 2])
+
+    def _process_dataString(self, datastring):
+        '''
+        generate datastring and param attributes from datastring
+        '''
+        dsList = datastring.split(' ')
+        self.M00 = float(dsList[0])
+        self.M01 = float(dsList[1])
+        self.M10 = float(dsList[2])
+        self.M11 = float(dsList[3])
+        self.B0 = float(dsList[4])
+        self.B1 = float(dsList[5])
+        self.load_M()
+
 
     def load_M(self):
         self.M = np.identity(3, np.double)
@@ -142,12 +205,6 @@ class AffineModel(Transform):
             self.M[1, 1], self.M[0, 2], self.M[1, 2])
         return d
     '''
-
-    def from_dict(self, d):
-        ds = d['dataString'].split()
-        (self.M00, self.M10, self.M01, self.M11, self.B0, self.B1) = map(
-            float, ds)
-        self.load_M()
 
     def invert(self):
         Ai = AffineModel()
@@ -271,21 +328,25 @@ class Polynomial2DTransform(Transform):
     className = 'mpicbg.trakem2.transform.PolynomialTransform2D'
 
     def __init__(self, dataString=None, src=None, dst=None, order=2,
-                 force_polynomial=True, params=None, identity=False):
-        self.className = 'mpicbg.trakem2.transform.PolynomialTransform2D'
-        if dataString is not None:
-            self._process_dataString(dataString)
-        elif identity:
-            self._process_params(np.array([[0, 1, 0], [0, 0, 1]]))
-        elif params is not None:
-            self._process_params(params)
-        elif src is not None and dst is not None:
-            self._process_params(self.estimate(src, dst, order))
+                 force_polynomial=True, params=None, identity=False,
+                 json=None):
+        if json is not None:
+            self.from_dict(json)
+        else:
+            self.className = 'mpicbg.trakem2.transform.PolynomialTransform2D'
+            if dataString is not None:
+                self._process_dataString(dataString)
+            elif identity:
+                self._process_params(np.array([[0, 1, 0], [0, 0, 1]]))
+            elif params is not None:
+                self._process_params(params)
+            elif src is not None and dst is not None:
+                self._process_params(self.estimate(src, dst, order))
 
-        if not force_polynomial and self.is_affine:
-            # TODO try implement affine from poly (& vice versa)
-            return AffineTransform(poly_params=self.params)
-        self.transformId = None
+            if not force_polynomial and self.is_affine:
+                # TODO try implement affine from poly (& vice versa)
+                return AffineTransform(poly_params=self.params)
+            self.transformId = None
 
     @property
     def is_affine(self):

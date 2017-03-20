@@ -1,4 +1,8 @@
+<<<<<<< Updated upstream
 FROM continuumio/anaconda
+=======
+FROM fcollman/render
+>>>>>>> Stashed changes
 MAINTAINER Forrest Collman (forrest.collman@gmail.com)
 
 #install java
@@ -27,7 +31,19 @@ RUN pip install shapely==1.6b2
 #install render python using pip from github
 #RUN pip install -e git+https://github.com/fcollman/render-python.git@master#egg=render-python
 
+RUN pip install coverage==4.1 \
+mock==2.0.0 \
+pep8==1.7.0 \
+pytest==3.0.5 \
+pytest-cov==2.2.1 \
+pytest-pep8==1.0.6 \
+pytest-xdist==1.14 \
+flake8>=3.0.4 \
+pylint>=1.5.4
 RUN mkdir -p /usr/local/render-python
 COPY . /usr/local/render-python
 WORKDIR /usr/local/render-python
-RUN python setup.py install 
+RUN python setup.py install
+
+ENTRYPOINT [ "/usr/bin/tini", "--" ]
+CMD [ "/bin/bash" ]
