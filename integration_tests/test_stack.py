@@ -6,6 +6,8 @@ import logging
 import sys
 import json
 import numpy as np
+from test_data import render_host, render_port,
+                     client_script_location, tilespec_file, tform_file
 
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)
@@ -16,16 +18,12 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 ch.setFormatter(formatter)
 root.addHandler(ch)
 
-
-
-i=0
 render_test_parameters={
-        'host':'renderservice',
-        'port':8080,
+        'host':render_host,
+        'port':render_port,
         'owner':'test',
         'project':'test_project',
-        'client_scripts':'/var/www/render/render-ws-java-client/src/main/scripts/'
-}
+        'client_scripts':client_script_location}
 
 @pytest.fixture(scope='module')
 def render():
@@ -33,7 +31,7 @@ def render():
 
 @pytest.fixture
 def simpletilespec():
-    mml = renderapi.tilespec.MipMapLevel(0,'https://pathology.duke.edu/sites/pathology.duke.edu/files/rem-brain-label.jpg')
+    mml = renderapi.tilespec.MipMapLevel(0,'/not/a/path.jpg')
     tform = renderapi.transform.AffineModel()
     layout = renderapi.tilespec.Layout(secitionId = "section0",
         scopeId="testscope",
@@ -54,9 +52,6 @@ def simpletilespec():
 
 @pytest.fixture(scope='module')
 def render_example_tilespec_and_transforms():
-    tilespec_file = '/var/www/render/examples/example_1/cycle1_step1_acquire_tiles.json'
-    tform_file = '/var/www/render/examples/example_1/cycle1_step1_acquire_transforms.json'
-
     ts_json = json.load(open(tilespec_file,'r'))
     tform_json = json.load(open(tform_file,'r'))
 
@@ -165,12 +160,37 @@ def test_import_tilespecs(render,simpletilespec):
     assert (ts_out.z == simpletilespec.z)
     render.run(renderapi.stack.delete_stack,stack)
 
+def test_import_tilespecs_parallel(render):
+    root.debug('test not implemented yet')
+    assert(False)
+
+def test_import_jsonfiles_validate_client(render):
+    root.debug('test not implemented yet')
+    assert(False)
+
+def test_import_jsonfiles(render):
+    root.debug('test not implemented yet')
+    assert(False)
+
+def test_import_parallel(render):
+    root.debug('test not implemented yet')
+    assert(False)
+
+def test_tile_pair_client(render):
+    root.debug('test not implemented yet')
+    assert(False)
+
+def test_importTransformChangesClient(render):
+    root.debug('test not implemented yet')
+    assert(False)
+
+def test_coordinateClient(render):
+    root.debug('test not implemented yet')
+    assert(False)
 
 @pytest.fixture(scope="module")
 def teststack(request):
     render=renderapi.render.connect(**render_test_parameters)
-    tilespec_file = '/var/www/render/examples/example_1/cycle1_step1_acquire_tiles.json'
-    tform_file = '/var/www/render/examples/example_1/cycle1_step1_acquire_transforms.json'
 
     ts_json = json.load(open(tilespec_file,'r'))
     tform_json = json.load(open(tform_file,'r'))
@@ -184,9 +204,6 @@ def teststack(request):
     sharedTransforms=tforms)
     r=render.run(renderapi.stack.set_stack_state,stack,'COMPLETE')
     def fin():
-        global i
-        i+=1
-        root.debug('TEARDOWN! %d'%i)
         render.run(renderapi.stack.delete_stack,stack)
     request.addfinalizer(fin)
     return stack
