@@ -15,7 +15,7 @@ class PyTest(TestCommand):
         import shlex
         #import here, cause outside the eggs aren't loaded
         import pytest
-        self.pytest_args += " --boxed --cov=renderapi --cov-report html --junitxml=test-reports/test.xml"
+        self.pytest_args += " --cov=renderapi --cov-report html --junitxml=test-reports/test.xml"
 
         errno = pytest.main(shlex.split(self.pytest_args))
         sys.exit(errno)

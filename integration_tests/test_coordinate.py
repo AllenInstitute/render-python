@@ -6,8 +6,8 @@ import logging
 import sys
 import json
 import numpy as np
-from test_data import render_host, render_port,
-                     client_script_location, tilespec_file, tform_file
+from test_data import render_host, render_port, \
+    client_script_location, tilespec_file, tform_file
 
 
 logger = logging.getLogger()
@@ -17,22 +17,30 @@ ch = logging.StreamHandler(sys.stdout)
 ch.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 ch.setFormatter(formatter)
-
+#
 logger.addHandler(ch)
-render_test_parameters={
-        'host':render_host,
-        'port':8080,
-        'owner':'test_coordinate',
-        'project':'test_coordinate_project',
-        'client_scripts':client_script_location
-}
+
 
 @pytest.fixture(scope='module')
 def render():
+    render_test_parameters={
+            'host':render_host,
+            'port':8080,
+            'owner':'test_coordinate',
+            'project':'test_coordinate_project',
+            'client_scripts':client_script_location
+    }
     return renderapi.render.connect(**render_test_parameters)
 
 @pytest.fixture(scope='module')
 def teststack_tilespec():
+    render_test_parameters={
+            'host':render_host,
+            'port':8080,
+            'owner':'test_coordinate',
+            'project':'test_coordinate_project',
+            'client_scripts':client_script_location
+    }
     render=renderapi.render.connect(**render_test_parameters)
     ts_json = json.load(open(tilespec_file,'r'))
     tform_json = json.load(open(tform_file,'r'))

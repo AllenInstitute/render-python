@@ -6,8 +6,8 @@ import logging
 import sys
 import json
 import numpy as np
-from test_data import render_host, render_port,
-                     client_script_location, tilespec_file, tform_file
+from test_data import render_host, render_port,\
+client_script_location, tilespec_file, tform_file
 
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)
@@ -18,15 +18,16 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 ch.setFormatter(formatter)
 root.addHandler(ch)
 
-render_test_parameters={
-        'host':render_host,
-        'port':render_port,
-        'owner':'test',
-        'project':'test_project',
-        'client_scripts':client_script_location}
+
 
 @pytest.fixture(scope='module')
 def render():
+    render_test_parameters={
+            'host':render_host,
+            'port':render_port,
+            'owner':'test',
+            'project':'test_project',
+            'client_scripts':client_script_location}
     return renderapi.render.connect(**render_test_parameters)
 
 @pytest.fixture
@@ -74,10 +75,10 @@ def test_stack_creation_deletion(render):
     assert(sv.stackResolutionZ==1.0)
 
     owners = render.run(renderapi.render.get_owners)
-    assert(render_test_parameters['owner'] in owners)
+    assert('test' in owners)
 
     projects = render.run(renderapi.render.get_projects_by_owner)
-    assert(render_test_parameters['project'] in projects)
+    assert('test_project' in projects)
 
     stacks = render.run(renderapi.render.get_stacks_by_owner_project)
     assert(test_stack in stacks)
@@ -190,6 +191,12 @@ def test_coordinateClient(render):
 
 @pytest.fixture(scope="module")
 def teststack(request):
+    render_test_parameters={
+                'host':render_host,
+                'port':render_port,
+                'owner':'test',
+                'project':'test_project',
+                'client_scripts':client_script_location}
     render=renderapi.render.connect(**render_test_parameters)
 
     ts_json = json.load(open(tilespec_file,'r'))

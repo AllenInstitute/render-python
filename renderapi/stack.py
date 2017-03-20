@@ -4,7 +4,7 @@ import logging
 from time import strftime
 import requests
 from .render import Render, format_baseurl, format_preamble, renderaccess
-from .utils import jbool, NullHandler
+from .utils import jbool, NullHandler, post_json
 from .errors import RenderError
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -91,6 +91,9 @@ def set_stack_state(stack, state='LOADING', host=None, port=None,
     logger.debug(request_url)
     r = session.put(request_url, data=None,
                     headers={"content-type": "application/json"})
+    if (r.status_code != 201):
+        logger.error(r.text)
+        raise RenderError(r.text)
     return r
 
 
@@ -145,10 +148,8 @@ def create_stack(stack, cycleNumber=None, cycleStepNumber=None,
         stackResolutionZ=stackResolutionZ)
     request_url = format_preamble(host, port, owner, project, stack)
     logger.debug("stack version {} {}".format(request_url, sv.to_dict()))
-    payload = json.dumps(sv.to_dict())
-    r = session.post(request_url, data=payload,
-                     headers={"content-type": "application/json",
-                              "Accept": "application/json"})
+    r = post_json(session,request_url,sv.to_dict())
+
     try:
         return r
     except:
@@ -172,10 +173,10 @@ def clone_stack(inputstack, outputstack, host=None, port=None,
         host, port, owner, project, inputstack), outputstack)
 
     logger.debug(request_url)
-    r = session.put(request_url, params={
+    r = post_json(session,request_url,sv.to_dict(), params={
         'z': zs, 'toProject': toProject,
-        'skipTransforms': jbool(skipTransforms)},
-                    data=json.dumps(sv.to_dict()))
+        'skipTransforms': jbool(skipTransforms)})
+
 
     return r
 
@@ -200,14 +201,12 @@ def get_z_value_for_section(stack, sectionId, **kwargs):
 
 
 @renderaccess
-def put_resolved_tilespecs(stack, data, host=None, port=None,
+def put_resolved_tilespecs(stack, json_dict, host=None, port=None,
                            owner=None, project=None,
                            session=requests.session(), render=None, **kwargs):
     request_url = format_preamble(
         host, port, owner, project, stack) + "/resolvedTiles"
-    r = session.put(request_url, data=data,
-                    headers={"content-type": "application/json",
-                             "Accept": "text/plain"})
+    r = post_json(session,request_url,json_dict)
     return r
 
 
