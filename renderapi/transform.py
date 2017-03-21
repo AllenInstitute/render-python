@@ -27,7 +27,7 @@ except ImportError as e:
     logger.info(e)
     logger.info('scipy-based linalg may or may not lead '
                 'to better parameter fitting')
-    from numpy.linalg import svd
+    from np.linalg import svd
 
 
 
@@ -293,12 +293,12 @@ class AffineModel(Transform):
     def scale(self):
         '''tuple of scale for x, y'''
         return tuple([np.sqrt(sum([i ** 2 for i in self.M[:, j]]))
-                      for j in self.M.shape[1]])[:2]
+                      for j in range(self.M.shape[1])])[:2]
 
     @property
     def shear(self):
         '''counter-clockwise shear angle'''
-        return np.atan2(-self.M[0, 1], self.M[1, 1]) - self.rotation
+        return np.arctan2(-self.M[0, 1], self.M[1, 1]) - self.rotation
 
     @property
     def translation(self):
@@ -308,7 +308,7 @@ class AffineModel(Transform):
     @property
     def rotation(self):
         '''counter-clockwise rotation'''
-        return numpy.atan2(self.M[1, 0], self.M[0, 0])
+        return np.arctan2(self.M[1, 0], self.M[0, 0])
 
     def __str__(self):
         return "M=[[%f,%f],[%f,%f]] B=[%f,%f]" % (
@@ -319,6 +319,32 @@ class AffineModel(Transform):
 class Polynomial2DTransform(Transform):
     '''
     Polynomial2DTransform implemented as in skimage
+    Polynomial2DTransform(dataString=None, src=None, dst=None, order=2,
+                 force_polynomial=True, params=None, identity=False,
+                 json=None)
+    This provides 5 different ways to initialize the transform which are
+    mutually exclusive and applied in the following order.
+
+    1st
+    json = a json dictonary representation of the Polynomial2DTransform
+    generally used by TransformList
+
+    2nd
+    dataString = dataString representation of transform from mpicpg
+
+
+    3rd
+    identity = make this transform the identity
+
+    4th
+    params = 2xK np.array of polynomial coefficents up to order K
+
+    5th
+    src,dst = Nx2 np.array of source and dst points to use to estimate
+    transformation
+    order = integer degree of polynomial to fit when using src,dst
+
+
     TODO:
         fall back to Affine Model in special cases
         robustness in estimation
