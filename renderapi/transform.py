@@ -423,7 +423,6 @@ class Polynomial2DTransform(Transform):
 
     def estimate(self, src, dst, order=2,
                  convergence_test=None, max_tries=100,**kwargs):
-        old_params = self.params
 
         params = self.fit(src, dst, order=order)
         if convergence_test is None:
