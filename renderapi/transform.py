@@ -422,10 +422,10 @@ class Polynomial2DTransform(Transform):
         # return (-V[-1, :-1] / V[-1, -1]).reshape((2, no_coeff // 2))
 
     def estimate(self, src, dst, order=2,
-                 convergence_test=None, max_tries=100):
+                 convergence_test=None, max_tries=100,**kwargs):
         old_params = self.params
 
-        params = self.fit(src, dst, **kwargs)
+        params = self.fit(src, dst, order=order)
         if convergence_test is None:
             return params
         else:
