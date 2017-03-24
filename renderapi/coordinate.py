@@ -56,6 +56,10 @@ def world_to_local_coordinates_batch(stack, d, z, host=None,
                                      render=None, **kwargs):
 
     ''''''
+    if (execute_local == True):
+        logger.error("local execution not yet implemented")
+        raise RenderError('local execution not yet implemented')
+
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%s/world-to-local-coordinates" % (str(z))

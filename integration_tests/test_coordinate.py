@@ -57,8 +57,13 @@ def teststack_tilespec():
     render.run(renderapi.stack.delete_stack,stack)
 
 def test_world_to_local_coordinates(render,teststack_tilespec):
-    logger.debug('test not implemented yet')
-    assert(False)
+    (stack,ts) = teststack_tilespec
+    local=render.run(renderapi.coordinate.world_to_local_coordinates,
+        stack,ts.z,ts.minX,ts.minY)
+    assert(local['error']="")
+    assert(local['tileId']==ts.tileId)
+    assert(len(local['local'])>=2)
+    
 
 def test_local_to_world_coordinates(render,teststack_tilespec):
     logger.debug('test not implemented yet')
