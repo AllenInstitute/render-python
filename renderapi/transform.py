@@ -27,7 +27,7 @@ except ImportError as e:
     logger.info(e)
     logger.info('scipy-based linalg may or may not lead '
                 'to better parameter fitting')
-    from np.linalg import svd
+    from numpy.linalg import svd
 
 
 
@@ -176,7 +176,7 @@ class AffineModel(Transform):
         '''
         generate datastring and param attributes from datastring
         '''
-        dsList = datastring.split(' ')
+        dsList = datastring.split()
         self.M00 = float(dsList[0])
         self.M01 = float(dsList[1])
         self.M10 = float(dsList[2])
