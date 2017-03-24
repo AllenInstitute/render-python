@@ -176,7 +176,7 @@ class AffineModel(Transform):
         '''
         generate datastring and param attributes from datastring
         '''
-        dsList = datastring.split(' ')
+        dsList = datastring.split()
         self.M00 = float(dsList[0])
         self.M01 = float(dsList[1])
         self.M10 = float(dsList[2])
