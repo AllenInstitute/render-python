@@ -178,8 +178,8 @@ class AffineModel(Transform):
         '''
         dsList = datastring.split()
         self.M00 = float(dsList[0])
-        self.M01 = float(dsList[1])
-        self.M10 = float(dsList[2])
+        self.M10 = float(dsList[1])
+        self.M01 = float(dsList[2])
         self.M11 = float(dsList[3])
         self.B0 = float(dsList[4])
         self.B1 = float(dsList[5])
