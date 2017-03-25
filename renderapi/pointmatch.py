@@ -147,6 +147,20 @@ def get_match_groupIds_to_only(matchCollection, render=None, owner=None,
     except:
         logger.error(r.text)
 
+@renderaccess
+def delete_point_matches_between_groups(matchCollection,pGroupId,qGroupId,
+                                        render=None,owner=None,host=None,
+                                        port=None,session=requests.session(),
+                                        **kwargs ):
+    request_url = format_baseurl(host,port) + \
+    "/owner/{}/matchCollection/{}/group/{}/matchesWith/{}".format(\
+    owner,matchCollection,pGroupId,qGroupId)
+    try:
+        r = session.delete(request_url)
+        return r
+    except:
+        logger.errr(r.text)
+        raise RenderError(r.text)
 
 @renderaccess
 def import_matches(matchCollection, data, owner=None, host=None, port=None,

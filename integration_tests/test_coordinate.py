@@ -56,6 +56,18 @@ def teststack_tilespec():
     yield (stack,tilespecs[0])
     render.run(renderapi.stack.delete_stack,stack)
 
+@pytest.fixture(scope='module')
+def local_corners_json(teststack_tilespec):
+    (stack,ts) = teststack_tilespec
+    corners = [[0,0],[ts.width,0],[ts.width,ts.height],[0,ts.height]]
+    batch = []
+    for corner in corners:
+        d={
+            'tileId':ts.tileId,
+            'visible':True,
+            ''
+        }
+
 def test_world_to_local_coordinates(render,teststack_tilespec):
     (stack,ts) = teststack_tilespec
     local=render.run(renderapi.coordinate.world_to_local_coordinates,
@@ -63,17 +75,33 @@ def test_world_to_local_coordinates(render,teststack_tilespec):
     assert(local['error']="")
     assert(local['tileId']==ts.tileId)
     assert(len(local['local'])>=2)
-    
+
 
 def test_local_to_world_coordinates(render,teststack_tilespec):
-    logger.debug('test not implemented yet')
-    assert(False)
+    (stack,ts) = teststack_tilespec
+    local=render.run(renderapi.coordinate.local_to_world_coordinates_batch,
+        stack,ts.z,0,0)
+    assert(local['error']="")
+    assert(local['tileId']==ts.tileId)
+    assert(len(local['world'])>=2)
 
 def test_world_to_local_coordinates_batch(render,teststack_tilespec):
-    logger.debug('test not implemented yet')
-    assert(False)
+    (stack,ts) = teststack_tilespec
+    corners = [[0,0],[ts.width,0],[ts.width,ts.height],[0,ts.height]]
+    batch = []
+    for corner in corners:
+        batch.append(renderapi.coordinate.local-to-world-coordinates(\
+                      stack,ts.z,corner[0],corner[1]))
+    local=renderapi.coordinates.world_to_local_coordinates_batch(stack,batch,
+        execute_local==False)
+
+    assert(len(local)==len(batch))
+    for ans in local:
+        assert(len(ans['error'])==0)
+
 
 def test_local_to_world_coordinates_batch(render,teststack_tilespec):
+
     logger.debug('test not implemented yet')
     assert(False)
 
