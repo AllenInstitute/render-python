@@ -63,7 +63,7 @@ def world_to_local_coordinates_batch(stack, d, z, host=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%s/world-to-local-coordinates" % (str(z))
-    r = session.put(request_url, data=json.dumps(data),
+    r = session.put(request_url, data=json.dumps(d),
                     headers={"content-type": "application/json"})
     return r.json()
 
