@@ -51,7 +51,7 @@ def local_to_world_coordinates(stack, tileId, x, y,
 @renderaccess
 def world_to_local_coordinates_batch(stack, d, z, host=None,
                                      port=None, owner=None, project=None,
-                                     execute_local=True,
+                                     execute_local=False,
                                      session=requests.session(),
                                      render=None, **kwargs):
 
