@@ -159,7 +159,7 @@ def delete_point_matches_between_groups(matchCollection,pGroupId,qGroupId,
         r = session.delete(request_url)
         return r
     except:
-        logger.errr(r.text)
+        logger.error(r.text)
         raise RenderError(r.text)
 
 @renderaccess
