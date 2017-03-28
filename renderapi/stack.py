@@ -237,6 +237,17 @@ def get_stack_bounds(stack, host=None, port=None, owner=None, project=None,
         logger.error(r.text)
         raise RenderError(r.text)
 
+@renderaccess
+def get_stack_sectionData(stack, host=None, port=None, owner=None, project=None,
+                     session=requests.session(), render=None, **kwargs):
+    request_url = format_preamble(
+        host, port, owner, project, stack) + '/sectionData'
+    r = session.get(request_url)
+    try:
+        return r.json()
+    except:
+        logger.error(r.text)
+        raise RenderError(r.text)
 
 @renderaccess
 def get_section_z_value(stack, sectionId, host=None, port=None,
