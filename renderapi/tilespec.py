@@ -2,7 +2,7 @@
 from .render import Render, format_baseurl, format_preamble, renderaccess
 from .utils import NullHandler
 from .stack import get_z_values_for_stack
-from .transform import TransformList,load_transform_json
+from .transform import TransformList, load_transform_json
 from collections import OrderedDict
 import logging
 import requests
@@ -35,7 +35,7 @@ class ResolvedTileSpecMap:
             ts.from_dict(tsd)
             self.tilespecs.append(ts)
         for tfd in tfmap.values():
-            tf=load_transform_json(tfd)
+            tf = load_transform_json(tfd)
             self.transforms.append(tf)
 
 
@@ -85,9 +85,9 @@ class Layout:
     def __init__(self, sectionId=None, scopeId=None, cameraId=None,
                  imageRow=None, imageCol=None, stageX=None, stageY=None,
                  rotation=None, pixelsize=0.100, **kwargs):
-        self.sectionId = str(sectionId)
-        self.scopeId = str(scopeId)
-        self.cameraId = str(cameraId)
+        self.sectionId = sectionId
+        self.scopeId = scopeId
+        self.cameraId = cameraId
         self.imageRow = imageRow
         self.imageCol = imageCol
         self.stageX = stageX
@@ -110,15 +110,15 @@ class Layout:
 
     def from_dict(self, d):
         if d is not None:
-            self.sectionId = d.get('sectionId', None)
-            self.cameraId = d.get('camera', None)
-            self.scopeId = d.get('temca', None)
-            self.imageRow = d.get('imageRow', None)
-            self.imageCol = d.get('imageCol', None)
-            self.stageX = d.get('stageX', None)
-            self.stageY = d.get('stageY', None)
-            self.rotation = d.get('rotation', None)
-            self.pixelsize = d.get('pixelsize', None)
+            self.sectionId = d.get('sectionId')
+            self.cameraId = d.get('camera')
+            self.scopeId = d.get('temca')
+            self.imageRow = d.get('imageRow')
+            self.imageCol = d.get('imageCol')
+            self.stageX = d.get('stageX')
+            self.stageY = d.get('stageY')
+            self.rotation = d.get('rotation')
+            self.pixelsize = d.get('pixelsize')
 
 
 class TileSpec:
@@ -208,9 +208,9 @@ class TileSpec:
         self.z = d['z']
         self.width = d['width']
         self.height = d['height']
-        self.minint = d.get('minIntensity',None)
-        self.maxint = d.get('maxIntensity',None)
-        self.frameId = d.get('frameId', None)
+        self.minint = d.get('minIntensity')
+        self.maxint = d.get('maxIntensity')
+        self.frameId = d.get('frameId')
         self.layout = Layout()
         self.layout.from_dict(d.get('layout', None))
         self.minX = d.get('minX', None)
@@ -297,7 +297,8 @@ def get_tile_spec(stack, tile, host=None, port=None, owner=None,
     r = session.get(request_url)
     try:
         tilespec_json = r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
     return TileSpec(json=tilespec_json['tileSpecs'][0])
 
@@ -331,7 +332,8 @@ def get_tile_specs_from_box(stack, z, x, y, width, height,
     r = session.get(request_url)
     try:
         tilespecs_json = r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
     return [TileSpec(json=tilespec_json)
             for tilespec_json in tilespecs_json['tileSpecs']]
@@ -347,7 +349,8 @@ def get_tile_specs_from_z(stack, z, host=None, port=None,
     r = session.get(request_url)
     try:
         tilespecs_json = r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
 
     if len(tilespecs_json) == 0:
