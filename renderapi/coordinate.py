@@ -28,7 +28,8 @@ def world_to_local_coordinates(stack, z, x, y, host=None,
     r = session.get(request_url)
     try:
         return r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
 
 
@@ -44,7 +45,8 @@ def local_to_world_coordinates(stack, tileId, x, y,
     r = session.get(request_url)
     try:
         return r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
 
 
@@ -56,9 +58,8 @@ def world_to_local_coordinates_batch(stack, d, z, host=None,
                                      render=None, **kwargs):
 
     ''''''
-    if (execute_local == True):
-        logger.error("local execution not yet implemented")
-        raise RenderError('local execution not yet implemented')
+    if (execute_local is True):
+        raise NotImplementedError("local execution not yet implemented")
 
     request_url = format_preamble(
         host, port, owner, project, stack) + \
@@ -80,7 +81,8 @@ def local_to_world_coordinates_batch(stack, d, z, host=None,
                     headers={"content-type": "application/json"})
     try:
         return r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
 
 
@@ -133,7 +135,8 @@ def old_world_to_local_coordinates_array(stack, dataarray, tileId, z=0,
             answer[i, 0] = c[0]
             answer[i, 1] = c[1]
         return answer
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(json_answer)
 
 
@@ -197,7 +200,8 @@ def old_local_to_world_coordinates_array(stack, dataarray, tileId, z=0,
             answer[i, 0] = c[0]
             answer[i, 1] = c[1]
         return answer
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(json_answer)
 
 

@@ -12,9 +12,9 @@ class NullHandler(logging.Handler):
     def emit(self, record):
         pass
 
+
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
-
 
 
 class RenderEncoder(json.JSONEncoder):
@@ -25,22 +25,25 @@ class RenderEncoder(json.JSONEncoder):
         else:
             return obj.__dict__
 
-def post_json(session,request_url,d,params=None):
+
+def post_json(session, request_url, d, params=None):
     headers = {"content-type": "application/json"}
     if d is not None:
         payload = json.dumps(d)
     else:
         payload = None
-        headers['Accept']="application/json"
-
-
-    r = session.post(request_url, data=payload,params=params,
+        headers['Accept'] = "application/json"
+    r = session.post(request_url, data=payload, params=params,
                      headers=headers)
     try:
         return r
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
-        raise RenderError('cannot post {} to {} with params {}'.format(d,request_url,params))
+        raise RenderError(
+            'cannot post {} to {} with params {}'.format(
+                d, request_url, params))
+
 
 def renderdumps(obj, *args, **kwargs):
     cls_ = kwargs.pop('cls', RenderEncoder)

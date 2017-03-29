@@ -3,6 +3,7 @@ import logging
 import os
 from functools import wraps
 import requests
+import json
 from .utils import defaultifNone, NullHandler, fitargspec
 from .errors import ClientScriptError
 
@@ -192,6 +193,18 @@ def renderaccess(f):
     return wrapper
 
 
+def post_json(session, request, jsondict):
+    payload = json.dumps(jsondict)
+    r = session.post(request, data=payload,
+                     headers={"content-type": "application/json",
+                              "Accept": "application/json"})
+    try:
+        return r
+    except Exception as e:
+        logger.error(e)
+        logger.error(r.text)
+
+
 def format_baseurl(host, port):
     # return 'http://%s:%d/render-ws/v1' % (host, port)
     server = '{}{}'.format(host, ('' if port is None else ':{}'.format(port)))
@@ -211,7 +224,8 @@ def get_owners(host=None, port=None, session=requests.session(),
     r = session.get(request_url)
     try:
         return r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
 
 
@@ -225,7 +239,8 @@ def get_stack_metadata_by_owner(owner=None, host=None, port=None,
     r = session.get(request_url)
     try:
         return r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
 
 

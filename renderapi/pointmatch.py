@@ -20,7 +20,8 @@ def get_matchcollection_owners(host=None, port=None,
     r = session.get(request_url)
     try:
         return r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
 
 
@@ -32,7 +33,8 @@ def get_matchcollections(owner=None, host=None, port=None,
     r = session.get(request_url)
     try:
         return r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
 
 
@@ -45,7 +47,8 @@ def get_match_groupIds(matchCollection, owner=None, host=None,
     r = session.get(request_url)
     try:
         return r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
 
 
@@ -59,7 +62,8 @@ def get_matches_outside_group(matchCollection, groupId, owner=None, host=None,
     r = session.get(request_url)
     try:
         return r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
 
 
@@ -73,7 +77,8 @@ def get_matches_within_group(matchCollection, groupId, owner=None,
     r = session.get(request_url)
     try:
         return r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
 
 
@@ -88,7 +93,8 @@ def get_matches_from_group_to_group(matchCollection, pgroup, qgroup,
     r = session.get(request_url)
     try:
         return r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
 
 
@@ -104,7 +110,8 @@ def get_matches_from_tile_to_tile(matchCollection, pgroup, pid,
     r = session.get(request_url)
     try:
         return r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
 
 
@@ -118,7 +125,8 @@ def get_matches_with_group(matchCollection, pgroup, render=None, owner=None,
     r = session.get(request_url)
     try:
         return r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
 
 
@@ -131,7 +139,8 @@ def get_match_groupIds_from_only(matchCollection, render=None, owner=None,
     r = session.get(request_url)
     try:
         return r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
 
 
@@ -144,24 +153,28 @@ def get_match_groupIds_to_only(matchCollection, render=None, owner=None,
     r = session.get(request_url)
     try:
         return r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
 
+
 @renderaccess
-def delete_point_matches_between_groups(matchCollection,pGroupId,qGroupId,
-                                        render=None,owner=None,host=None,
-                                        port=None,session=requests.session(),
-                                        **kwargs ):
-    request_url = format_baseurl(host,port) + \
-    "/owner/{}/matchCollection/{}/group/{}/matchesWith/{}".format(\
-    owner,matchCollection,pGroupId,qGroupId)
+def delete_point_matches_between_groups(matchCollection, pGroupId, qGroupId,
+                                        render=None, owner=None, host=None,
+                                        port=None, session=requests.session(),
+                                        **kwargs):
+    request_url = format_baseurl(host, port) + \
+        "/owner/{}/matchCollection/{}/group/{}/matchesWith/{}".format(
+            owner, matchCollection, pGroupId, qGroupId)
     try:
         r = session.delete(request_url)
         return r
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(request_url)
         logger.error(r.text)
         raise RenderError(r.text)
+
 
 @renderaccess
 def import_matches(matchCollection, data, owner=None, host=None, port=None,
