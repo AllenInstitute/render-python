@@ -234,6 +234,15 @@ class TileSpec:
 
 
 class MipMapLevel:
+    '''
+    MipMapLevel class to represent a level of an image pyramid.
+    Can be put in dictionary formatting using dict(mML)
+
+    init:
+        level -- integer level of 2x downsampling represented by mipmaplevel
+        imageUrl (optional) -- url corresponding to image
+        maskUrl (optional) -- url corresponding to mask
+    '''
     def __init__(self, level, imageUrl=None, maskUrl=None):
         self.level = level
         self.imageUrl = imageUrl
@@ -255,6 +264,24 @@ class MipMapLevel:
 
 
 class ImagePyramid:
+    '''
+    Image Pyramid class representing a set of MipMapLevels which correspond
+        to mipmapped (continuously downsmapled by 2x) representations
+        of an image at level 0
+    Can be put into dictionary formatting using dict(ip) or OrderedDict(ip)
+
+    init:
+        mipMapLevels -- list of MipMapLevel objects
+    append:
+        adds MipmapLevel without checking if it exists
+        input: MipMapLevel object
+    update:
+        adds MipMapLevel object replacing a corresponding level if it exists
+        input: MipMapLevel object
+    to_ordered_dict:
+        input: key(optional) -- key to sort ordered dictionary
+            default sort by level via lambda x: x[0]
+    '''
     def __init__(self, mipMapLevels=[]):
         self.mipMapLevels = mipMapLevels
 
@@ -343,6 +370,12 @@ def get_tile_specs_from_box(stack, z, x, y, width, height,
 def get_tile_specs_from_z(stack, z, host=None, port=None,
                           owner=None, project=None, session=requests.session(),
                           render=None, **kwargs):
+    '''
+    input:
+        stack -- string render stack
+        z -- render z
+    output: list of tilespec objects
+    '''
     request_url = format_preamble(
         host, port, owner, project, stack) + '/z/%f/tile-specs' % (z)
     logger.debug(request_url)
