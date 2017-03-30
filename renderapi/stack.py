@@ -86,7 +86,9 @@ def get_stack_metadata(stack, host=None, port=None, owner=None, project=None,
 def set_stack_state(stack, state='LOADING', host=None, port=None,
                     owner=None, project=None,
                     session=requests.session(),  render=None, **kwargs):
-    assert state in ['LOADING', 'COMPLETE', 'OFFLINE', 'READ_ONLY']
+    if state not in ['LOADING', 'COMPLETE', 'OFFLINE', 'READ_ONLY']:
+        raise RenderError('state {} not in known states {}'.format(
+            state, ['LOADING', 'COMPLETE', 'OFFLINE', 'READ_ONLY']))
     request_url = format_preamble(
         host, port, owner, project, stack) + "/state/%s" % state
     logger.debug(request_url)

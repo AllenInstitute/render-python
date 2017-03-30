@@ -38,7 +38,10 @@ class TransformList:
             if tforms is None:
                 self.tforms = []
             else:
-                assert(type(tforms) == list)
+                if not isinstance(tforms, list):
+                    raise RenderError(
+                        'unexpected type {} for transforms!'.format(
+                            type(tforms)))
                 self.tforms = tforms
             self.transformId = transformId
 
@@ -119,7 +122,6 @@ class InterpolatedTransform:
         self.lambda_ = d['lambda']
 
     def __iter__(self):
-        # TODO I think AffineModel requires to_dict()
         return iter([('type', 'interpolated'),
                      ('a', self.a.to_dict()),
                      ('b', self.b.to_dict()),
@@ -236,24 +238,14 @@ class AffineModel(Transform):
         self.M[0, 2] = self.B0
         self.M[1, 2] = self.B1
 
-    '''
-    def to_dict(self):
-        d = {}
-        d['type'] = 'leaf'
-        d['className'] = self.className
-        d['dataString'] = "%.10f %.10f %.10f %.10f %.10f %.10f" % (
-            self.M[0, 0], self.M[1, 0], self.M[0, 1],
-            self.M[1, 1], self.M[0, 2], self.M[1, 2])
-        return d
-    '''
-
     def invert(self):
         Ai = AffineModel()
 
     def fit(self, A, B):
-        assert A.shape[0] == B.shape[0]
-        assert A.shape[1] == 2
-        assert B.shape[1] == 2
+        if not all([A.shape[0] == B.shape[0], A.shape[1] == B.shape[1] == 2]):
+            raise EstimationError(
+                'shape mismatch! A shape: {}, B shape {}'.format(
+                    A.shape, B.shape))
 
         N = A.shape[0]  # total points
 
@@ -287,7 +279,9 @@ class AffineModel(Transform):
         zerovec = np.zeros((Np, 1), np.double)
         onevec = np.ones((Np, 1), np.double)
 
-        assert(points.shape[1] == 2)
+        if points.shape[1] != 2:
+            raise ConversionError('Points must be of shape (:, 2) '
+                                  '-- got {}'.format(points.shape))
         Nd = 2
         points = np.concatenate((points, onevec), axis=1)
         return points, Nd
