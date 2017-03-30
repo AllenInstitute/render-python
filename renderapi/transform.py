@@ -65,7 +65,9 @@ class TransformList:
 def load_transform_json(d, default_type='leaf'):
     handle_load_tform = {'leaf': load_leaf_json,
                          'list': lambda x: TransformList(json=x),
-                         'ref': lambda x: ReferenceTransform(json=x)}
+                         'ref': lambda x: ReferenceTransform(json=x),
+                         'interpolated':
+                             lambda x: InterpolatedTransform(json=x)}
     try:
         return handle_load_tform[d.get('type', default_type)](d)
     except KeyError as e:
@@ -89,6 +91,39 @@ def load_leaf_json(d):
         logger.info('Leaf transform class {} not defined in '
                     'transform module, using generic'.format(e))
         return Transform(json=d)
+
+
+class InterpolatedTransform:
+    '''
+    Transform spec defined by linear interpolation of two other transform specs
+    inputs:
+        a -- transform spec at minimum weight
+        b -- transform spec at maximum weight
+        lambda_ -- float value (0.-1.) which defines evaluation of the
+            linear interpolation between a (at 0) and b (at 1)
+    '''
+    def __init__(self, a=None, b=None, lambda_=None, json=None):
+        if json is not None:
+            self.from_dict(json)
+        else:
+            self.a = a
+            self.b = b
+            self.lambda_ = lambda_
+
+    def to_dict(self):
+        return dict(self)
+
+    def from_dict(self, d):
+        self.a = load_transform_json(d['a'])
+        self.b = load_transform_json(d['b'])
+        self.lambda_ = d['lambda']
+
+    def __iter__(self):
+        # TODO I think AffineModel requires to_dict()
+        return iter([('type', 'interpolated'),
+                     ('a', self.a.to_dict()),
+                     ('b', self.b.to_dict()),
+                     ('lambda', self.lambda_)])
 
 
 class ReferenceTransform:
