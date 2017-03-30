@@ -86,6 +86,14 @@ def get_stack_metadata(stack, host=None, port=None, owner=None, project=None,
 def set_stack_state(stack, state='LOADING', host=None, port=None,
                     owner=None, project=None,
                     session=requests.session(),  render=None, **kwargs):
+    '''
+    set state of selected stack.  Acceptable states are listed below:
+        LOADING: stack is accepting additional information.
+        COMPLETE: stack is finished loading.
+        OFFLINE: stack is not in use.
+        READ_ONLY: stack cannot be changed.
+    TODO there is a limited direction in which these stack changes can go
+    '''
     if state not in ['LOADING', 'COMPLETE', 'OFFLINE', 'READ_ONLY']:
         raise RenderError('state {} not in known states {}'.format(
             state, ['LOADING', 'COMPLETE', 'OFFLINE', 'READ_ONLY']))
