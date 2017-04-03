@@ -71,7 +71,6 @@ def local_corners_json(teststack_tilespec):
         d = {
             'tileId': ts.tileId,
             'visible': True,
-            ''
         }
 
 
