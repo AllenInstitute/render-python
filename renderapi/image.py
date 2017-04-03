@@ -25,6 +25,7 @@ IMAGE_FORMATS = {'png': 'png-image',
 
 @renderaccess
 def get_bb_image(stack, z, x, y, width, height, scale=1.0,
+                 minIntensity=None,maxIntensity=None,
                  host=None, port=None, owner=None, project=None,
                  img_format=None, session=requests.session(),
                  render=None, **kwargs):
@@ -43,8 +44,17 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
 
     request_url = format_preamble(
         host, port, owner, project, stack) + \
-        "/z/%d/box/%d,%d,%d,%d,%3.2f/%s" % (
+        "/z/%d/box/%d,%d,%d,%d,%3.2f/%s?" % (
                       z, x, y, width, height, scale, image_ext)
+    args = []
+    if minIntensity is not None:
+        args+=['minIntensity=%d'%minIntensity]
+    if maxIntensity is not None:
+        args+=['maxIntensity=%d'%maxIntensity]
+    if len(args)>0:
+        args = "&".join(args)
+        request_url+=args
+
     r = session.get(request_url)
     try:
         image = np.asarray(Image.open(io.BytesIO(r.content)))
