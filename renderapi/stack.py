@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-import json
 import logging
 from time import strftime
 import requests
 from .errors import RenderError
 from .utils import jbool, NullHandler
-from .render import (Render, format_baseurl, format_preamble,
+from .render import (format_baseurl, format_preamble,
                      renderaccess, post_json)
 
 logger = logging.getLogger(__name__)
@@ -85,7 +84,7 @@ def get_stack_metadata(stack, host=None, port=None, owner=None, project=None,
 @renderaccess
 def set_stack_state(stack, state='LOADING', host=None, port=None,
                     owner=None, project=None,
-                    session=requests.session(),  render=None, **kwargs):
+                    session=requests.session(), render=None, **kwargs):
     '''
     set state of selected stack.  Acceptable states are listed below:
         LOADING: stack is accepting additional information.
@@ -278,4 +277,3 @@ def get_section_z_value(stack, sectionId, host=None, port=None,
         logger.error(e)
         logger.error(r.text)
         raise RenderError(r.text)
-    return float(process_simple_url_request(request_url, session))

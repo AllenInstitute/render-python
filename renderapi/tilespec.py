@@ -1,12 +1,11 @@
 #!/usr/bin/env python
-from .render import Render, format_baseurl, format_preamble, renderaccess
+from .render import format_preamble, renderaccess
 from .utils import NullHandler
 from .stack import get_z_values_for_stack
 from .transform import TransformList, load_transform_json
 from collections import OrderedDict
 import logging
 import requests
-import numpy as np
 
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())

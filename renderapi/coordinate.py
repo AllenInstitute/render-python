@@ -2,9 +2,9 @@
 '''
 coordinate mapping functions for render api
 '''
-from .render import Render, format_preamble, renderaccess
+from .render import format_preamble, renderaccess
 from .utils import NullHandler
-from .client import call_run_ws_client, coordinateClient
+from .client import coordinateClient
 import requests
 import json
 import numpy as np
