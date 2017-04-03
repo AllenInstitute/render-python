@@ -12,16 +12,17 @@ class PyTest(TestCommand):
         self.pytest_args = ""
 
     def run_tests(self):
+        # import here, cause outside the eggs aren't loaded
         import shlex
-        #import here, cause outside the eggs aren't loaded
         import pytest
-        self.pytest_args += " --cov=renderapi --cov-report html --junitxml=test-reports/test.xml"
+        self.pytest_args += " --cov=renderapi --cov-report html "\
+                            "--junitxml=test-reports/test.xml"
 
         errno = pytest.main(shlex.split(self.pytest_args))
         sys.exit(errno)
 
 
-with open('test/requirements.txt','r') as f:
+with open('test/requirements.txt', 'r') as f:
     test_required = f.read().splitlines()
 
 with open('requirements.txt', 'r') as f:
@@ -37,5 +38,5 @@ setup(name='render-python',
       packages=['renderapi'],
       install_requires=required,
       setup_requires=['flake8'],
-      tests_require = test_required,
-      cmdclass = {'test': PyTest},)
+      tests_require=test_required,
+      cmdclass={'test': PyTest},)

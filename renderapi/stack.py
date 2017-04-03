@@ -3,9 +3,11 @@ import json
 import logging
 from time import strftime
 import requests
-from .render import Render, format_baseurl, format_preamble, renderaccess
-from .utils import jbool, NullHandler, post_json
 from .errors import RenderError
+from .utils import jbool, NullHandler
+from .render import (Render, format_baseurl, format_preamble,
+                     renderaccess, post_json)
+
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
 
@@ -54,38 +56,47 @@ class StackVersion:
         self.__dict__.update({k: v for k, v in d.items()})
 
 
-
-
 @renderaccess
-def set_stack_metadata(stack,sv,host=None,port=None,owner=None,
-                                project=None,session=requests.session(),
-                                render=None,**kwargs):
-    request_url = format_preamble(host, port, owner, project,stack)
+def set_stack_metadata(stack, sv, host=None, port=None, owner=None,
+                       project=None, session=requests.session(),
+                       render=None, **kwargs):
+    request_url = format_preamble(host, port, owner, project, stack)
     logger.debug(request_url)
-    return post_json(session,request_url,sv.to_dict())
+    return post_json(session, request_url, sv.to_dict())
+
 
 @renderaccess
-def get_stack_metadata(stack,host=None,port=None,owner=None,project=None,
-                       session=requests.session(), render=None,**kwargs):
-    request_url = format_preamble(host, port, owner, project,stack)
+def get_stack_metadata(stack, host=None, port=None, owner=None, project=None,
+                       session=requests.session(), render=None, **kwargs):
+    request_url = format_preamble(host, port, owner, project, stack)
 
     logger.debug(request_url)
     r = session.get(request_url)
     try:
-        sv= StackVersion()
+        sv = StackVersion()
         sv.from_dict(r.json()['currentVersion'])
         return sv
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
         raise RenderError(r.text)
-
 
 
 @renderaccess
 def set_stack_state(stack, state='LOADING', host=None, port=None,
                     owner=None, project=None,
                     session=requests.session(),  render=None, **kwargs):
-    assert state in ['LOADING', 'COMPLETE', 'OFFLINE', 'READ_ONLY']
+    '''
+    set state of selected stack.  Acceptable states are listed below:
+        LOADING: stack is accepting additional information.
+        COMPLETE: stack is finished loading.
+        OFFLINE: stack is not in use.
+        READ_ONLY: stack cannot be changed.
+    TODO there is a limited direction in which these stack changes can go
+    '''
+    if state not in ['LOADING', 'COMPLETE', 'OFFLINE', 'READ_ONLY']:
+        raise RenderError('state {} not in known states {}'.format(
+            state, ['LOADING', 'COMPLETE', 'OFFLINE', 'READ_ONLY']))
     request_url = format_preamble(
         host, port, owner, project, stack) + "/state/%s" % state
     logger.debug(request_url)
@@ -148,11 +159,11 @@ def create_stack(stack, cycleNumber=None, cycleStepNumber=None,
         stackResolutionZ=stackResolutionZ)
     request_url = format_preamble(host, port, owner, project, stack)
     logger.debug("stack version {} {}".format(request_url, sv.to_dict()))
-    r = post_json(session,request_url,sv.to_dict())
-
+    r = post_json(session, request_url, sv.to_dict())
     try:
         return r
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
 
 
@@ -173,11 +184,9 @@ def clone_stack(inputstack, outputstack, host=None, port=None,
         host, port, owner, project, inputstack), outputstack)
 
     logger.debug(request_url)
-    r = post_json(session,request_url,sv.to_dict(), params={
+    r = post_json(session, request_url, sv.to_dict(), params={
         'z': zs, 'toProject': toProject,
         'skipTransforms': jbool(skipTransforms)})
-
-
     return r
 
 
@@ -191,13 +200,14 @@ def get_z_values_for_stack(stack, project=None, host=None, port=None,
     r = session.get(request_url)
     try:
         return r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
         raise RenderError(r.text)
 
 
 def get_z_value_for_section(stack, sectionId, **kwargs):
-    return get_section_z_value(stack,sectionId,**kwargs)
+    return get_section_z_value(stack, sectionId, **kwargs)
 
 
 @renderaccess
@@ -206,7 +216,7 @@ def put_resolved_tilespecs(stack, json_dict, host=None, port=None,
                            session=requests.session(), render=None, **kwargs):
     request_url = format_preamble(
         host, port, owner, project, stack) + "/resolvedTiles"
-    r = post_json(session,request_url,json_dict)
+    r = post_json(session, request_url, json_dict)
     return r
 
 
@@ -220,7 +230,8 @@ def get_bounds_from_z(stack, z, host=None, port=None, owner=None,
     r = session.get(request_url)
     try:
         return r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
         raise RenderError(r.text)
 
@@ -233,21 +244,26 @@ def get_stack_bounds(stack, host=None, port=None, owner=None, project=None,
     r = session.get(request_url)
     try:
         return r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
         raise RenderError(r.text)
 
+
 @renderaccess
-def get_stack_sectionData(stack, host=None, port=None, owner=None, project=None,
-                     session=requests.session(), render=None, **kwargs):
+def get_stack_sectionData(stack, host=None, port=None, owner=None,
+                          project=None, session=requests.session(),
+                          render=None, **kwargs):
     request_url = format_preamble(
         host, port, owner, project, stack) + '/sectionData'
     r = session.get(request_url)
     try:
         return r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
         raise RenderError(r.text)
+
 
 @renderaccess
 def get_section_z_value(stack, sectionId, host=None, port=None,
@@ -258,7 +274,8 @@ def get_section_z_value(stack, sectionId, host=None, port=None,
     r = session.get(request_url)
     try:
         return float(r.json())
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
         raise RenderError(r.text)
     return float(process_simple_url_request(request_url, session))

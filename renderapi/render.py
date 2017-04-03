@@ -3,6 +3,7 @@ import logging
 import os
 from functools import wraps
 import requests
+import json
 from .utils import defaultifNone, NullHandler, fitargspec
 from .errors import ClientScriptError
 
@@ -11,6 +12,9 @@ logger.addHandler(NullHandler())
 
 
 class Render(object):
+    '''
+    Render object to store connection settings for render server
+    '''
     def __init__(self, host=None, port=None, owner=None, project=None,
                  client_scripts=None):
         self.DEFAULT_HOST = host
@@ -63,7 +67,10 @@ class Render(object):
 
 
 class RenderClient(Render):
-    '''Draft object for run_ws_client.sh calls'''
+    '''
+    Render object to run java client commands via a wrapped client script.
+        This is a work in progress.
+    '''
     def __init__(self, client_script=None, memGB=None, *args, **kwargs):
         super(RenderClient, self).__init__(**kwargs)
         if client_script is None:
@@ -95,8 +102,35 @@ class RenderClient(Render):
 
 def connect(host=None, port=None, owner=None, project=None,
             client_scripts=None, client_script=None, memGB=None,
-            json_dict=None, force_http=True, **kwargs):
-    '''helper function to connect to a render instance'''
+            force_http=True, **kwargs):
+    '''
+    helper function to connect to a render instance
+        can default to using environment variables if not specified in call.
+    input:
+        host -- string hostname for target render server -- will prepend
+            "http://" if not found and force_http keyword evaluates True.
+            Can be set by environment variable RENDER_HOST.
+        port -- string, int, or None port for target render server.
+            Optional as in 'http://hostname[:port]'.
+            Can be set by environment variable RENDER_PORT.
+        owner -- string owner for render-ws.
+            Can be set by environment variable RENDER_OWNER.
+        project -- string project for render webservice.
+            Can be set by environment variable RENDER_PROJECT.
+        client_scripts -- string specifying directory path
+            for render-ws-java-client scripts.
+            Can be set by environment variable RENDER_CLIENT_SCRIPTS.
+        client_script -- string path to a wrapper for java client classes.
+            Used only in RenderClient.
+            Can be set by environment variable RENDER_CLIENT_SCRIPT.
+        memGB -- string specifying heap size in GB for java client scripts,
+            example for 1 GB: '1G'.  Used only in RenderClient.
+            Can be set by environment variable RENDER_CLIENT_HEAP.
+        force_http -- boolean determining whether to prepend
+            'http://' to render host
+    returns:
+        RenderClient or Render object
+    '''
     if host is None:
         if 'RENDER_HOST' not in os.environ:
             host = str(raw_input("Enter Render Host: "))
@@ -176,6 +210,10 @@ def connect(host=None, port=None, owner=None, project=None,
 
 
 def renderaccess(f):
+    '''
+    decorator allowing functions asking for host, port, owner, project
+        to default to a connection defined by a render object kwarg
+    '''
     @wraps(f)
     def wrapper(*args, **kwargs):
         args, kwargs = fitargspec(f, args, kwargs)
@@ -192,13 +230,30 @@ def renderaccess(f):
     return wrapper
 
 
+def post_json(session, request, jsondict):
+    payload = json.dumps(jsondict)
+    r = session.post(request, data=payload,
+                     headers={"content-type": "application/json",
+                              "Accept": "application/json"})
+    try:
+        return r
+    except Exception as e:
+        logger.error(e)
+        logger.error(r.text)
+
+
 def format_baseurl(host, port):
+    '''format host and port to a standard template render-ws url'''
     # return 'http://%s:%d/render-ws/v1' % (host, port)
     server = '{}{}'.format(host, ('' if port is None else ':{}'.format(port)))
     return '{}/render-ws/v1'.format(server)
 
 
 def format_preamble(host, port, owner, project, stack):
+    '''
+    format host, port, owner, project, and stack parameters
+       to the access point to stack-based apis
+    '''
     preamble = "%s/owner/%s/project/%s/stack/%s" % (
         format_baseurl(host, port), owner, project, stack)
     return preamble
@@ -207,11 +262,15 @@ def format_preamble(host, port, owner, project, stack):
 @renderaccess
 def get_owners(host=None, port=None, session=requests.session(),
                render=None, **kwargs):
+    '''
+    return list of owners across all Projects and Stacks for a render server
+    '''
     request_url = "%s/owners/" % format_baseurl(host, port)
     r = session.get(request_url)
     try:
         return r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
 
 
@@ -219,19 +278,26 @@ def get_owners(host=None, port=None, session=requests.session(),
 def get_stack_metadata_by_owner(owner=None, host=None, port=None,
                                 session=requests.session(),
                                 render=None, **kwargs):
+    '''
+    return metadata for all stacks belonging to particular
+        owner on render server
+    TODO example
+    '''
     request_url = "%s/owner/%s/stacks/" % (
         format_baseurl(host, port), owner)
     logger.debug(request_url)
     r = session.get(request_url)
     try:
         return r.json()
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
 
 
 @renderaccess
 def get_projects_by_owner(owner=None, host=None, port=None,
                           session=requests.session(), render=None, **kwargs):
+    '''return list of projects belonging to a single owner for render stack'''
     metadata = get_stack_metadata_by_owner(owner=owner, host=host,
                                            port=port, session=session)
     projects = list(set([m['stackId']['project'] for m in metadata]))
@@ -242,6 +308,9 @@ def get_projects_by_owner(owner=None, host=None, port=None,
 def get_stacks_by_owner_project(owner=None, project=None, host=None,
                                 port=None, session=requests.session(),
                                 render=None, **kwargs):
+    '''
+    return list of stacks belonging to an owner's project on render server
+    '''
     metadata = get_stack_metadata_by_owner(owner=owner, host=host,
                                            port=port, session=session)
     stacks = ([m['stackId']['stack'] for m in metadata

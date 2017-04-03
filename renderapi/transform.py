@@ -30,23 +30,25 @@ except ImportError as e:
     from numpy.linalg import svd
 
 
-
 class TransformList:
-    def __init__(self,tforms=None,transformId=None,json=None):
+    def __init__(self, tforms=None, transformId=None, json=None):
         if json is not None:
             self.from_dict(json)
         else:
             if tforms is None:
                 self.tforms = []
             else:
-                assert(type(tforms)==list)
+                if not isinstance(tforms, list):
+                    raise RenderError(
+                        'unexpected type {} for transforms!'.format(
+                            type(tforms)))
                 self.tforms = tforms
             self.transformId = transformId
 
     def to_dict(self):
-        d= {}
+        d = {}
         d['type'] = 'list'
-        d['specList'] =[tform.to_dict() for tform in self.tforms]
+        d['specList'] = [tform.to_dict() for tform in self.tforms]
         if self.transformId is not None:
             d['id'] = self.transformId
         return d
@@ -54,35 +56,77 @@ class TransformList:
     def to_json(self):
         return json.dumps(self.to_dict())
 
-    def from_dict(self,d):
-        self.tforms=[]
+    def from_dict(self, d):
+        self.tforms = []
         if d is not None:
-            self.transformId = d.get('id',None)
+            self.transformId = d.get('id')
             for td in d['specList']:
                 self.tforms.append(load_transform_json(td))
         return self.tforms
 
-def load_transform_json(d):
-    type = d.get('type','leaf')
-    if type=='leaf':
-        return load_leaf_json(d)
-    elif type == 'list':
-        return TransformList(json=d)
-    elif type == 'ref':
-        return ReferenceTransform(json=d)
-    raise RenderError("Unknown Transform Type %s"%type)
+
+def load_transform_json(d, default_type='leaf'):
+    handle_load_tform = {'leaf': load_leaf_json,
+                         'list': lambda x: TransformList(json=x),
+                         'ref': lambda x: ReferenceTransform(json=x),
+                         'interpolated':
+                             lambda x: InterpolatedTransform(json=x)}
+    try:
+        return handle_load_tform[d.get('type', default_type)](d)
+    except KeyError as e:
+        raise RenderError('Unknown Transform Type {}'.format(e))
+
 
 def load_leaf_json(d):
-    type = d.get('type','leaf')
-    assert(type=='leaf')
-    cls = d['className']
+    handle_load_leaf = {
+        AffineModel.className: lambda x: AffineModel(json=d),
+        Polynomial2DTransform.className:
+            lambda x: Polynomial2DTransform(json=d)}
 
-    if cls==AffineModel.className:
-        return AffineModel(json=d)
-    elif cls==Polynomial2DTransform.className:
-        return Polynomial2DTransform(json=d)
-    else:
+    tform_type = d.get('type', 'leaf')
+    if tform_type != 'leaf':
+        raise RenderError(
+            'Unexpected or unknown Transform Type {}'.format(tform_type))
+    tform_class = d['className']
+    try:
+        return handle_load_leaf[tform_class](d)
+    except KeyError as e:
+        logger.info('Leaf transform class {} not defined in '
+                    'transform module, using generic'.format(e))
         return Transform(json=d)
+
+
+class InterpolatedTransform:
+    '''
+    Transform spec defined by linear interpolation of two other transform specs
+    inputs:
+        a -- transform spec at minimum weight
+        b -- transform spec at maximum weight
+        lambda_ -- float value (0.-1.) which defines evaluation of the
+            linear interpolation between a (at 0) and b (at 1)
+    '''
+    def __init__(self, a=None, b=None, lambda_=None, json=None):
+        if json is not None:
+            self.from_dict(json)
+        else:
+            self.a = a
+            self.b = b
+            self.lambda_ = lambda_
+
+    def to_dict(self):
+        return dict(self)
+
+    def from_dict(self, d):
+        self.a = load_transform_json(d['a'])
+        self.b = load_transform_json(d['b'])
+        self.lambda_ = d['lambda']
+
+    def __iter__(self):
+        return iter([('type', 'interpolated'),
+                     ('a', self.a.to_dict()),
+                     ('b', self.b.to_dict()),
+                     ('lambda', self.lambda_)])
+
 
 class ReferenceTransform:
     def __init__(self, refId=None, json=None):
@@ -130,7 +174,8 @@ class Transform(object):
         self.className = d['className']
         self.transformId = d.get('transformId', None)
         self._process_dataString(d['dataString'])
-    def _process_dataString(self,datastring):
+
+    def _process_dataString(self, datastring):
         self.dataString = datastring
 
     def __str__(self):
@@ -165,7 +210,6 @@ class AffineModel(Transform):
             self.load_M()
             self.transformId = None
 
-
     @property
     def dataString(self):
         return "%.10f %.10f %.10f %.10f %.10f %.10f" % (
@@ -185,7 +229,6 @@ class AffineModel(Transform):
         self.B1 = float(dsList[5])
         self.load_M()
 
-
     def load_M(self):
         self.M = np.identity(3, np.double)
         self.M[0, 0] = self.M00
@@ -195,24 +238,14 @@ class AffineModel(Transform):
         self.M[0, 2] = self.B0
         self.M[1, 2] = self.B1
 
-    '''
-    def to_dict(self):
-        d = {}
-        d['type'] = 'leaf'
-        d['className'] = self.className
-        d['dataString'] = "%.10f %.10f %.10f %.10f %.10f %.10f" % (
-            self.M[0, 0], self.M[1, 0], self.M[0, 1],
-            self.M[1, 1], self.M[0, 2], self.M[1, 2])
-        return d
-    '''
-
     def invert(self):
         Ai = AffineModel()
 
     def fit(self, A, B):
-        assert A.shape[0] == B.shape[0]
-        assert A.shape[1] == 2
-        assert B.shape[1] == 2
+        if not all([A.shape[0] == B.shape[0], A.shape[1] == B.shape[1] == 2]):
+            raise EstimationError(
+                'shape mismatch! A shape: {}, B shape {}'.format(
+                    A.shape, B.shape))
 
         N = A.shape[0]  # total points
 
@@ -246,7 +279,9 @@ class AffineModel(Transform):
         zerovec = np.zeros((Np, 1), np.double)
         onevec = np.ones((Np, 1), np.double)
 
-        assert(points.shape[1] == 2)
+        if points.shape[1] != 2:
+            raise ConversionError('Points must be of shape (:, 2) '
+                                  '-- got {}'.format(points.shape))
         Nd = 2
         points = np.concatenate((points, onevec), axis=1)
         return points, Nd
@@ -348,8 +383,6 @@ class Polynomial2DTransform(Transform):
     TODO:
         fall back to Affine Model in special cases
         robustness in estimation
-
-        there is a hierarchy in the __init__ that should probably be defined
     '''
     className = 'mpicbg.trakem2.transform.PolynomialTransform2D'
 
@@ -422,7 +455,7 @@ class Polynomial2DTransform(Transform):
         # return (-V[-1, :-1] / V[-1, -1]).reshape((2, no_coeff // 2))
 
     def estimate(self, src, dst, order=2,
-                 convergence_test=None, max_tries=100,**kwargs):
+                 convergence_test=None, max_tries=100, **kwargs):
 
         params = self.fit(src, dst, order=order)
         if convergence_test is None:

@@ -14,4 +14,4 @@ from .render import Render
 
 __all__ = ['render', 'client', 'tilespec', 'errors',
            'stack', 'image', 'pointmatch', 'coordinate',
-           'connect', 'transform','Render']
+           'connect', 'transform', 'Render']
