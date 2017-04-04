@@ -71,13 +71,15 @@ class RenderClient(Render):
     Render object to run java client commands via a wrapped client script.
         This is a work in progress.
     '''
-    def __init__(self, client_script=None, memGB=None, *args, **kwargs):
+    def __init__(self, client_script=None, memGB=None, validate_client=True,
+                 *args, **kwargs):
         super(RenderClient, self).__init__(**kwargs)
-        if client_script is None:
-            raise ClientScriptError('No RenderClient script specified!')
-        elif not os.path.isfile(client_script):
-            raise ClientScriptError('Client script {} not found!'.format(
-                client_script))
+        if validate_client:
+            if client_script is None:
+                raise ClientScriptError('No RenderClient script specified!')
+            elif not os.path.isfile(client_script):
+                raise ClientScriptError('Client script {} not found!'.format(
+                    client_script))
         if 'run_ws_client.sh' not in os.path.basename(client_script):
             logger.warning(
                 'Unrecognized client script {}!'.format(client_script))
@@ -102,7 +104,7 @@ class RenderClient(Render):
 
 def connect(host=None, port=None, owner=None, project=None,
             client_scripts=None, client_script=None, memGB=None,
-            force_http=True, **kwargs):
+            force_http=True, validate_client=True, **kwargs):
     '''
     helper function to connect to a render instance
         can default to using environment variables if not specified in call.
@@ -200,7 +202,8 @@ def connect(host=None, port=None, owner=None, project=None,
         return RenderClient(client_script=client_script, memGB=memGB,
                             host=host, port=port,
                             owner=owner, project=project,
-                            client_scripts=client_scripts)
+                            client_scripts=client_scripts,
+                            validate_client=validate_client)
     except ClientScriptError as e:
         logger.info(e)
         logger.warning(
