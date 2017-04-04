@@ -72,40 +72,48 @@ def local_corners_json(teststack_tilespec):
             'tileId': ts.tileId,
             'visible': True,
         }
+        d['local']=corner
+    return corners
 
+@pytest.fixture(scope='module')
+def world_corners_json(render,teststack_tilespec):
+    (stack, ts) = teststack_tilespec
+    corners = [[0, 0], [ts.width-100, 0], [ts.width-100, ts.height-100], [0, ts.height-100]]
+    world_corners = []
+    for corner in corners:
+        world_corners.append(renderapi.coordinate.local_to_world_coordinates(\
+                         stack, ts.tileId, corner[0], corner[1],render=render))
+    return world_corners
 
 def test_world_to_local_coordinates(render, teststack_tilespec):
     (stack, ts) = teststack_tilespec
     local = render.run(renderapi.coordinate.world_to_local_coordinates,
                        stack, ts.z, ts.minX, ts.minY)
-    assert(local['error'] == "")
+    logger.debug(local)
+    assert('error' not in local.keys())
     assert(local['tileId'] == ts.tileId)
     assert(len(local['local']) >= 2)
 
 
 def test_local_to_world_coordinates(render, teststack_tilespec):
     (stack, ts) = teststack_tilespec
-    local = render.run(renderapi.coordinate.local_to_world_coordinates,
+    world = render.run(renderapi.coordinate.local_to_world_coordinates,
                        stack, ts.tileId, 0,0)
-    assert(local['error'] == "")
-    assert(local['tileId'] == ts.tileId)
-    assert(len(local['world']) >= 2)
+    logger.debug(world)
+    assert('error' not in world.keys())
+    assert(world['tileId'] == ts.tileId)
+    assert(len(world['world']) >= 2)
 
 
-def test_world_to_local_coordinates_batch(render, teststack_tilespec):
+def test_world_to_local_coordinates_batch(render, teststack_tilespec,world_corners_json):
     (stack, ts) = teststack_tilespec
-    corners = [[0, 0], [ts.width, 0], [ts.width, ts.height], [0, ts.height]]
-    batch = []
-    for corner in corners:
-        batch.append(renderapi.coordinate.local_to_world_coordinates(
-                         stack, ts.z, corner[0], corner[1],render=render))
     local = renderapi.coordinate.world_to_local_coordinates_batch(
-        stack, batch, ts.z,execute_local=False,render=render)
-
-    assert(len(local) == len(batch))
+        stack, world_corners_json, ts.z,execute_local=False,render=render)
+    logger.debug(local)
+    assert(len(local) == len(world_corners_json))
     for ans in local:
         for tile in ans:
-            assert(len(tile['error']) == 0)
+            assert('error' not in tile.keys())
 
 
 def test_local_to_world_coordinates_batch(render, teststack_tilespec):
