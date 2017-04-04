@@ -59,7 +59,7 @@ def teststack_tilespec():
         sharedTransforms=tforms)
     r = render.run(renderapi.stack.set_stack_state, stack, 'COMPLETE')
     yield (stack, tilespecs[0])
-    render.run(renderapi.stack.delete_stack, stack)
+    #render.run(renderapi.stack.delete_stack, stack)
 
 
 @pytest.fixture(scope='module')
@@ -86,7 +86,7 @@ def test_world_to_local_coordinates(render, teststack_tilespec):
 def test_local_to_world_coordinates(render, teststack_tilespec):
     (stack, ts) = teststack_tilespec
     local = render.run(renderapi.coordinate.local_to_world_coordinates,
-                       stack, ts.z, 0,0)
+                       stack, ts.tileId, 0,0)
     assert(local['error'] == "")
     assert(local['tileId'] == ts.tileId)
     assert(len(local['world']) >= 2)
