@@ -126,22 +126,20 @@ def test_local_to_world_coordinates_batch(render, teststack_tilespec,local_corne
     for ans in world:
         assert('error' not in ans.keys())
 
-def old_world_to_local_coordinates_array(render, teststack_tilespec):
-    logger.debug('test not implemented yet')
-    assert(False)
-
-
 def test_world_to_local_coordinates_array(render, teststack_tilespec):
-    logger.debug('test not implemented yet')
-    assert(False)
-
-
-def old_local_to_world_coordinates_array(render, teststack_tilespec):
- 
-
-    logger.debug('test not implemented yet')
-    assert(False)
-
+    local_corners = np.array([[10, 10], [ts.width-10, 10], [ts.width-10, ts.height-10], [10, ts.height-10]])
+    world_corners = renderapi.coordinate.local_to_world_coordinates_array(stack,
+        local_corners,
+        ts.tileId,
+        ts.z,
+        render=render)
+    local_corners2 = renderapi.coordinate.world_to_local_coordinates_array(stack,
+        world_corners,
+        ts.tileId,
+        ts.z,
+        render=render)
+    for pt,ptafter in zip(local_corners,local_corners2):
+        assert np.sum(np.abs(pt-ptafter))<.1
 
 def local_to_world_coordinates_array(render, teststack_tilespec):
     (stack, ts) = teststack_tilespec
@@ -155,6 +153,7 @@ def local_to_world_coordinates_array(render, teststack_tilespec):
     assert world_corners.shape[0]==local_corners.shape[0]
 
 def world_to_local_coordinates_clientside():
+    
     logger.debug('test not implemented yet')
     assert(False)
 
