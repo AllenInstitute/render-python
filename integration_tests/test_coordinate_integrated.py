@@ -138,6 +138,7 @@ def test_world_to_local_coordinates_array(render, teststack_tilespec):
         ts.tileId,
         ts.z,
         render=render)
+    logger.debug('local corners2: {}'.format(local_corners2))
     for pt,ptafter in zip(local_corners,local_corners2):
         assert np.sum(np.abs(pt-ptafter))<.1
 
@@ -152,12 +153,33 @@ def local_to_world_coordinates_array(render, teststack_tilespec):
     logger.debug('world corners:{}'.format(world_corners))
     assert world_corners.shape[0]==local_corners.shape[0]
 
-def world_to_local_coordinates_clientside():
-    
-    logger.debug('test not implemented yet')
-    assert(False)
+def world_to_local_coordinates_clientside(render, teststack_tilespec):
+    local_corners = np.array([[10, 10], [ts.width-10, 10], [ts.width-10, ts.height-10], [10, ts.height-10]])
+    world_corners = renderapi.coordinate.local_to_world_coordinates_array(stack,
+        local_corners,
+        ts.tileId,
+        ts.z,
+        render=render,
+        doClientSide=True)
+    local_corners2 = renderapi.coordinate.world_to_local_coordinates_array(stack,
+        world_corners,
+        ts.tileId,
+        ts.z,
+        render=render,
+        doClientSide=True)
+    logger.debug('local corners2: {}'.format(local_corners2))
+    for pt,ptafter in zip(local_corners,local_corners2):
+        assert np.sum(np.abs(pt-ptafter))<.1
 
 
-def local_to_world_coordinates_clientside():
-    logger.debug('test not implemented yet')
-    assert(False)
+def local_to_world_coordinates_clientside(render, teststack_tilespec):
+    (stack, ts) = teststack_tilespec
+    local_corners = np.array([[10, 10], [ts.width-10, 10], [ts.width-10, ts.height-10], [10, ts.height-10]])
+    world_corners = renderapi.coordinate.local_to_world_coordinates_array(stack,
+        local_corners,
+        ts.tileId,
+        ts.z,
+        doClientSide=True,
+        render=render)
+    logger.debug('world corners:{}'.format(world_corners))
+    assert world_corners.shape[0]==local_corners.shape[0]
