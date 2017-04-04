@@ -4,11 +4,13 @@ utilities to make render/java/web/life interfacing easier
 '''
 import logging
 import inspect
+import tempfile
 import copy
 import json
 
 
 class NullHandler(logging.Handler):
+    '''handler to avoid logging errors for, e.g., missing logger setup'''
     def emit(self, record):
         pass
 
@@ -18,12 +20,30 @@ logger.addHandler(NullHandler())
 
 
 class RenderEncoder(json.JSONEncoder):
+    '''
+    json Encoder in the following hierarchy for serialization:
+        obj.to_dict()
+        dict(obj)
+        JsonEncoder.default(obj)
+        obj.__dict__
+    '''
     def default(self, obj):
         to_dict = getattr(obj, "to_dict", None)
         if callable(to_dict):
             return obj.to_dict()
         else:
-            return obj.__dict__
+            try:
+                return dict(obj)
+            except TypeError as e:
+                logger.debug("{} object is not recognized dictionary".format(
+                    type(obj)))
+                try:
+                    return super(RenderEncoder, self).default(obj)
+                except TypeError as e:
+                    logger.warning(
+                        "cannot json serialize {}.  "
+                        "Defaulting to __dict__".format(type(obj)))
+                    return obj.__dict__
 
 
 def post_json(session, request_url, d, params=None):
@@ -46,11 +66,13 @@ def post_json(session, request_url, d, params=None):
 
 
 def renderdumps(obj, *args, **kwargs):
+    '''json.dumps using the RenderEncoder'''
     cls_ = kwargs.pop('cls', RenderEncoder)
     return json.dumps(obj, *args, cls=cls_, **kwargs)
 
 
 def renderdump(obj, *args, **kwargs):
+    '''json.dump using the RenderEncoder'''
     cls_ = kwargs.pop('cls', RenderEncoder)
     return json.dump(obj, *args, cls=cls_, **kwargs)
 
