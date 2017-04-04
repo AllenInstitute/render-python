@@ -233,8 +233,9 @@ def test_z_bounds(render, teststack, render_example_tilespec_and_transforms):
     # check a single z stack bounds
     zbounds = render.run(renderapi.stack.get_bounds_from_z,
                          teststack, tilespecs[0].z)
-    expected_bounds = {u'maxZ': 3407.0, u'maxX': 5009.0, u'maxY': 4395.0,
-                       u'minX': 232.0, u'minY': 17.0, u'minZ': 3407.0}
+
+    expected_bounds = {u'maxZ': 3407.0, u'maxX': 4917.0, u'maxY': 4506.0,
+                       u'minX': 149.0, u'minY': 130.0, u'minZ': 3407.0}
     for key in zbounds.keys():
         assert np.abs(zbounds[key]-expected_bounds[key]) < 1.0 
 

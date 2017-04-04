@@ -88,11 +88,12 @@ def world_corners_json(render,teststack_tilespec):
 def test_world_to_local_coordinates(render, teststack_tilespec):
     (stack, ts) = teststack_tilespec
     local = render.run(renderapi.coordinate.world_to_local_coordinates,
-                       stack, ts.z, ts.minX, ts.minY)
+                       stack, ts.z, 1500, 1500)
     logger.debug(local)
-    assert('error' not in local.keys())
-    assert(local['tileId'] == ts.tileId)
-    assert(len(local['local']) >= 2)
+    for tile in local:
+        assert('error' not in tile.keys())
+        assert(tile['tileId'] == ts.tileId)
+        assert(len(tile['local']) >= 2)
 
 
 def test_local_to_world_coordinates(render, teststack_tilespec):
