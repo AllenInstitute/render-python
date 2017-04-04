@@ -1,4 +1,4 @@
-FROM atbigdawg:5000/fcollman/render:forrest
+FROM fcollman/render:latest
 MAINTAINER Forrest Collman (forrest.collman@gmail.com)
 
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
