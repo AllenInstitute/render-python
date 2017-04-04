@@ -2,9 +2,7 @@
   {
     "tileId": "20160710195316413_243774_7R_SID_01_redo_0_11_7_3_15_8.2266.0",
     "layout": {
-      "sectionId": "2266.0",
-      "temca": null,
-      "camera": null
+      "sectionId": "2266.0"
     },
     "z": 2266,
     "minX": 1857,
@@ -50,9 +48,7 @@
   {
     "tileId": "20160710195316873_243774_7R_SID_01_redo_0_11_7_3_16_8.2266.0",
     "layout": {
-      "sectionId": "2266.0",
-      "temca": null,
-      "camera": null
+      "sectionId": "2266.0"
     },
     "z": 2266,
     "minX": 3915,
@@ -98,9 +94,7 @@
   {
     "tileId": "20160710195317333_243774_7R_SID_01_redo_0_11_7_3_17_8.2266.0",
     "layout": {
-      "sectionId": "2266.0",
-      "temca": null,
-      "camera": null
+      "sectionId": "2266.0"
     },
     "z": 2266,
     "minX": 5957,

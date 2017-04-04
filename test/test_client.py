@@ -14,16 +14,15 @@ def test_render_client():
     r = renderapi.render.connect(**args)
 
 
-def test_default_kwargs(rkwargs=rendersettings.DEFAULT_RENDER):
-    r = renderapi.connect(**rkwargs)
-    new_r = renderapi.connect(**r.DEFAULT_KWARGS)
+def test_default_kwargs(rkwargs=rendersettings.DEFAULT_RENDER, **kwargs):
+    r = renderapi.connect(**dict(rkwargs, **kwargs))
+    new_r = renderapi.connect(**dict(r.DEFAULT_KWARGS, **kwargs))
     assert(new_r.DEFAULT_KWARGS == r.DEFAULT_KWARGS == rkwargs)
 
 
-'''
 def test_default_kwargs_client():
-    test_default_kwargs(rkwargs=rendersettings.DEFAULT_RENDER_CLIENT)
-'''
+    test_default_kwargs(rkwargs=rendersettings.DEFAULT_RENDER_CLIENT,
+                        validate_client=False)
 
 
 def test_environment_variables(
