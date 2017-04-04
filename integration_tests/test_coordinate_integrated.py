@@ -59,7 +59,7 @@ def teststack_tilespec():
         sharedTransforms=tforms)
     render.run(renderapi.stack.set_stack_state, stack, 'COMPLETE')
     yield (stack, tilespecs[0])
-    #render.run(renderapi.stack.delete_stack, stack)
+    render.run(renderapi.stack.delete_stack, stack)
 
 
 @pytest.fixture(scope='module')

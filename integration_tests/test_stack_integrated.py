@@ -219,42 +219,26 @@ def test_coordinateClient(render):
 
 
 @pytest.fixture(scope="module")
-def teststack(request):
-    render_test_parameters = {
-                'host': render_host,
-                'port': render_port,
-                'owner': 'test',
-                'project': 'test_project',
-                'client_scripts': client_script_location}
-    render = renderapi.render.connect(**render_test_parameters)
-
-    with open(tilespec_file, 'r') as f:
-        ts_json = json.load(f)
-    with open(tform_file, 'r') as f:
-        tform_json = json.load(f)
-
-    tilespecs = [renderapi.tilespec.TileSpec(json=ts) for ts in ts_json]
-    tforms = [renderapi.transform.load_transform_json(td) for td in tform_json]
+def teststack(request,render,render_example_tilespec_and_transforms):
+    (tilespecs,tforms)=render_example_tilespec_and_transforms
 
     stack = 'test_insert3'
     r = render.run(renderapi.stack.create_stack, stack, force_resolution=True)
     render.run(renderapi.client.import_tilespecs, stack, tilespecs,
                sharedTransforms=tforms)
     r = render.run(renderapi.stack.set_stack_state, stack, 'COMPLETE')
-
-    def fin():
-        render.run(renderapi.stack.delete_stack, stack)
-    request.addfinalizer(fin)
-    return stack
-
+    yield stack
+    render.run(renderapi.stack.delete_stack, stack)
 
 def test_stack_bounds(render, teststack):
     # check the stack bounds
     stack_bounds = render.run(renderapi.stack.get_stack_bounds, teststack)
-    expected_bounds = {u'maxZ': 3408.0, u'maxX': 5176.0, u'maxY': 5319.0,
-                       u'minX': 232.0, u'minY': 17.0, u'minZ': 3407.0}
-    assert(stack_bounds == expected_bounds)
+    expected_bounds = {u'maxZ': 3408.0, u'maxX': 5102.0, u'maxY': 5385.0,
+                       u'minX': 149.0, u'minY': 130.0, u'minZ': 3407.0}
 
+    for key in stack_bounds.keys():
+        assert(np.abs(stack_bounds[key]-expected_bounds[key])<1.0)
+   
 
 def test_z_bounds(render, teststack, render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
@@ -263,7 +247,9 @@ def test_z_bounds(render, teststack, render_example_tilespec_and_transforms):
                          teststack, tilespecs[0].z)
     expected_bounds = {u'maxZ': 3407.0, u'maxX': 5009.0, u'maxY': 4395.0,
                        u'minX': 232.0, u'minY': 17.0, u'minZ': 3407.0}
-    assert(zbounds == expected_bounds)
+    for key in zbounds.keys():
+        assert(np.abs(zbounds[key]-expected_bounds[key])<1.0)
+   
 
 
 def test_get_section_z(render, teststack):
