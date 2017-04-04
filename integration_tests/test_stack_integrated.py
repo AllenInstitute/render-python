@@ -23,11 +23,11 @@ root.addHandler(ch)
 @pytest.fixture(scope='module')
 def render():
     render_test_parameters = {
-            'host': render_host,
-            'port': render_port,
-            'owner': 'test',
-            'project': 'test_project',
-            'client_scripts': client_script_location}
+        'host': render_host,
+        'port': render_port,
+        'owner': 'test',
+        'project': 'test_project',
+        'client_scripts': client_script_location}
     return renderapi.render.connect(**render_test_parameters)
 
 
@@ -110,12 +110,11 @@ def test_set_stack_metadata(render):
     sv.stackResolutionZ = 4.0
 
     r = render.run(renderapi.stack.set_stack_metadata, test_stack, sv)
-    assert (r.status_code == 201)
+    assert r.status_code == 201
     sv = render.run(renderapi.stack.get_stack_metadata, test_stack)
-    assert (sv.stackResolutionX == 2.0)
-    assert (sv.stackResolutionY == 3.0)
-    assert (sv.stackResolutionZ == 4.0)
-
+    assert sv.stackResolutionX == 2.0
+    assert sv.stackResolutionY == 3.0
+    assert sv.stackResolutionZ == 4.0
 
 def test_simple_import(render, simpletilespec, tmpdir):
     # open a temporary file
@@ -137,7 +136,6 @@ def test_simple_import(render, simpletilespec, tmpdir):
                         'test_insert', simpletilespec.tileId)
     assert (ts_out.z == simpletilespec.z)
     render.run(renderapi.stack.delete_stack, 'test_insert')
-
 
 def test_simple_import_with_transforms(
         render, render_example_tilespec_and_transforms, tmpdir):
@@ -162,61 +160,52 @@ def test_simple_import_with_transforms(
                str(tilespecfile), transformFile=str(transformfile))
     r = render.run(renderapi.stack.set_stack_state,
                    'test_insert_tform', 'COMPLETE')
-    assert (r.status_code == 201)
+    assert r.status_code == 201
     ts_out = render.run(renderapi.tilespec.get_tile_spec,
                         'test_insert_tform', tilespecs[0].tileId)
-    assert (ts_out.z == tilespecs[0].z)
+    assert ts_out.z == tilespecs[0].z
     render.run(renderapi.stack.delete_stack, 'test_insert_tform')
-
-    # os.remove(tfile)
-
 
 def test_import_tilespecs(render, simpletilespec):
     stack = 'test_insert2'
-    r = render.run(renderapi.stack.create_stack, stack, force_resolution=True)
+    render.run(renderapi.stack.create_stack, stack, force_resolution=True)
     render.run(renderapi.client.import_tilespecs, stack, [simpletilespec])
-    r = render.run(renderapi.stack.set_stack_state, stack, 'COMPLETE')
-    assert (r.status_code == 201)
+    response = render.run(renderapi.stack.set_stack_state, stack, 'COMPLETE')
+    assert response.status_code == 201
     ts_out = render.run(renderapi.tilespec.get_tile_spec,
                         stack, simpletilespec.tileId)
-    assert (ts_out.z == simpletilespec.z)
+    assert ts_out.z == simpletilespec.z
     render.run(renderapi.stack.delete_stack, stack)
 
 
 def test_import_tilespecs_parallel(render):
     root.debug('test not implemented yet')
-    assert(False)
-
+    assert False
 
 def test_import_jsonfiles_validate_client(render):
     root.debug('test not implemented yet')
-    assert(False)
-
+    assert False
 
 def test_import_jsonfiles(render):
     root.debug('test not implemented yet')
-    assert(False)
-
+    assert False
 
 def test_import_parallel(render):
     root.debug('test not implemented yet')
-    assert(False)
-
+    assert False
 
 def test_tile_pair_client(render):
     root.debug('test not implemented yet')
-    assert(False)
+    assert False
 
 
 def test_importTransformChangesClient(render):
     root.debug('test not implemented yet')
-    assert(False)
-
+    assert False
 
 def test_coordinateClient(render):
     root.debug('test not implemented yet')
-    assert(False)
-
+    assert False
 
 @pytest.fixture(scope="module")
 def teststack(request,render,render_example_tilespec_and_transforms):
@@ -237,8 +226,7 @@ def test_stack_bounds(render, teststack):
                        u'minX': 149.0, u'minY': 130.0, u'minZ': 3407.0}
 
     for key in stack_bounds.keys():
-        assert(np.abs(stack_bounds[key]-expected_bounds[key])<1.0)
-   
+        assert np.abs(stack_bounds[key]-expected_bounds[key]) < 1.0
 
 def test_z_bounds(render, teststack, render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
@@ -248,31 +236,26 @@ def test_z_bounds(render, teststack, render_example_tilespec_and_transforms):
     expected_bounds = {u'maxZ': 3407.0, u'maxX': 5009.0, u'maxY': 4395.0,
                        u'minX': 232.0, u'minY': 17.0, u'minZ': 3407.0}
     for key in zbounds.keys():
-        assert(np.abs(zbounds[key]-expected_bounds[key])<1.0)
-   
-
+        assert np.abs(zbounds[key]-expected_bounds[key]) < 1.0 
 
 def test_get_section_z(render, teststack):
     # check getting section Z
     z = render.run(renderapi.stack.get_section_z_value,
                    teststack, "3407.0")
-    assert(z == 3407)
+    assert z == 3407
     z = render.run(renderapi.stack.get_z_value_for_section,
                    teststack, "3407.0")
-    assert(z == 3407)
-
+    assert z == 3407
 
 def test_get_z_values(render, teststack):
     # check get z values
     zvalues = render.run(renderapi.stack.get_z_values_for_stack, teststack)
-    assert(zvalues == [3407.0, 3408.0])
-
+    assert zvalues == [3407.0, 3408.0]
 
 def test_uniq_value(render):
     # check likelyUniqueId
     uniq = render.run(renderapi.stack.likelyUniqueId)
-    assert(len(uniq) >= len('58ceebb7a7b11b0001dc4e32'))
-
+    assert len(uniq) >= len('58ceebb7a7b11b0001dc4e32')
 
 def test_bb_image(render, teststack):
     formats = renderapi.image.IMAGE_FORMATS.keys()
@@ -289,10 +272,9 @@ def test_bb_image(render, teststack):
                           teststack, z, x, y, width, height,
                           scale=.25, img_format=fmt)
         dr = data.ravel()
-        assert (data.shape[0] == (np.floor(height*.25)))
-        assert (data.shape[1] == (np.floor(width*.25)))
-        assert (data.shape[2] >= 3)
-
+        assert data.shape[0] == (np.floor(height*.25))
+        assert data.shape[1] == (np.floor(width*.25))
+        assert data.shape[2] >= 3
 
 def test_tile_image(render, teststack, render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
@@ -302,7 +284,6 @@ def test_tile_image(render, teststack, render_example_tilespec_and_transforms):
     assert len(data.shape) == 3
     assert data.shape[0] >= tilespecs[0].height
     assert data.shape[1] >= tilespecs[0].width
-
 
 def fail_image_get(render, teststack, render_example_tilespec_and_transforms):
     with pytest.raises(KeyError):
