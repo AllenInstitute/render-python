@@ -105,6 +105,7 @@ class Layout:
         d['stageY'] = self.stageY
         d['rotation'] = self.rotation
         d['pixelsize'] = self.pixelsize
+        d = {k: v for k, v in d.items() if v is not None}
         return d
 
     def from_dict(self, d):
@@ -199,6 +200,7 @@ class TileSpec:
         thedict['inputfilters']['type'] = 'list'
         thedict['inputfilters']['specList'] = [f.to_dict() for f
                                                in self.inputfilters]
+        thedict = {k: v for k, v in thedict.items() if v is not None}
         return thedict
 
     def from_dict(self, d):
