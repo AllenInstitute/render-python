@@ -53,11 +53,11 @@ def teststack_tilespec():
     tforms = [renderapi.transform.load_transform_json(td) for td in tform_json]
 
     stack = 'test_coordinate_stack'
-    r = render.run(renderapi.stack.create_stack, stack, force_resolution=True)
+    render.run(renderapi.stack.create_stack, stack, force_resolution=True)
     render.run(
         renderapi.client.import_tilespecs, stack, tilespecs,
         sharedTransforms=tforms)
-    r = render.run(renderapi.stack.set_stack_state, stack, 'COMPLETE')
+    render.run(renderapi.stack.set_stack_state, stack, 'COMPLETE')
     yield (stack, tilespecs[0])
     #render.run(renderapi.stack.delete_stack, stack)
 
@@ -65,7 +65,7 @@ def teststack_tilespec():
 @pytest.fixture(scope='module')
 def local_corners_json(teststack_tilespec):
     (stack, ts) = teststack_tilespec
-    corners = [[0, 0], [ts.width, 0], [ts.width, ts.height], [0, ts.height]]
+    corners = [[10, 10], [ts.width-10, 10], [ts.width-10, ts.height-10], [10, ts.height-10]]
     batch = []
     for corner in corners:
         d = {
@@ -78,7 +78,7 @@ def local_corners_json(teststack_tilespec):
 @pytest.fixture(scope='module')
 def world_corners_json(render,teststack_tilespec):
     (stack, ts) = teststack_tilespec
-    corners = [[0, 0], [ts.width-100, 0], [ts.width-100, ts.height-100], [0, ts.height-100]]
+    corners = [[10, 10], [ts.width-10, 10], [ts.width-10, ts.height-10], [10, ts.height-10]]
     world_corners = []
     for corner in corners:
         world_corners.append(renderapi.coordinate.local_to_world_coordinates(\
