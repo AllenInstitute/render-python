@@ -8,9 +8,9 @@ from functools import partial
 import logging
 import subprocess
 import tempfile
-from .utils import jbool, renderdump, NullHandler
+from .utils import renderdump, NullHandler
 from .errors import ClientScriptError
-from .render import Render, RenderClient, renderaccess
+from .render import RenderClient, renderaccess
 from .stack import set_stack_state, make_stack_params
 
 # setup logger
@@ -203,7 +203,6 @@ def import_tilespecs(stack, tilespecs, sharedTransforms=None,
         trjson = tempjson.name
         with open(trjson, 'w') as f:
             renderdump(sharedTransforms, f)
-
     importJsonClient(stack, tileFiles=[tsjson], transformFile=(
                          trjson if sharedTransforms is not None else None),
                      subprocess_mode=subprocess_mode, host=host, port=port,
@@ -226,9 +225,9 @@ def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
     pool = Pool(poolsize)
     partial_import = partial(
         import_tilespecs, stack, sharedTransforms=sharedTransforms,
-        subprocess_mode=subprocess_mode, **render.make_kwargs(
-            host=host, port=port, owner=owner, project=project,
-            client_script=client_script, memGB=memGB, **kwargs))
+        subprocess_mode=subprocess_mode, host=host, port=port,
+        owner=owner, project=project, client_script=client_script,
+        memGB=memGB, **kwargs)
 
     # TODO this is a weird way to do splits.... is that okay?
     tilespec_groups = [tilespecs[i::poolsize] for i in xrange(poolsize)]
@@ -397,7 +396,7 @@ def importTransformChangesClient(stack, targetStack, transformFile,
             'changeMode {} is not valid!'.format(changeMode))
 
     argvs = (make_stack_params(host, port, owner, project, stack) +
-             ['--stack', stack, '--targetStack', targetStack] +
+             ['--targetStack', targetStack] +
              ['--transformFile', transformFile] +
              get_param(targetOwner, '--targetOwner') +
              get_param(targetProject, '--targetProject') +
@@ -405,7 +404,7 @@ def importTransformChangesClient(stack, targetStack, transformFile,
     call_run_ws_client(
         'org.janelia.render.client.ImportTransformChangesClient', memGB=memGB,
         client_script=client_script, subprocess_mode=subprocess_mode,
-        add_args=argv)
+        add_args=argvs)
 
 
 @renderaccess
@@ -436,3 +435,22 @@ def coordinateClient(stack, z, fromJson=None, toJson=None, localToWorld=None,
         jsondata = json.load(f)
 
     return jsondata
+
+
+@renderaccess
+def renderSectionClient(stack, rootDirectory, zs, scale=None, format=None,
+                        doFilter=None, fillWithNoise=None,
+                        subprocess_mode=None, host=None, port=None, owner=None,
+                        project=None, client_script=None, memGB=None,
+                        render=None, **kwargs):
+    '''
+    run RenderSectionClient.java
+    '''
+    argvs = (make_stack_params(host, port, owner, project, stack) +
+             ['--rootDirectory', rootDirectory] +
+             get_param(scale, '--scale') + get_param(format, '--format') +
+             get_param(doFilter, '--doFilter') +
+             get_param(fillWithNoise, '--fillWithNoise') + zs)
+    call_run_ws_client('org.janelia.render.client.RenderSectionClient',
+                       memGB=memGB, client_script=client_script,
+                       subprocess_mode=subprocess_mode, add_args=argvs)
