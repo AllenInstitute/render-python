@@ -59,7 +59,7 @@ def teststack_tilespec():
         sharedTransforms=tforms)
     r = render.run(renderapi.stack.set_stack_state, stack, 'COMPLETE')
     yield (stack, tilespecs[0])
-    render.run(renderapi.stack.delete_stack, stack)
+    #render.run(renderapi.stack.delete_stack, stack)
 
 
 @pytest.fixture(scope='module')
@@ -85,8 +85,8 @@ def test_world_to_local_coordinates(render, teststack_tilespec):
 
 def test_local_to_world_coordinates(render, teststack_tilespec):
     (stack, ts) = teststack_tilespec
-    local = render.run(renderapi.coordinate.local_to_world_coordinates_batch,
-                       stack, ts.z, 0, 0)
+    local = render.run(renderapi.coordinate.local_to_world_coordinates,
+                       stack, ts.tileId, 0,0)
     assert(local['error'] == "")
     assert(local['tileId'] == ts.tileId)
     assert(len(local['world']) >= 2)
@@ -97,14 +97,15 @@ def test_world_to_local_coordinates_batch(render, teststack_tilespec):
     corners = [[0, 0], [ts.width, 0], [ts.width, ts.height], [0, ts.height]]
     batch = []
     for corner in corners:
-        batch.append(renderapi.coordinate.local-to-world-coordinates(
-                         stack, ts.z, corner[0], corner[1]))
-    local = renderapi.coordinates.world_to_local_coordinates_batch(
-        stack, batch, execute_local=False)
+        batch.append(renderapi.coordinate.local_to_world_coordinates(
+                         stack, ts.z, corner[0], corner[1],render=render))
+    local = renderapi.coordinate.world_to_local_coordinates_batch(
+        stack, batch, ts.z,execute_local=False,render=render)
 
     assert(len(local) == len(batch))
     for ans in local:
-        assert(len(ans['error']) == 0)
+        for tile in ans:
+            assert(len(tile['error']) == 0)
 
 
 def test_local_to_world_coordinates_batch(render, teststack_tilespec):
