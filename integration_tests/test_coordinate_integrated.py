@@ -86,7 +86,7 @@ def test_world_to_local_coordinates(render, teststack_tilespec):
 def test_local_to_world_coordinates(render, teststack_tilespec):
     (stack, ts) = teststack_tilespec
     local = render.run(renderapi.coordinate.local_to_world_coordinates_batch,
-                       stack, ts.z, 0, 0)
+                       stack, ts.z, 0)
     assert(local['error'] == "")
     assert(local['tileId'] == ts.tileId)
     assert(len(local['world']) >= 2)
