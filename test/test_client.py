@@ -1,4 +1,6 @@
+import os
 import renderapi
+import rendersettings
 
 
 def test_render_client():
@@ -10,3 +12,41 @@ def test_render_client():
         'client_scripts': '/path/to/client_scripts'
         }
     r = renderapi.render.connect(**args)
+
+
+def test_default_kwargs(rkwargs=rendersettings.DEFAULT_RENDER):
+    r = renderapi.connect(**rkwargs)
+    new_r = renderapi.connect(**r.DEFAULT_KWARGS)
+    assert(new_r.DEFAULT_KWARGS == r.DEFAULT_KWARGS == rkwargs)
+
+
+'''
+def test_default_kwargs_client():
+    test_default_kwargs(rkwargs=rendersettings.DEFAULT_RENDER_CLIENT)
+'''
+
+
+def test_environment_variables(
+        rkwargs=rendersettings.DEFAULT_RENDER,
+        renvkwargs=rendersettings.DEFAULT_RENDER_ENVIRONMENT_VARIABLES):
+    def valstostring(d):
+        return {k: str(v) for k, v in d.items()}
+    old_env = os.environ.copy()
+    os.environ.update(valstostring(renvkwargs))
+
+    env_render = renderapi.connect()
+
+    # restore environment
+    os.environ.clear()
+    os.environ.update(old_env)
+
+    kwarg_render = renderapi.connect(**valstostring(rkwargs))
+    assert(valstostring(kwarg_render.DEFAULT_KWARGS) ==
+           valstostring(env_render.DEFAULT_KWARGS) ==
+           valstostring(rkwargs))
+
+
+'''
+def test_environment_variables_client():
+    test_environment_variables(rkwargs=rendersettings.DEFAULT_RENDER_CLIENT)
+'''
