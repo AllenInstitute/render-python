@@ -5,8 +5,8 @@ import requests
 from PIL import Image
 import numpy as np
 import logging
-from .render import Render, format_baseurl, format_preamble, renderaccess
-from .utils import NullHandler
+from .render import format_preamble, renderaccess
+from .utils import NullHandler, jbool
 
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -25,7 +25,7 @@ IMAGE_FORMATS = {'png': 'png-image',
 
 @renderaccess
 def get_bb_image(stack, z, x, y, width, height, scale=1.0,
-                 minIntensity=None,maxIntensity=None,
+                 minIntensity=None, maxIntensity=None,
                  host=None, port=None, owner=None, project=None,
                  img_format=None, session=requests.session(),
                  render=None, **kwargs):
@@ -48,18 +48,19 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
                       z, x, y, width, height, scale, image_ext)
     args = []
     if minIntensity is not None:
-        args+=['minIntensity=%d'%minIntensity]
+        args += ['minIntensity=%d' % minIntensity]
     if maxIntensity is not None:
-        args+=['maxIntensity=%d'%maxIntensity]
-    if len(args)>0:
+        args += ['maxIntensity=%d' % maxIntensity]
+    if len(args) > 0:
         args = "&".join(args)
-        request_url+=args
+        request_url += args
 
     r = session.get(request_url)
     try:
         image = np.asarray(Image.open(io.BytesIO(r.content)))
         return image
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
 
 
@@ -78,7 +79,7 @@ def get_tile_image_data(stack, tileId, normalizeForMatching=True,
 
     request_url = format_preamble(
         host, port, owner, project, stack) + \
-        "/tile/%s/png-image" % (tileId)
+        "/tile/%s/%s" % (tileId, image_ext)
     if normalizeForMatching:
         request_url += "?normalizeForMatching=true"
     logger.debug(request_url)
@@ -87,5 +88,33 @@ def get_tile_image_data(stack, tileId, normalizeForMatching=True,
         img = Image.open(io.BytesIO(r.content))
         array = np.asarray(img)
         return array
-    except:
+    except Exception as e:
+        logger.error(e)
         logger.error(r.text)
+
+
+@renderaccess
+def get_section_image(stack, z, scale=1.0, filter=False,
+                      maxTileSpecsToRender=None, img_format=None,
+                      host=None, port=None, owner=None, project=None,
+                      session=requests.session(),
+                      render=None, **kwargs):
+    '''
+    z: layer Z
+    scale: float -- linear scale at which to render image (e.g. 0.5)
+    filter: boolean -- whether or not to apply Khaled's preferred filter
+    maxTileSpecsToRender: int -- maximum number of tile specs in rendering
+    img_format: string -- format defined by IMAGE_FORMATS
+    '''
+    try:
+        image_ext = IMAGE_FORMATS[img_format]
+    except KeyError as e:
+        raise ValueError('{} is not a valid render image format!'.format(e))
+
+    request_url = format_preamble(
+        host, port, owner, project, stack) + '/z/{}/{}'.format(z, image_ext)
+    qparams = {'scale': scale, 'filter': jbool(filter)}
+    if maxTileSpecsToRender is not None:
+        qparams.update({'maxTileSpecsToRender': maxTileSpecsToRender})
+    r = session.get(request_url, params=qparams)
+    return np.asarray(Image.open(io.BytesIO(r.content)))

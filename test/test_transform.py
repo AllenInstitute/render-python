@@ -1,5 +1,6 @@
 import renderapi
 import numpy as np
+import scipy.linalg
 
 
 def test_affine_rot_90():
@@ -50,3 +51,49 @@ def test_affine_random():
         am_fit.estimate(points_in, points_out)
 
         assert(np.sum(np.abs(am.M.ravel()-am_fit.M.ravel())) < (.001*6))
+
+
+def test_invert_Affine():
+    am = renderapi.transform.AffineModel(M00=.9,
+                                         M10=-0.2,
+                                         M01=0.3,
+                                         M11=.85,
+                                         B0=245.3,
+                                         B1=-234.1)
+    Iam = am.invert()
+    assert(np.allclose(Iam.concatenate(am).M, np.eye(3)))
+    assert(np.allclose(am.concatenate(Iam).M, np.eye(3)))
+
+
+def test_Polynomial_estimation(use_numpy=False):
+    if use_numpy:
+        try:
+            import builtins
+        except ImportError:
+            import __builtin__ as builtins
+        realimport = builtins.__import__
+
+        def noscipy_import(name, globals=None, locals=None,
+                           fromlist=(), level=0):
+            if 'scipy' in name:
+                raise ImportError
+            return realimport(name, globals, locals, fromlist, level)
+        builtins.__import__ = noscipy_import
+    reload(renderapi.transform)
+    assert(renderapi.transform.svd is np.linalg.svd
+           if use_numpy else renderapi.transform.svd is scipy.linalg.svd)
+
+    # TODO now that import framework is good, do actual test
+
+    if use_numpy:
+        builtins.__import__ = realimport
+    reload(renderapi.transform)
+    assert(renderapi.transform.svd is scipy.linalg.svd)
+
+
+def test_Polynomial_estimation_numpy():
+    test_Polynomial_estimation(use_numpy=True)
+
+
+def test_transformsum():
+    pass

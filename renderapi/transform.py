@@ -239,7 +239,10 @@ class AffineModel(Transform):
         self.M[1, 2] = self.B1
 
     def invert(self):
-        Ai = AffineModel()
+        inv_M = np.linalg.inv(self.M)
+        Ai = AffineModel(inv_M[0, 0], inv_M[0, 1], inv_M[1, 0],
+                         inv_M[1, 1], inv_M[0, 2], inv_M[1, 2])
+        return Ai
 
     def fit(self, A, B):
         if not all([A.shape[0] == B.shape[0], A.shape[1] == B.shape[1] == 2]):

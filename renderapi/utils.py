@@ -4,9 +4,9 @@ utilities to make render/java/web/life interfacing easier
 '''
 import logging
 import inspect
-import tempfile
 import copy
 import json
+from .errors import RenderError
 
 
 class NullHandler(logging.Handler):
@@ -40,6 +40,7 @@ class RenderEncoder(json.JSONEncoder):
                 try:
                     return super(RenderEncoder, self).default(obj)
                 except TypeError as e:
+                    logger.info(e)
                     logger.warning(
                         "cannot json serialize {}.  "
                         "Defaulting to __dict__".format(type(obj)))
