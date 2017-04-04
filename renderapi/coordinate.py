@@ -193,8 +193,8 @@ def old_local_to_world_coordinates_array(stack, dataarray, tileId, z=0,
     json_answer = r.json()
     try:
         answer = np.zeros(dataarray.shape)
-        print dataarray.shape
-        print len(json_answer)
+        logger.debug('shape {}'.format(dataarray.shape))
+        logger.debug('length of json_answer {}'.format(len(json_answer)))
         for i, coord in enumerate(json_answer):
             c = coord['world']
             answer[i, 0] = c[0]

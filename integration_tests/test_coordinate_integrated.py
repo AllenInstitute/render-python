@@ -73,7 +73,8 @@ def local_corners_json(teststack_tilespec):
             'visible': True,
         }
         d['local']=corner
-    return corners
+        batch.append(d)
+    return batch
 
 @pytest.fixture(scope='module')
 def world_corners_json(render,teststack_tilespec):
@@ -117,10 +118,13 @@ def test_world_to_local_coordinates_batch(render, teststack_tilespec,world_corne
             assert('error' not in tile.keys())
 
 
-def test_local_to_world_coordinates_batch(render, teststack_tilespec):
-    logger.debug('test not implemented yet')
-    assert(False)
-
+def test_local_to_world_coordinates_batch(render, teststack_tilespec,local_corners_json):
+    (stack, ts) = teststack_tilespec
+    world = renderapi.coordinate.local_to_world_coordinates_batch(stack,local_corners_json,
+        ts.z,execute_local=False,render=render)
+    assert(len(local_corners_json)==len(world))
+    for ans in world:
+        assert('error' not in ans.keys())
 
 def old_world_to_local_coordinates_array(render, teststack_tilespec):
     logger.debug('test not implemented yet')
@@ -133,14 +137,22 @@ def test_world_to_local_coordinates_array(render, teststack_tilespec):
 
 
 def old_local_to_world_coordinates_array(render, teststack_tilespec):
+ 
+
     logger.debug('test not implemented yet')
     assert(False)
 
 
 def local_to_world_coordinates_array(render, teststack_tilespec):
-    logger.debug('test not implemented yet')
-    assert(False)
-
+    (stack, ts) = teststack_tilespec
+    local_corners = np.array([[10, 10], [ts.width-10, 10], [ts.width-10, ts.height-10], [10, ts.height-10]])
+    world_corners = renderapi.coordinate.local_to_world_coordinates_array(stack,
+        local_corners,
+        ts.tileId,
+        ts.z,
+        render=render)
+    logger.debug('world corners:{}'.format(world_corners))
+    assert world_corners.shape[0]==local_corners.shape[0]
 
 def world_to_local_coordinates_clientside():
     logger.debug('test not implemented yet')
