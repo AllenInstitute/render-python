@@ -98,9 +98,9 @@ def test_world_to_local_coordinates_batch(render, teststack_tilespec):
     batch = []
     for corner in corners:
         batch.append(renderapi.coordinate.local_to_world_coordinates(
-                         stack, ts.z, corner[0], corner[1]))
+                         stack, ts.z, corner[0], corner[1],render=render))
     local = renderapi.coordinate.world_to_local_coordinates_batch(
-        stack, batch, ts.z,execute_local=False)
+        stack, batch, ts.z,execute_local=False,render=render)
 
     assert(len(local) == len(batch))
     for ans in local:
