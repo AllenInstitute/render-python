@@ -83,7 +83,8 @@ class Filter:
 class Layout:
     def __init__(self, sectionId=None, scopeId=None, cameraId=None,
                  imageRow=None, imageCol=None, stageX=None, stageY=None,
-                 rotation=None, pixelsize=0.100, **kwargs):
+                 rotation=None, pixelsize=None,
+                 force_pixelsize=True, **kwargs):
         self.sectionId = sectionId
         self.scopeId = scopeId
         self.cameraId = cameraId
@@ -92,6 +93,8 @@ class Layout:
         self.stageX = stageX
         self.stageY = stageY
         self.rotation = rotation
+        if force_pixelsize:
+            pixelsize = 0.100 if pixelsize is None else pixelsize
         self.pixelsize = pixelsize
 
     def to_dict(self):
@@ -195,11 +198,12 @@ class TileSpec:
                 thedict['transforms']['specList'].append(strlist)
             else:
                 thedict['transforms']['specList'].append(t.to_dict())
+        if len(self.inputfilters):
+            thedict['inputfilters'] = {}
+            thedict['inputfilters']['type'] = 'list'
+            thedict['inputfilters']['specList'] = [f.to_dict() for f
+                                                   in self.inputfilters]
 
-        thedict['inputfilters'] = {}
-        thedict['inputfilters']['type'] = 'list'
-        thedict['inputfilters']['specList'] = [f.to_dict() for f
-                                               in self.inputfilters]
         thedict = {k: v for k, v in thedict.items() if v is not None}
         return thedict
 
