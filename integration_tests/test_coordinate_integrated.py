@@ -85,8 +85,8 @@ def test_world_to_local_coordinates(render, teststack_tilespec):
 
 def test_local_to_world_coordinates(render, teststack_tilespec):
     (stack, ts) = teststack_tilespec
-    local = render.run(renderapi.coordinate.local_to_world_coordinates_batch,
-                       stack, ts.z, 0)
+    local = render.run(renderapi.coordinate.local_to_world_coordinates,
+                       stack, ts.z, 0,0)
     assert(local['error'] == "")
     assert(local['tileId'] == ts.tileId)
     assert(len(local['world']) >= 2)
@@ -104,7 +104,8 @@ def test_world_to_local_coordinates_batch(render, teststack_tilespec):
 
     assert(len(local) == len(batch))
     for ans in local:
-        assert(len(ans['error']) == 0)
+        for tile in ans:
+            assert(len(tile['error']) == 0)
 
 
 def test_local_to_world_coordinates_batch(render, teststack_tilespec):
