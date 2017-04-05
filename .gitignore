@@ -1,6 +1,7 @@
 *.pyc
 *source_me.sh
 build/
-.eggs/
+.eggs*
 *.egg-info
 *.egg
+dist/
