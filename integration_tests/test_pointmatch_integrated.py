@@ -135,7 +135,7 @@ def test_get_matches_from_tile_to_tile(render,test_pm_collection):
     group2="1"
     tile1="0-1"
     tile2="1-1"
-    matches = renderapi.pointmatch.get_matches_outside_group(test_pm_collection,group1,tile1,group2,tile2,render=render)
+    matches = renderapi.pointmatch.get_matches_from_tile_to_tile(test_pm_collection,group1,tile1,group2,tile2,render=render)
     assert matches[0]==test_matches[0]
 
 def test_get_matches_with_group(render,test_pm_collection):
