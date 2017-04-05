@@ -127,6 +127,7 @@ def test_local_to_world_coordinates_batch(render, teststack_tilespec,local_corne
         assert('error' not in ans.keys())
 
 def test_world_to_local_coordinates_array(render, teststack_tilespec):
+    (stack, ts) = teststack_tilespec
     local_corners = np.array([[10, 10], [ts.width-10, 10], [ts.width-10, ts.height-10], [10, ts.height-10]])
     world_corners = renderapi.coordinate.local_to_world_coordinates_array(stack,
         local_corners,
@@ -154,6 +155,7 @@ def local_to_world_coordinates_array(render, teststack_tilespec):
     assert world_corners.shape[0]==local_corners.shape[0]
 
 def world_to_local_coordinates_clientside(render, teststack_tilespec):
+    (stack, ts) = teststack_tilespec
     local_corners = np.array([[10, 10], [ts.width-10, 10], [ts.width-10, ts.height-10], [10, ts.height-10]])
     world_corners = renderapi.coordinate.local_to_world_coordinates_array(stack,
         local_corners,
