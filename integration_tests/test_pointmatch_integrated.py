@@ -103,7 +103,7 @@ def test_pm_collection(render):
 
 def test_get_matchcollection_owners(render):
     owners = renderapi.pointmatch.get_matchcollection_owners(render=render)
-    assert (owner in owners)
+    assert (render_test_parameters['owner'] in owners)
 
 def test_get_matchcollections(render,test_pm_collection):
     collections = renderapi.pointmatch.get_matchcollections(render=render)
