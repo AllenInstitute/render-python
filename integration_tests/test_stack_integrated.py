@@ -324,9 +324,10 @@ def test_tile_image(render, teststack, render_example_tilespec_and_transforms,
         data = render.run(renderapi.image.get_tile_image_data,
                           teststack, tilespecs[0].tileId, **kwargs)
         if kwargs.get('scale') is None:
-            testscale = kwargs['scale']
-        else:
             testscale = 1.
+        else:
+            testscale = kwargs['scale']
+
         assert len(data.shape) == 3
         assert data.shape[0] >= np.floor(tilespecs[0].height * testscale)
         assert data.shape[1] >= np.floor(tilespecs[0].width * testscale)
@@ -335,7 +336,7 @@ def test_tile_image(render, teststack, render_example_tilespec_and_transforms,
 def test_tile_image_options(render, teststack,
                             render_example_tilespec_and_transforms):
     testscale = 0.5
-    test_tile_image_options(
+    test_tile_image(
         render, teststack, render_example_tilespec_and_transforms,
         scale=testscale, filter=True, normalizeForMatching=False)
 
@@ -349,8 +350,8 @@ def test_section_image(render, teststack, **kwargs):
     height = bounds['maxY'] - bounds['minY']
     fmt = 'png'
     scalefactor = 0.05
-    data = renderapi.image.get_section_image(teststack, z, scale=scalefactor,
-                                             img_format=fmt, **kwargs)
+    data = render.run(renderapi.image.get_section_image, teststack, z,
+                      scale=scalefactor, img_format=fmt, **kwargs)
     assert data.shape[0] == (np.floor(height * scalefactor))
     assert data.shape[1] == (np.floor(width * scalefactor))
     assert data.shape[2] >= 3
