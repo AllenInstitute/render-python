@@ -250,7 +250,7 @@ def test_get_section_z(render, teststack):
 
 def test_clone_stack(render,teststack):
     stack2 = 'cloned_stack'
-    zvalues = renderapi.stack.get_z_values_for_stack(test_stack,render=render)
+    zvalues = renderapi.stack.get_z_values_for_stack(teststack,render=render)
     renderapi.stack.clone_stack(teststack, cloned_stack, render=render)
     zvalues2 = renderapi.stack.get_z_values_for_stack(stack2, render=render)
     renderapi.stack.delete_stack(stack2,render=render)
@@ -258,7 +258,7 @@ def test_clone_stack(render,teststack):
 
 def test_clone_stack_subset(render, teststack):
     stack2 = 'cloned_stack_subset'
-    zvalues = renderapi.stack.get_z_values_for_stack(test_stack,render=render)
+    zvalues = renderapi.stack.get_z_values_for_stack(teststack,render=render)
     renderapi.stack.clone_stack(teststack,cloned_stack,z=zvalues[0:1],render=render)
     zvalues2 = renderapi.stack.get_z_values_for_stack(stack2,render=render)
     renderapi.stack.delete_stack(stack2,render=render)
@@ -267,7 +267,7 @@ def test_clone_stack_subset(render, teststack):
 def test_get_stack_sectionData(render,teststack):
     sectionData = renderapi.stack.get_stack_sectionData(teststack,render=render)
     assert len(sectionData)==2
-    
+
 def test_get_z_values(render, teststack):
     # check get z values
     zvalues = render.run(renderapi.stack.get_z_values_for_stack, teststack)
