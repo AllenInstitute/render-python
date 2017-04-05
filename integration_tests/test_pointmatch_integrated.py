@@ -138,16 +138,16 @@ def test_get_matches_from_tile_to_tile(render,test_pm_collection):
 
 def test_get_matches_with_group(render,test_pm_collection):
     group1="0"
-    matches = renderapi.pointmatch.get_matches_outside_group(test_pm_collection,group1,render=render)
+    matches = renderapi.pointmatch.get_matches_with_group(test_pm_collection,group1,render=render)
     assert len(matches)==3
     
 def test_get_match_groupIds_from_only(render,test_pm_collection):
     groups = renderapi.pointmatch.get_match_groupIds_from_only(test_pm_collection,render=render)
-    assert len(groups)==2
+    assert len(groups)==1
 
 def test_get_match_groupIds_to_only(render,test_pm_collection):
     groups = renderapi.pointmatch.get_match_groupIds_to_only(test_pm_collection,render=render)
-    assert len(groups)==2
+    assert len(groups)==3
 
 def test_delete_point_matches_between_groups(render):
     collection = 'test_delete'
