@@ -22,12 +22,13 @@ logger.addHandler(NullHandler())
 
 # TODO preference for svd version?
 try:
-    from scipy.linalg import svd
+    from scipy.linalg import svd, LinAlgError
 except ImportError as e:
     logger.info(e)
     logger.info('scipy-based linalg may or may not lead '
                 'to better parameter fitting')
     from numpy.linalg import svd
+    from numpy.linalg.linalg import LinAlgError
 
 
 class TransformList:
@@ -278,8 +279,6 @@ class AffineModel(Transform):
 
     def convert_to_point_vector(self, points):
         Np = points.shape[0]
-
-        zerovec = np.zeros((Np, 1), np.double)
         onevec = np.ones((Np, 1), np.double)
 
         if points.shape[1] != 2:
@@ -391,7 +390,7 @@ class Polynomial2DTransform(Transform):
 
     def __init__(self, dataString=None, src=None, dst=None, order=2,
                  force_polynomial=True, params=None, identity=False,
-                 json=None):
+                 json=None, **kwargs):
         if json is not None:
             self.from_dict(json)
         else:
@@ -399,15 +398,15 @@ class Polynomial2DTransform(Transform):
             if dataString is not None:
                 self._process_dataString(dataString)
             elif identity:
-                self._process_params(np.array([[0, 1, 0], [0, 0, 1]]))
+                self.params = np.array([[0, 1, 0], [0, 0, 1]])
             elif params is not None:
-                self._process_params(params)
+                self.params = params
             elif src is not None and dst is not None:
-                self._process_params(self.estimate(src, dst, order))
+                self.params = self.estimate(src, dst, order, **kwargs)
 
             if not force_polynomial and self.is_affine:
-                # TODO try implement affine from poly (& vice versa)
-                return AffineTransform(poly_params=self.params)
+                raise NotImplementedError('Falling back to Affine model is '
+                                          'not supported {}')
             self.transformId = None
 
     @property
@@ -421,7 +420,12 @@ class Polynomial2DTransform(Transform):
         no_coeffs = len(self.params.ravel())
         return int((abs(np.sqrt(4 * no_coeffs + 1)) - 3) / 2)
 
-    def fit(self, src, dst, order=2):
+    @property
+    def dataString(self):
+        return Polynomial2DTransform._dataStringfromParams(self.params)
+
+    @staticmethod
+    def fit(src, dst, order=2):
         '''This is unreliable -- add tests to ensure repeatability'''
         xs = src[:, 0]
         ys = src[:, 1]
@@ -439,7 +443,7 @@ class Polynomial2DTransform(Transform):
                 'order {} is too large to fit {} points!'.format(
                     order, len(src)))
 
-        A = np.empty([rows * 2, no_coeff + 1])
+        A = np.zeros([rows * 2, no_coeff + 1])
         pidx = 0
         for j in range(order + 1):
             for i in range(j + 1):
@@ -459,39 +463,35 @@ class Polynomial2DTransform(Transform):
 
     def estimate(self, src, dst, order=2,
                  convergence_test=None, max_tries=100, **kwargs):
+        def fitgood(src, dst, params):
+            result = Polynomial2DTransform(params=params).tform(src)
+            t = np.allclose(
+                result, dst,
+                atol=1e-3, rtol=0)
+            return t
 
-        params = self.fit(src, dst, order=order)
-        if convergence_test is None:
-            return params
-        else:
-            # FIXME discuss plan for estimate vs fit & stability handling
-            raise NotImplementedError(
-                'Stability checking is unavailable')
-        self._process_params(params)
-        if convergence_test is not None:
-            if(convergence_test(self)):
-                return params
+        estimated = False
+        tries = 0
+        while (tries < max_tries and not estimated):
+            tries += 1
+            try:
+                params = Polynomial2DTransform.fit(src, dst, order=2)
+            except (LinAlgError, ValueError) as e:
+                logger.debug('Encountered error {}'.format(e))
+                continue
+            estimated = fitgood(src, dst, params)
 
-            for i in range(max_tries):
-                params = fit(src, dst, **kwargs)
-                self._process_params(params)
-                if convergence_test(self):
-                    return params
-
-            raise EstimationError(
-                'could not find a converged estimate in %d tries' % max_tries)
-        else:
-            return params
-
-    def _process_params(self, params):
-        '''
-        generate datastring and param attributes from params
-        '''
+        if tries == max_tries and not estimated:
+            raise EstimationError('Could not fit Polynomial '
+                                  'in {} attempts!'.format(tries))
+        logger.debug('fit parameters in {} attempts'.format(tries))
         self.params = params
-        self.dataString = self._dataStringfromParams(params)
+        return self.params
 
-    def _dataStringfromParams(self, params=None):
-        return ' '.join([str(i) for i in params.flatten()]).replace('e', 'E')
+    @staticmethod
+    def _dataStringfromParams(params=None):
+        return ' '.join([str(i).replace('e-0', 'e-').replace('e+0', 'e+')
+                         for i in params.flatten()]).replace('e', 'E')
 
     def _process_dataString(self, datastring):
         '''
@@ -501,9 +501,9 @@ class Polynomial2DTransform(Transform):
         self.params = np.array(
             [[float(d) for d in dsList[:len(dsList)/2]],
              [float(d) for d in dsList[len(dsList)/2:]]])
-        self.dataString = datastring
 
-    def _format_raveled_params(self, raveled_params):
+    @staticmethod
+    def _format_raveled_params(raveled_params):
         return np.array(
             [[float(d) for d in raveled_params[:len(raveled_params)/2]],
              [float(d) for d in raveled_params[len(raveled_params)/2:]]])
@@ -523,12 +523,21 @@ class Polynomial2DTransform(Transform):
         return dst
 
     def coefficients(self, order=None):
+        '''
+        determine number of coefficient terms in transform for a given order
+        input: order of polynomial -- defaults to self.order
+        output: integer number of coefficient terms expected in transform
+        '''
         if order is None:
             order = self.order
         return (order + 1) * (order + 2)
 
     def asorder(self, order):
-        ''''''
+        '''
+        input: order > current order
+        output: new Transform object of selected order with coefficients
+            from self
+        '''
         if self.order > order:
             raise ConversionError(
                 'transformation {} is order {} -- conversion to '
@@ -538,7 +547,12 @@ class Polynomial2DTransform(Transform):
         new_params[:self.params.shape[0], :self.params.shape[1]] = self.params
         return Polynomial2DTransform(params=new_params)
 
-    def _fromAffine(self, aff):
+    @staticmethod
+    def fromAffine(aff):
+        '''
+        input: AffineModel
+        output: Polynomial2DTransform defined by Affine model
+        '''
         if not isinstance(aff, AffineModel):
             raise ConversionError('attempting to convert a nonaffine model!')
         return Polynomial2DTransform(params=np.array([
@@ -570,6 +584,8 @@ def transformsum(transformlist, src=None):
         Polynomial2DTransform representing the sum of the
             input list
     '''
+    logger.warning('This implementation of transformsum is not recommended!  '
+                   'Please consider using estimate_transformsum')
     sumtform = Polynomial2DTransform(identity=True)
     for tform in transformlist:
         if isinstance(tform, list):
@@ -579,3 +595,30 @@ def transformsum(transformlist, src=None):
         else:
             sumtform = sumtform.concatenate(tform, srcpts=src)
     return sumtform
+
+
+def estimate_dstpts(transformlist, src=None):
+    '''
+    estimate destination points for list of transforms
+    input:
+        transformlist -- list of transform classes with tform method
+        src -- Nx2 numpy array of source points
+    output: Nx2 numpt array of destination points
+    '''
+    dstpts = src
+    for tform in transformlist:
+        if isinstance(tform, list):
+            dstpts = estimate_dstpts(tform, dstpts)
+        else:
+            dstpts = tform.tform(dstpts)
+    return dstpts
+
+
+def estimate_transformsum(transformlist, src=None, order=2):
+    '''
+    pseudo-composition of transforms in list of transforms using source point
+        transformation and a single estimation.
+    input: trans
+    '''
+    dstpts = estimate_dstpts(transformlist, src)
+    return Polynomial2DTransform(src=src, dst=dstpts)

@@ -83,7 +83,17 @@ def test_Polynomial_estimation(use_numpy=False):
     assert(renderapi.transform.svd is np.linalg.svd
            if use_numpy else renderapi.transform.svd is scipy.linalg.svd)
 
-    # TODO now that import framework is good, do actual test
+    datastring = ('67572.7356991 0.972637082773 -0.0266434803369 '
+                  '-3.08962731867E-06 3.52672451824E-06 1.36924119761E-07 '
+                  '5446.85340052 0.0224047626583 0.961202608454 '
+                  '-3.36753624487E-07 -8.97219078255E-07 -5.49854010072E-06')
+    default_pt = renderapi.transform.Polynomial2DTransform(
+        dataString=datastring)
+    srcpts = np.random.rand(30, 2)
+    dstpts = default_pt.tform(srcpts)
+    derived_pt = renderapi.transform.Polynomial2DTransform(
+        src=srcpts, dst=dstpts)
+    assert(np.allclose(derived_pt.params, default_pt.params))
 
     if use_numpy:
         builtins.__import__ = realimport
