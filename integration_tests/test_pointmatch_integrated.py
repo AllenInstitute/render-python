@@ -115,13 +115,13 @@ def test_get_match_groupIds(render,test_pm_collection):
 
 def test_get_matches_outside_group(render,test_pm_collection):
     groups = renderapi.pointmatch.get_match_groupIds(test_pm_collection,render=render)
-    matches = renderapi.pointmatch.get_matches_outside_group(test_pm_collection,"0")
+    matches = renderapi.pointmatch.get_matches_outside_group(test_pm_collection,"0",render=render)
     assert test_matches[0] in matches
     assert test_matches[1] in matches
 
 def test_get_matches_within_group(render,test_pm_collection):
     groups = renderapi.pointmatch.get_match_groupIds(test_pm_collection,render=render)
-    matches = renderapi.pointmatch.get_matches_outside_group(test_pm_collection,"0")
+    matches = renderapi.pointmatch.get_matches_outside_group(test_pm_collection,"0",render=render)
     assert matches[0]==test_matches[2]
 
 def test_get_matches_from_group_to_group(render,test_pm_collection):
