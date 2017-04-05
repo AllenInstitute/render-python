@@ -103,11 +103,12 @@ def test_pm_collection(render):
 
 def test_get_matchcollection_owners(render):
     owners = renderapi.pointmatch.get_matchcollection_owners(render=render)
-    assert (render_test_parameters['owner'] in owners)
+    assert 'test' in owners
 
 def test_get_matchcollections(render,test_pm_collection):
     collections = renderapi.pointmatch.get_matchcollections(render=render)
-    assert (test_pm_collection in collections)
+    matched_collection = next(coljson for coljson in collections if coljson['collectionId']['name']==test_pm_collection)
+    assert matched_collection is not None
 
 def test_get_match_groupIds(render,test_pm_collection):
     groups = renderapi.pointmatch.get_match_groupIds(test_pm_collection,render=render)
@@ -119,13 +120,13 @@ def test_get_matches_outside_group(render,test_pm_collection):
     assert test_matches[1] in matches
 
 def test_get_matches_within_group(render,test_pm_collection):
-    matches = renderapi.pointmatch.get_matches_outside_group(test_pm_collection,"0",render=render)
+    matches = renderapi.pointmatch.get_matches_within_group(test_pm_collection,"0",render=render)
     assert matches[0]==test_matches[2]
 
 def test_get_matches_from_group_to_group(render,test_pm_collection):
     group1="0"
     group2="1"
-    matches = renderapi.pointmatch.get_matches_outside_group(test_pm_collection,group1,group2,render=render)
+    matches = renderapi.pointmatch.get_matches_from_group_to_group(test_pm_collection,group1,group2,render=render)
     assert matches[0] == test_matches[0]
 
 def test_get_matches_from_tile_to_tile(render,test_pm_collection):
