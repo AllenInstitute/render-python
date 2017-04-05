@@ -183,7 +183,7 @@ def import_matches(matchCollection, data, owner=None, host=None, port=None,
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/matches" % (owner, matchCollection)
     logger.debug(request_url)
-    if isinstance(data, dict):
+    if not isinstance(data, str):
         data = json.dumps(data)
     r = session.put(request_url, data=data, headers={
         "content-type": "application/json", "Accept": "application/json"})
