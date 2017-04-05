@@ -96,69 +96,59 @@ def render():
     return renderapi.render.connect(**render_test_parameters)
 
 @pytest.fixture(scope='module')
-def test_pm_collection_owner(render):
+def test_pm_collection(render):
     collection = 'test_collection'
     renderapi.pointmatch.import_matches(collection,test_matches,render=render)
-    return (owner,collection)
+    return collection
 
-def test_get_matchcollection_owners(render,test_pm_collection_owner):
-    (owner, collection) = test_pm_collection_owner
+def test_get_matchcollection_owners(render):
     owners = renderapi.pointmatch.get_matchcollection_owners(render=render)
     assert (owner in owners)
 
-def test_get_matchcollections(render,test_pm_collection_owner):
-    (owner,collection)=test_pm_collection_owner
+def test_get_matchcollections(render,test_pm_collection):
     collections = renderapi.pointmatch.get_matchcollections(render=render)
-    assert (collection in collections)
+    assert (test_pm_collection in collections)
 
-def test_get_match_groupIds(render,test_pm_collection_owner):
-    (owner,collection)=test_pm_collection_owner
-    groups = renderapi.pointmatch.get_match_groupIds(collection,render=render)
+def test_get_match_groupIds(render,test_pm_collection):
+    groups = renderapi.pointmatch.get_match_groupIds(test_pm_collection,render=render)
     assert len(groups)==3
 
-def test_get_matches_outside_group(render,test_pm_collection_owner):
-    (owner,collection)=test_pm_collection_owner
-    groups = renderapi.pointmatch.get_match_groupIds(collection,render=render)
-    matches = renderapi.pointmatch.get_matches_outside_group(collection,"0")
+def test_get_matches_outside_group(render,test_pm_collection):
+    groups = renderapi.pointmatch.get_match_groupIds(test_pm_collection,render=render)
+    matches = renderapi.pointmatch.get_matches_outside_group(test_pm_collection,"0")
     assert test_matches[0] in matches
     assert test_matches[1] in matches
 
-def test_get_matches_within_group(render,test_pm_collection_owner):
-    (owner,collection)=test_pm_collection_owner
-    groups = renderapi.pointmatch.get_match_groupIds(collection,render=render)
-    matches = renderapi.pointmatch.get_matches_outside_group(collection,"0")
+def test_get_matches_within_group(render,test_pm_collection):
+    groups = renderapi.pointmatch.get_match_groupIds(test_pm_collection,render=render)
+    matches = renderapi.pointmatch.get_matches_outside_group(test_pm_collection,"0")
     assert matches[0]==test_matches[2]
 
-def test_get_matches_from_group_to_group(render,test_pm_collection_owner):
-    (owner,collection)=test_pm_collection_owner
+def test_get_matches_from_group_to_group(render,test_pm_collection):
     group1="0"
     group2="1"
-    matches = renderapi.pointmatch.get_matches_outside_group(collection,group1,group2,render=render)
+    matches = renderapi.pointmatch.get_matches_outside_group(test_pm_collection,group1,group2,render=render)
     assert matches[0] == test_matches[0]
 
-def test_get_matches_from_tile_to_tile(render,test_pm_collection_owner):
-    (owner,collection)=test_pm_collection_owner
+def test_get_matches_from_tile_to_tile(render,test_pm_collection):
     group1="0"
     group2="1"
     tile1="0-1"
     tile2="1-1"
-    matches = renderapi.pointmatch.get_matches_outside_group(collection,group1,tile1,group2,tile2,render=render)
+    matches = renderapi.pointmatch.get_matches_outside_group(test_pm_collection,group1,tile1,group2,tile2,render=render)
     assert matches[0]==test_matches[0]
 
-def test_get_matches_with_group(render,test_pm_collection_owner):
-    (owner,collection)=test_pm_collection_owner
+def test_get_matches_with_group(render,test_pm_collection):
     group1="0"
-    matches = renderapi.pointmatch.get_matches_outside_group(collection,group1,render=render)
+    matches = renderapi.pointmatch.get_matches_outside_group(test_pm_collection,group1,render=render)
     assert len(matches)==3
     
-def test_get_match_groupIds_from_only(render,test_pm_collection_owner):
-    (owner,collection)=test_pm_collection_owner
-    groups = renderapi.pointmatch.get_match_groupIds_from_only(collection,render=render)
+def test_get_match_groupIds_from_only(render,test_pm_collection):
+    groups = renderapi.pointmatch.get_match_groupIds_from_only(test_pm_collection,render=render)
     assert len(groups)==2
 
-def test_get_match_groupIds_to_only(render,test_pm_collection_owner):
-    (owner,collection)=test_pm_collection_owner
-    groups = renderapi.pointmatch.get_match_groupIds_to_only(collection,render=render)
+def test_get_match_groupIds_to_only(render,test_pm_collection):
+    groups = renderapi.pointmatch.get_match_groupIds_to_only(test_pm_collection,render=render)
     assert len(groups)==2
 
 def test_delete_point_matches_between_groups(render):
