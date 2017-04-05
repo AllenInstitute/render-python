@@ -95,17 +95,16 @@ def render():
     render_test_parameters = {
             'host': render_host,
             'port': 8080,
-            'owner': 'test_coordinate',
-            'project': 'test_coordinate_project',
+            'owner': 'test',
+            'project': 'test_pointmatch_project',
             'client_scripts': client_script_location
     }
     return renderapi.render.connect(**render_test_parameters)
 
 @pytest.fixture(scope='module')
 def test_pm_collection_owner(render):
-    owner='test'
     collection = 'test_collection'
-    renderapi.pointmatch.import_matches(owner,collection,test_matches,render=render)
+    renderapi.pointmatch.import_matches(collection,test_matches,render=render)
     return (owner,collection)
 
 def test_get_matchcollection_owners(render,test_pm_collection_owner):
@@ -171,7 +170,7 @@ def test_get_match_groupIds_to_only(render,test_pm_collection_owner):
 def test_delete_point_matches_between_groups(render):
     collection = 'test_delete'
     owner = 'test'
-    renderapi.pointmatch.import_matches(owner,collection,test_matches,render=render)
+    renderapi.pointmatch.import_matches(collection,test_matches,render=render)
     group1 = '0'
     group2 = '1'
     renderapi.pointmatch.delete_point_matches_between_groups(collection,'0','1',render=render)
