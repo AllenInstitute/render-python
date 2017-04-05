@@ -46,16 +46,13 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
         host, port, owner, project, stack) + \
         "/z/%d/box/%d,%d,%d,%d,%f/%s" % (
                       z, x, y, width, height, scale, image_ext)
-    args = []
+    qparams = {}
     if minIntensity is not None:
-        args += ['minIntensity=%d' % minIntensity]
+        qparams['minIntensity'] = minIntensity
     if maxIntensity is not None:
-        args += ['maxIntensity=%d' % maxIntensity]
-    if len(args) > 0:
-        args = "&".join(args)
-        request_url += args
+        qparams['maxIntensity'] = maxIntensity
 
-    r = session.get(request_url)
+    r = session.get(request_url, params=qparams)
     try:
         image = np.asarray(Image.open(io.BytesIO(r.content)))
         return image
@@ -65,10 +62,10 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
 
 
 @renderaccess
-def get_tile_image_data(stack, tileId, normalizeForMatching=True,
-                        host=None, port=None, owner=None, project=None,
-                        img_format=None, session=requests.session(),
-                        render=None, **kwargs):
+def get_tile_image_data(stack, tileId, normalizeForMatching=True, scale=None,
+                        filter=None, host=None, port=None, owner=None,
+                        project=None, img_format=None,
+                        session=requests.session(), render=None, **kwargs):
     '''
     render image from a tile with all transforms and return numpy array
     '''
@@ -80,10 +77,17 @@ def get_tile_image_data(stack, tileId, normalizeForMatching=True,
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/tile/%s/%s" % (tileId, image_ext)
+
+    qparams = {}
     if normalizeForMatching:
-        request_url += "?normalizeForMatching=true"
+        qparams['normalizeForMatching'] = jbool(normalizeForMatching)
+    if scale is not None:
+        qparams['scale'] = scale
+    if filter is not None:
+        qparams['filter'] = jbool(filter)
     logger.debug(request_url)
-    r = session.get(request_url)
+
+    r = session.get(request_url, params=qparams)
     try:
         img = Image.open(io.BytesIO(r.content))
         array = np.asarray(img)
