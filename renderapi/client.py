@@ -12,18 +12,11 @@ from .utils import renderdump, NullHandler
 from .errors import ClientScriptError
 from .render import RenderClient, renderaccess
 from .stack import set_stack_state, make_stack_params
+from pathos.multiprocessing import ProcessingPool as Pool
 
 # setup logger
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
-
-try:
-    from pathos.multiprocessing import ProcessingPool as Pool
-    has_pathos = True
-except ImportError as e:
-    logger.warning(e)
-    has_pathos = False
-    from multiprocessing import Pool
 
 
 @renderaccess
@@ -94,7 +87,7 @@ def import_jsonfiles_parallel(
                              host=host, port=port, owner=owner,
                              project=project)
 
-    rs = pool.map(partial_import, jsonfiles)
+    pool.map(partial_import, jsonfiles)
 
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
@@ -231,7 +224,7 @@ def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
 
     # TODO this is a weird way to do splits.... is that okay?
     tilespec_groups = [tilespecs[i::poolsize] for i in xrange(poolsize)]
-    rs = pool.map(partial_import, tilespec_groups)
+    pool.map(partial_import, tilespec_groups)
 
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
