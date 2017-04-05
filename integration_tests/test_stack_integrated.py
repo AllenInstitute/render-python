@@ -297,7 +297,7 @@ def test_uniq_value(render):
     assert len(uniq) >= len('58ceebb7a7b11b0001dc4e32')
 
 
-def test_bb_image(render, teststack):
+def test_bb_image(render, teststack, **kwargs):
     formats = renderapi.image.IMAGE_FORMATS.keys()
     zvalues = render.run(renderapi.stack.get_z_values_for_stack, teststack)
     z = zvalues[0]
@@ -310,27 +310,32 @@ def test_bb_image(render, teststack):
     for fmt in formats:
         data = render.run(renderapi.image.get_bb_image,
                           teststack, z, x, y, width, height,
-                          scale=.25, img_format=fmt)
+                          scale=.25, img_format=fmt, **kwargs)
         dr = data.ravel()
         assert data.shape[0] == (np.floor(height*.25))
         assert data.shape[1] == (np.floor(width*.25))
         assert data.shape[2] >= 3
 
 
+def test_bb_image_options(render, teststack):
+    test_bb_image(render, teststack, filter=True,
+                  binaryMask=True, maxTileSpecsToRender=20)
+
+
 def test_tile_image(render, teststack, render_example_tilespec_and_transforms,
                     **kwargs):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
-    for fmt in renderapi.image.IMAGE_FORMATS:
-        data = render.run(renderapi.image.get_tile_image_data,
-                          teststack, tilespecs[0].tileId, **kwargs)
-        if kwargs.get('scale') is None:
-            testscale = 1.
-        else:
-            testscale = kwargs['scale']
+    fmt = 'png'
+    data = render.run(renderapi.image.get_tile_image_data,
+                      teststack, tilespecs[0].tileId, **kwargs)
+    if kwargs.get('scale') is None:
+        testscale = 1.
+    else:
+        testscale = kwargs['scale']
 
-        assert len(data.shape) == 3
-        assert data.shape[0] >= np.floor(tilespecs[0].height * testscale)
-        assert data.shape[1] >= np.floor(tilespecs[0].width * testscale)
+    assert len(data.shape) == 3
+    assert data.shape[0] >= np.floor(tilespecs[0].height * testscale)
+    assert data.shape[1] >= np.floor(tilespecs[0].width * testscale)
 
 
 def test_tile_image_options(render, teststack,

@@ -25,7 +25,8 @@ IMAGE_FORMATS = {'png': 'png-image',
 
 @renderaccess
 def get_bb_image(stack, z, x, y, width, height, scale=1.0,
-                 minIntensity=None, maxIntensity=None,
+                 minIntensity=None, maxIntensity=None, binaryMask=None,
+                 filter=None, maxTileSpecsToRender=None,
                  host=None, port=None, owner=None, project=None,
                  img_format=None, session=requests.session(),
                  render=None, **kwargs):
@@ -36,6 +37,9 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
         y: topmost pont of bounding rectangle
         width: extent to right in x
         height: extent down in y
+        binaryMask: optional, boolean whether to treat maskimage as binary
+        maxTileSpecsToRender: optional, int number of tilespecs to render
+        filter: optional, boolean whether to use Khaled's preferred filter
     '''
     try:
         image_ext = IMAGE_FORMATS[img_format]
@@ -51,6 +55,12 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
         qparams['minIntensity'] = minIntensity
     if maxIntensity is not None:
         qparams['maxIntensity'] = maxIntensity
+    if binaryMask is not None:
+        qparams['binaryMask'] = jbool(binaryMask)
+    if filter is not None:
+        qparams['filter'] = jbool(filter)
+    if maxTileSpecsToRender is not None:
+        qparams['maxTileSpecsToRender'] = maxTileSpecsToRender
 
     r = session.get(request_url, params=qparams)
     try:
