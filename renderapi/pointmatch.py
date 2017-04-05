@@ -7,7 +7,7 @@ import logging
 from .render import format_baseurl, renderaccess
 from .errors import RenderError
 from .utils import NullHandler
-
+import json
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
 
@@ -183,6 +183,8 @@ def import_matches(matchCollection, data, owner=None, host=None, port=None,
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/matches" % (owner, matchCollection)
     logger.debug(request_url)
+    if isinstance(data, dict):
+        data = json.dumps(data)
     r = session.put(request_url, data=data, headers={
         "content-type": "application/json", "Accept": "application/json"})
     return r
