@@ -43,7 +43,7 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
 
     request_url = format_preamble(
         host, port, owner, project, stack) + \
-        "/z/%d/box/%d,%d,%d,%d,%3.2f/%s" % (
+        "/z/%d/box/%d,%d,%d,%d,%f/%s" % (
                       z, x, y, width, height, scale, image_ext)
     r = session.get(request_url)
     try:
