@@ -39,7 +39,7 @@ class RenderEncoder(json.JSONEncoder):
                     type(obj)))
                 try:
                     return super(RenderEncoder, self).default(obj)
-                except TypeError as e:  # pragma no cover
+                except TypeError as e:  # pragma: no cover
                     logger.info(e)
                     logger.warning(
                         "cannot json serialize {}.  "
@@ -105,7 +105,7 @@ def jbool(val):
     return 'true' if val else 'false'
 
 
-def stripLogger(logger_tostrip):  # pragma no cover
+def stripLogger(logger_tostrip):  # pragma: no cover
     '''
     remove all handlers from a logger -- useful for redefining
     input:
