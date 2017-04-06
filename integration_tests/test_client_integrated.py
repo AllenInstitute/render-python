@@ -1,59 +1,59 @@
-# import renderapi
-# import pytest
-# import tempfile
-# import os
-# import logging
-# import sys
-# import json
-# import numpy as np
-# from test_data import (render_host, render_port,
-#                        client_script_location, tilespec_file, tform_file)
+import renderapi
+import pytest
+import tempfile
+import os
+import logging
+import sys
+import json
+import numpy as np
+import dill
+from test_data import (render_host, render_port,
+                       client_script_location, tilespec_file, tform_file)
 
-# root = logging.getLogger()
-# root.setLevel(logging.DEBUG)
+root = logging.getLogger()
+root.setLevel(logging.DEBUG)
 
-# ch = logging.StreamHandler(sys.stdout)
-# ch.setLevel(logging.DEBUG)
-# formatter = logging.Formatter(
-#     '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-# ch.setFormatter(formatter)
-# root.addHandler(ch)
-
-
-# @pytest.fixture(scope='module')
-# def render():
-#     render_test_parameters = {
-#         'host': render_host,
-#         'port': render_port,
-#         'owner': 'test',
-#         'project': 'test_project',
-#         'client_scripts': client_script_location}
-#     return renderapi.render.connect(**render_test_parameters)
+ch = logging.StreamHandler(sys.stdout)
+ch.setLevel(logging.DEBUG)
+formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+root.addHandler(ch)
 
 
-# @pytest.fixture(scope='module')
-# def render_example_tilespec_and_transforms():
-#     with open(tilespec_file, 'r') as f:
-#         ts_json = json.load(f)
-#     with open(tform_file, 'r') as f:
-#         tform_json = json.load(f)
-
-#     tilespecs = [renderapi.tilespec.TileSpec(json=ts) for ts in ts_json]
-#     tforms = [renderapi.transform.load_transform_json(td) for td in tform_json]
-#     print tforms
-#     return (tilespecs, tforms)
+@pytest.fixture(scope='module')
+def render():
+    render_test_parameters = {
+        'host': render_host,
+        'port': render_port,
+        'owner': 'test',
+        'project': 'test_project',
+        'client_scripts': client_script_location}
+    return renderapi.render.connect(**render_test_parameters)
 
 
-# def test_import_tilespecs_parallel(render, render_example_tilespec_and_transforms, stack = 'test_import_tilespecs_parallel'):
-   
-#     renderapi.stack.create_stack(stack,render=render)
-#     (tilespecs, tforms) = render_example_tilespec_and_transforms
-#     renderapi.client.import_tilespecs_parallel(stack, tilespecs, sharedTransforms=tforms,
-#                                                render=render)
-#     stacks = renderapi.render.get_stacks_by_owner_project(render=render)
-#     assert stack in stacks
-#     ts = renderapi.tilespec.get_tile_specs_from_stack(stack, render=render)
-#     assert len(ts) == len(tilespecs)
+@pytest.fixture(scope='module')
+def render_example_tilespec_and_transforms():
+    with open(tilespec_file, 'r') as f:
+        ts_json = json.load(f)
+    with open(tform_file, 'r') as f:
+        tform_json = json.load(f)
+
+    tilespecs = [renderapi.tilespec.TileSpec(json=ts) for ts in ts_json]
+    tforms = [renderapi.transform.load_transform_json(td) for td in tform_json]
+    print tforms
+    return (tilespecs, tforms)
+
+
+def test_import_tilespecs_parallel(render, render_example_tilespec_and_transforms, stack = 'test_import_tilespecs_parallel'):
+    renderapi.stack.create_stack(stack,render=render)
+    (tilespecs, tforms) = render_example_tilespec_and_transforms
+    renderapi.client.import_tilespecs_parallel(stack, tilespecs, sharedTransforms=tforms,
+                                               render=render)
+    stacks = renderapi.render.get_stacks_by_owner_project(render=render)
+    assert stack in stacks
+    ts = renderapi.tilespec.get_tile_specs_from_stack(stack, render=render)
+    assert len(ts) == len(tilespecs)
     
 # def test_import_jsonfiles_validate_client(render):
 #     root.debug('test not implemented yet')
