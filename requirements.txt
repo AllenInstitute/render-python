@@ -1,5 +1,5 @@
 requests
 numpy
 pillow
+dill>=0.2.6
 pathos
-dill
