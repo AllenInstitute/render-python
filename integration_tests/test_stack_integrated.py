@@ -380,7 +380,7 @@ def test_get_tilespecs_from_z(render, teststack,
     tiles = renderapi.tilespec.get_tile_specs_from_z(
         teststack, tilespecs[0].z, render=render)
     tsz = [ts for ts in tilespecs if ts.z == tilespecs[0].z]
-    assert len(ts) == len(tsz)
+    assert len(tiles) == len(tsz)
 
 
 def test_get_tile_specs_from_minmax_box(
