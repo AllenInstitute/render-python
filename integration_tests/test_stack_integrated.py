@@ -273,7 +273,7 @@ def test_clone_stack_subset(render, teststack):
     stack2 = 'cloned_stack_subset'
     zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
     renderapi.stack.clone_stack(
-        teststack, cloned_stack, zs=zvalues[0:1], render=render)
+        teststack, stack2, zs=zvalues[0:1], render=render)
     zvalues2 = renderapi.stack.get_z_values_for_stack(stack2, render=render)
     renderapi.stack.delete_stack(stack2, render=render)
     assert zvalues[0:1] == zvalues2

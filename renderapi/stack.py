@@ -183,6 +183,7 @@ def clone_stack(inputstack, outputstack, skipTransforms=False, toProject=None,
     '''
     session = requests.session() if session is None else session
     sv = StackVersion(**kwargs)
+    newstack_project = project
     qparams = {}
     if zs is not None:
         qparams['z'] = [float(i) for i in zs]
@@ -190,15 +191,17 @@ def clone_stack(inputstack, outputstack, skipTransforms=False, toProject=None,
         qparams['skipTransforms'] = jbool(skipTransforms)
     if toProject is not None:
         qparams['toProject'] = toProject
+        newstack_project = toProject
 
-    request_url = '{}/{}'.format(format_preamble(
+    request_url = '{}/cloneTo/{}'.format(format_preamble(
         host, port, owner, project, inputstack), outputstack)
 
     logger.debug(request_url)
     r = post_json(session, request_url, sv.to_dict(), params=qparams)
 
     if close_stack:
-        set_stack_state(outputstack, 'COMPLETE', host, port, owner, project)
+        set_stack_state(outputstack, 'COMPLETE', host, port, owner,
+                        newstack_project)
     return r
 
 
