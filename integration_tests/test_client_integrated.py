@@ -60,52 +60,50 @@ def test_import_tilespecs_parallel(render, render_example_tilespec_and_transform
 #     assert False
 
 
-# def test_import_jsonfiles(render,render_example_tilespec_and_transforms,stack=None):
-#     if stack is None:
-#         stack = 'test_import_jsonfiles'
-#     renderapi.stack.create_stack(stack,render=render)
-#     (tilespecs, tforms) = render_example_tilespec_and_transforms
-#     tfiles=[]
-#     for ts in tilespecs:
-#         tfile = tempfile.NamedTemporaryFile(mode = 'w', suffix = '.json', delete=False)
-#         tfile.write(renderapi.utils.renderdumps(ts))
-#         tfile.close()
-#         tfiles.append(tfile.name)
-#     transformFile = tempfile.NamedTemporaryFile(mode = 'w',suffix = '.json', delete=False)
-#     transformFile.write(renderapi.utils.renderdumps(tforms))
-#     transformFile.close()
+def test_import_jsonfiles(render,render_example_tilespec_and_transforms,stack='test_import_jsonfiles'):
+    renderapi.stack.create_stack(stack,render=render)
+    (tilespecs, tforms) = render_example_tilespec_and_transforms
+    tfiles=[]
+    for ts in tilespecs:
+        tfile = tempfile.NamedTemporaryFile(mode = 'w', suffix = '.json', delete=False)
+        tfile.write(renderapi.utils.renderdumps(ts))
+        tfile.close()
+        tfiles.append(tfile.name)
+    transformFile = tempfile.NamedTemporaryFile(mode = 'w',suffix = '.json', delete=False)
+    transformFile.write(renderapi.utils.renderdumps(tforms))
+    transformFile.close()
 
-#     renderapi.client.import_jsonfiles(stack, tfiles, transformFile = transformFile.name, render=render)
+    renderapi.client.import_jsonfiles(stack, tfiles, transformFile = transformFile.name, render=render)
     
-#     stacks = renderapi.render.get_stacks_by_owner_project(render=render)
-#     assert stack in stacks
-#     ts = renderapi.tilespec.get_tile_specs_from_stack(stack, render=render)
-#     assert len(ts) == len(tilespecs)
+    stacks = renderapi.render.get_stacks_by_owner_project(render=render)
+    assert stack in stacks
+    ts = renderapi.tilespec.get_tile_specs_from_stack(stack, render=render)
+    assert len(ts) == len(tilespecs)
 
 
-# @pytest.fixture(scope = "module")
-# def teststack(render,render_example_tilespec_and_transforms):
+@pytest.fixture(scope = "module")
+def teststack(render,render_example_tilespec_and_transforms):
 
-#     stack = 'teststack'
-#     test_import_jsonfiles(render,render_example_tilespec_and_transforms,stack=stack)
-#     yield stack
-#     renderapi.stack.delete_stack(stack, render=render)
+    stack = 'teststack'
+    test_import_jsonfiles(render,render_example_tilespec_and_transforms,stack=stack)
+    yield stack
+    renderapi.stack.delete_stack(stack, render=render)
 
 
-# def test_tile_pair_client(render,teststack,**kwargs):
-#     zvalues = np.array(renderapi.stack.get_z_values_for_stack(teststack, render=render))
-#     outjson = kwargs.pop('outjson',None)
-#     if outjson is None:
-#         outjson = 'test_tile_pair_client.json'
+def test_tile_pair_client(render,teststack,**kwargs):
+    zvalues = np.array(renderapi.stack.get_z_values_for_stack(teststack, render=render))
+    outjson = kwargs.pop('outjson',None)
+    if outjson is None:
+        outjson = 'test_tile_pair_client.json'
 
-#     renderapi.client.tilePairClient(teststack, np.min(zvalues),
-#                                     np.max(zvalues), outjson=outjson, 
-#                                     render = render,
-#                                     **kwargs)
+    renderapi.client.tilePairClient(teststack, np.min(zvalues),
+                                    np.max(zvalues), outjson=outjson, 
+                                    render = render,
+                                    **kwargs)
     
-#     tilepairjson = json.load(open(outjson,'r'))
-#     assert isinstance(tilepairjson,dict)
-#     assert len(tilepairjson['neighborPairs'])>3
+    tilepairjson = json.load(open(outjson,'r'))
+    assert isinstance(tilepairjson,dict)
+    assert len(tilepairjson['neighborPairs'])>3
 
 # def test_importTransformChangesClient(render):
 #     root.debug('test not implemented yet')
