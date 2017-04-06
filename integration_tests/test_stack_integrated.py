@@ -181,39 +181,6 @@ def test_import_tilespecs(render, simpletilespec):
     render.run(renderapi.stack.delete_stack, stack)
 
 
-def test_import_tilespecs_parallel(render):
-    root.debug('test not implemented yet')
-    assert False
-
-
-def test_import_jsonfiles_validate_client(render):
-    root.debug('test not implemented yet')
-    assert False
-
-
-def test_import_jsonfiles(render):
-    root.debug('test not implemented yet')
-    assert False
-
-
-def test_import_parallel(render):
-    root.debug('test not implemented yet')
-    assert False
-
-
-def test_tile_pair_client(render):
-    root.debug('test not implemented yet')
-    assert False
-
-
-def test_importTransformChangesClient(render):
-    root.debug('test not implemented yet')
-    assert False
-
-
-def test_coordinateClient(render):
-    root.debug('test not implemented yet')
-    assert False
 
 
 @pytest.fixture(scope="module")
@@ -379,15 +346,15 @@ def test_get_tilespecs_from_z(render, teststack,
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     tiles = renderapi.tilespec.get_tile_specs_from_z(
         teststack, tilespecs[0].z, render=render)
-    tsz = [ts for ts in tilespces if ts.z == tilespecs[0].z]
-    assert len(ts) == len(tsz)
+    tsz = [ts for ts in tilespecs if ts.z == tilespecs[0].z]
+    assert len(tiles) == len(tsz)
 
 
 def test_get_tile_specs_from_minmax_box(
         render, teststack, render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     z = tilespecs[0].z
-    tsz = [ts for ts in tilespces if ts.z == tilespecs[0].z]
+    tsz = [ts for ts in tilespecs if ts.z == tilespecs[0].z ]
     zbounds = renderapi.stack.get_bounds_from_z(teststack, z, render=render)
     ts = renderapi.tilespec.get_tile_specs_from_minmax_box(
         teststack, z, zbounds['minX'], zbounds['maxX'],
@@ -399,7 +366,7 @@ def test_get_tile_specs_from_box(render, teststack,
                                  render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     z = tilespecs[0].z
-    tsz = [ts for ts in tilespces if ts.z == tilespecs[0].z]
+    tsz = [ts for ts in tilespecs if ts.z == tilespecs[0].z ]
     zbounds = renderapi.stack.get_bounds_from_z(teststack, z, render=render)
     width = zbounds['maxX']-zbounds['minX']
     height = zbounds['maxY']-zbounds['minY']
@@ -414,4 +381,4 @@ def test_get_tile_specs_from_stack(render, teststack,
                                    render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     ts = renderapi.tilespec.get_tile_specs_from_stack(teststack, render=render)
-    assert len(ts) == len(tsz)
+    assert len(ts) == len(tilespecs)

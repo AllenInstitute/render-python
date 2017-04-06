@@ -35,8 +35,9 @@ ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 RUN apt-get install gcc -y
 RUN apt-get install build-essential -y
 RUN apt-get clean
-RUN pip install multiprocess
+RUN pip install dill
 RUN pip install pathos
+
 
 #install components for common render-python apps
 #jupyter notebook, shapely with geos
