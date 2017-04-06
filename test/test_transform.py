@@ -1,6 +1,8 @@
+import json
 import renderapi
 import numpy as np
 import scipy.linalg
+import rendersettings
 
 
 def test_affine_rot_90():
@@ -170,3 +172,60 @@ def test_Polynomial_from_affine():
     assert pt_params_raveled[3] == am1.B1
     assert pt_params_raveled[4] == am1.M10
     assert pt_params_raveled[5] == am1.M11
+
+
+def test_interpolated_transform():
+    with open(rendersettings.INTERPOLATED_TRANSFORM_TILESPEC, 'r') as f:
+        j = json.load(f)
+    ts = renderapi.tilespec.TileSpec(json=j)
+    it_ts = [tform for tform in ts.tforms
+             if isinstance(
+                 tform, renderapi.transform.InterpolatedTransform)][0]
+    it_args = renderapi.transform.InterpolatedTransform(
+        it_ts.a, it_ts.b, it_ts.lambda_)
+    it_dd = renderapi.transform.InterpolatedTransform(
+        json=it_ts.to_dict())
+
+    assert (dict(it_args) == it_args.to_dict() == dict(it_ts) ==
+            it_ts.to_dict() == dict(it_dd) == it_dd.to_dict())
+
+
+def test_reference_transform():
+    with open(rendersettings.REFERENCE_TRANSFORM_TILESPEC, 'r') as f:
+        j = json.load(f)
+    ts = renderapi.tilespec.TileSpec(json=j)
+    ref_ts = [tform for tform in ts.tforms
+              if isinstance(
+                 tform, renderapi.transform.ReferenceTransform)][0]
+    ref_args = renderapi.transform.ReferenceTransform(ref_ts.refId)
+    ref_dd = renderapi.transform.ReferenceTransform(json=ref_ts.to_dict())
+
+    assert (dict(ref_args) == ref_args.to_dict() == dict(ref_ts) ==
+            ref_ts.to_dict() == dict(ref_dd) == ref_dd.to_dict())
+
+
+def test_transform_hash_eq():
+    t1 = renderapi.transform.Transform(
+        **rendersettings.NONLINEAR_TRANSFORM_KWARGS)
+    t2 = renderapi.transform.Transform(
+        **rendersettings.NONLINEAR_TRANSFORM_KWARGS)
+
+    assert t1 is not t2
+    assert t1 == t2
+    assert len({t1, t2}) == 1
+
+    am1 = renderapi.transform.AffineModel(M00=.9,
+                                          M10=-0.2,
+                                          M01=0.3,
+                                          M11=.85,
+                                          B0=245.3,
+                                          B1=-234.1)
+    am2 = renderapi.transform.AffineModel(M00=.9,
+                                          M10=-0.2,
+                                          M01=0.3,
+                                          M11=.85,
+                                          B0=245.3,
+                                          B1=-234.1)
+    assert am1 is not am2
+    assert am1 == am2
+    assert len({am1, am2}) == 1

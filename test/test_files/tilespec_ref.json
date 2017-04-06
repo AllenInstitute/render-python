@@ -1,0 +1,29 @@
+{
+    "maxX": 7275,
+    "maxY": -27014,
+    "layout": {
+        "sectionId": "2266.0"
+    },
+    "width": 3840,
+    "height": 3840,
+    "minX": 1857,
+    "minY": -32318,
+    "minIntensity": 0,
+    "tileId": "20160710195316413_243774_7R_SID_01_redo_0_11_7_3_15_8.2266.0",
+    "meshCellSize": 64,
+    "maxIntensity": 65535,
+    "z": 2266,
+    "mipmapLevels": {
+        "0": {
+            "imageUrl": "file:/data/20160710195316413_243774_7R_SID_01_redo_0_11_7_3_15_8.tif"
+        }
+    },
+    "transforms": {
+        "specList": [
+            {   "type": "ref",
+                "refId": "lc_em_test_2266.2266.0"
+            }
+        ],
+        "type": "list"
+    }
+}

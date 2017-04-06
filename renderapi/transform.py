@@ -150,6 +150,9 @@ class ReferenceTransform:
     def __repr__(self):
         return self.__str__()
 
+    def __iter__(self):
+        return iter([('type', 'ref'), ('refId', self.refId)])
+
 
 class Transform(object):
     def __init__(self, className=None, dataString=None,
