@@ -63,6 +63,8 @@ def import_jsonfiles_and_transforms_parallel_by_z(
                              port=port, owner=owner, project=project)
     rs = pool.amap(partial_import, jsonfiles, transformfiles)
     rs.wait()
+    pool.close()
+    pool.join()
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
@@ -88,7 +90,8 @@ def import_jsonfiles_parallel(
                              project=project)
 
     pool.map(partial_import, jsonfiles)
-
+    pool.close()
+    pool.join()
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
@@ -225,7 +228,8 @@ def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
     # TODO this is a weird way to do splits.... is that okay?
     tilespec_groups = [tilespecs[i::poolsize] for i in xrange(poolsize)]
     pool.map(partial_import, tilespec_groups)
-
+    pool.close()
+    pool.join()
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 

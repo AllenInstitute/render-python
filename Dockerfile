@@ -35,18 +35,21 @@ ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 RUN apt-get install gcc -y
 RUN apt-get install build-essential -y
 RUN apt-get clean
-RUN pip install dill
-RUN pip install pathos
+
 
 
 #install components for common render-python apps
 #jupyter notebook, shapely with geos
 RUN /opt/conda/bin/conda install jupyter -y
 RUN apt-get install libgeos-dev -y
+RUN apt-get install imagemagick -y
+
 RUN pip install shapely==1.6b2
 RUN pip install opencv-python
-
-RUN apt-get install imagemagick -y
+RUN pip install dill==0.2.6
+RUN pip install multiprocess==0.70.5
+RUN pip install pathos==0.2.0
+RUN pip install pillow
 
 #install render python using pip from github
 #RUN pip install -e git+https://github.com/fcollman/render-python.git@master#egg=render-python

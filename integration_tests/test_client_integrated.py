@@ -6,6 +6,7 @@ import logging
 import sys
 import json
 import numpy as np
+import dill
 from test_data import (render_host, render_port,
                        client_script_location, tilespec_file, tform_file)
 
@@ -45,7 +46,6 @@ def render_example_tilespec_and_transforms():
 
 
 def test_import_tilespecs_parallel(render, render_example_tilespec_and_transforms, stack = 'test_import_tilespecs_parallel'):
-   
     renderapi.stack.create_stack(stack,render=render)
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     renderapi.client.import_tilespecs_parallel(stack, tilespecs, sharedTransforms=tforms,
@@ -55,14 +55,12 @@ def test_import_tilespecs_parallel(render, render_example_tilespec_and_transform
     ts = renderapi.tilespec.get_tile_specs_from_stack(stack, render=render)
     assert len(ts) == len(tilespecs)
     
-def test_import_jsonfiles_validate_client(render):
-    root.debug('test not implemented yet')
-    assert False
+# def test_import_jsonfiles_validate_client(render):
+#     root.debug('test not implemented yet')
+#     assert False
 
 
-def test_import_jsonfiles(render,render_example_tilespec_and_transforms,stack=None):
-    if stack is None:
-        stack = 'test_import_jsonfiles'
+def test_import_jsonfiles(render,render_example_tilespec_and_transforms,stack='test_import_jsonfiles'):
     renderapi.stack.create_stack(stack,render=render)
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     tfiles=[]
@@ -107,11 +105,11 @@ def test_tile_pair_client(render,teststack,**kwargs):
     assert isinstance(tilepairjson,dict)
     assert len(tilepairjson['neighborPairs'])>3
 
-def test_importTransformChangesClient(render):
-    root.debug('test not implemented yet')
-    assert False
+# def test_importTransformChangesClient(render):
+#     root.debug('test not implemented yet')
+#     assert False
 
 
-def test_coordinateClient(render):
-    root.debug('test not implemented yet')
-    assert False
+# def test_coordinateClient(render):
+#     root.debug('test not implemented yet')
+#     assert False
