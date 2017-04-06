@@ -37,6 +37,7 @@ RUN apt-get install build-essential -y
 RUN apt-get clean
 RUN pip install multiprocess
 RUN pip install pathos
+RUN pip install dill
 
 #install components for common render-python apps
 #jupyter notebook, shapely with geos
