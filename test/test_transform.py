@@ -125,7 +125,7 @@ def test_transformsum_polynomial_identity():
     invpt = renderapi.transform.Polynomial2DTransform(
         src=ptest_dstpts, dst=srcpts)
 
-    tformlist = [am, pt, invpt, invam]
+    tformlist = [am, [[pt, invpt]], invam]
     new_tform = renderapi.transform.estimate_transformsum(
         tformlist, src=srcpts)
 
@@ -163,9 +163,10 @@ def test_Polynomial_from_affine():
                                           B1=-234.1)
     pt = renderapi.transform.Polynomial2DTransform.fromAffine(am1)
     pt_params_raveled = pt.params.ravel()
-    assert pt_params_raveled[0] == am1.M[0, 2]
-    assert pt_params_raveled[1] == am1.M[0, 0]
-    assert pt_params_raveled[2] == am1.M[0, 1]
-    assert pt_params_raveled[3] == am1.M[1, 2]
-    assert pt_params_raveled[4] == am1.M[1, 0]
-    assert pt_params_raveled[5] == am1.M[1, 1]
+    assert pt.order == 1
+    assert pt_params_raveled[0] == am1.B0
+    assert pt_params_raveled[1] == am1.M00
+    assert pt_params_raveled[2] == am1.M01
+    assert pt_params_raveled[3] == am1.B1
+    assert pt_params_raveled[4] == am1.M10
+    assert pt_params_raveled[5] == am1.M11
