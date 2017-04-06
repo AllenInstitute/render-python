@@ -66,6 +66,25 @@ def post_json(session, request_url, d, params=None):
                 d, request_url, params))
 
 
+def put_json(session, request_url, d, params=None):
+    headers = {"content-type": "application/json"}
+    if d is not None:
+        payload = json.dumps(d)
+    else:
+        payload = None
+        headers['Accept'] = "application/json"
+    r = session.put(request_url, data=payload, params=params,
+                    headers=headers)
+    try:
+        return r
+    except Exception as e:
+        logger.error(e)
+        logger.error(r.text)
+        raise RenderError(
+            'cannot put {} to {} with params {}'.format(
+                d, request_url, params))
+
+
 def renderdumps(obj, *args, **kwargs):
     '''json.dumps using the RenderEncoder'''
     cls_ = kwargs.pop('cls', RenderEncoder)

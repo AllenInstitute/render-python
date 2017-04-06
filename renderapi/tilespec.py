@@ -2,14 +2,13 @@
 from .render import format_preamble, renderaccess
 from .utils import NullHandler
 from .stack import get_z_values_for_stack
-from .transform import TransformList, load_transform_json
+from .transform import TransformList
 from collections import OrderedDict
 import logging
 import requests
 
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
-
 
 
 class Layout:
@@ -130,11 +129,15 @@ class TileSpec:
                 thedict['transforms']['specList'].append(strlist)
             else:
                 thedict['transforms']['specList'].append(t.to_dict())
+
+        # TODO filters not implemented
+        '''
         if len(self.inputfilters):
             thedict['inputfilters'] = {}
             thedict['inputfilters']['type'] = 'list'
             thedict['inputfilters']['specList'] = [f.to_dict() for f
                                                    in self.inputfilters]
+        '''
 
         thedict = {k: v for k, v in thedict.items() if v is not None}
         return thedict
@@ -162,12 +165,15 @@ class TileSpec:
         tfl = TransformList(json=d['transforms'])
         self.tforms = tfl.tforms
 
+        # TODO filters not implemented -- should skip
+        '''
         self.inputfilters = []
         if d.get('inputfilters', None) is not None:
             for f in d['inputfilters']['specList']:
                 f = Filter()
                 f.from_dict(f)
                 self.inputfilters.append(f)
+        '''
 
 
 class MipMapLevel:
@@ -343,7 +349,7 @@ def get_tile_specs_from_stack(stack, host=None, port=None,
                                         owner=owner, project=project,
                                         session=session)] for i in sl]
 
-#TODO: ADD FEATURES THAT REQUIRED THESE TO SUPPORT.. NOT YET FULLY IMPLEMENTED
+# TODO: ADD FEATURES THAT REQUIRED THESE TO SUPPORT.. NOT YET FULLY IMPLEMENTED
 # class ResolvedTileSpecMap:
 #     def __init__(self, tilespecs=[], transforms=[]):
 #         self.tilespecs = tilespecs

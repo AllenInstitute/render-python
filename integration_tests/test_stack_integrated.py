@@ -263,7 +263,7 @@ def test_get_section_z(render, teststack):
 def test_clone_stack(render, teststack):
     stack2 = 'cloned_stack'
     zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
-    renderapi.stack.clone_stack(teststack, cloned_stack, render=render)
+    renderapi.stack.clone_stack(teststack, stack2, render=render)
     zvalues2 = renderapi.stack.get_z_values_for_stack(stack2, render=render)
     renderapi.stack.delete_stack(stack2, render=render)
     assert zvalues == zvalues2
@@ -273,7 +273,7 @@ def test_clone_stack_subset(render, teststack):
     stack2 = 'cloned_stack_subset'
     zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
     renderapi.stack.clone_stack(
-        teststack, cloned_stack, zs=zvalues[0:1], render=render)
+        teststack, stack2, zs=zvalues[0:1], render=render)
     zvalues2 = renderapi.stack.get_z_values_for_stack(stack2, render=render)
     renderapi.stack.delete_stack(stack2, render=render)
     assert zvalues[0:1] == zvalues2
@@ -362,41 +362,10 @@ def test_section_image(render, teststack, **kwargs):
     assert data.shape[1] == (np.floor(width * scalefactor))
     assert data.shape[2] >= 3
 
-def test_get_tilespecs_from_z(render, teststack,render_example_tilespec_and_transforms):
-    (tilespecs, tforms) = render_example_tilespec_and_transforms
-    tiles = renderapi.tilespec.get_tile_specs_from_z(teststack, tilespecs[0].z, render=render)
-    tsz = [ts for ts in tilespecs if ts.z == tilespecs[0].z ]
-    assert len(ts)==len(tsz)
-    
-def test_get_tile_specs_from_minmax_box(render, teststack, render_example_tilespec_and_transforms):
-    (tilespecs, tforms) = render_example_tilespec_and_transforms
-    z = tilespecs[0].z
-    tsz = [ts for ts in tilespecs if ts.z == tilespecs[0].z ]
-    zbounds = renderapi.stack.get_bounds_from_z(teststack, z, render=render)
-    ts = renderapi.tilespec.get_tile_specs_from_minmax_box(teststack, z, zbounds['minX'],
-        zbounds['maxX'], zbounds['minY'], zbounds['maxY'], render=render)
-    assert len(ts) == len(tsz)
-
-def test_get_tile_specs_from_box(render,teststack,render_example_tilespec_and_transforms):
-    (tilespecs, tforms) = render_example_tilespec_and_transforms
-    z = tilespecs[0].z
-    tsz = [ts for ts in tilespecs if ts.z == tilespecs[0].z ]
-    zbounds = renderapi.stack.get_bounds_from_z(teststack, z, render=render)
-    width = zbounds['maxX']-zbounds['minX']
-    height = zbounds['maxY']-zbounds['minY']
-
-    ts = renderapi.tilespec.get_tile_specs_from_box(teststack, z, zbounds['minX'],
-        zbounds['minY'], width, height, render=render)
-    assert len(ts) == len(tsz)
-
-def test_get_tile_specs_from_stack(render,teststack,render_example_tilespec_and_transforms):
-    (tilespecs, tforms) = render_example_tilespec_and_transforms
-    ts = renderapi.tilespec.get_tile_specs_from_stack(teststack, render=render)
-    assert len(ts) == len(tsz)
 
 def test_section_image_options(render, teststack):
-    img=test_section_image(render, teststack, filter=True,
-                       maxTileSpecsToRender=50)
+    img = test_section_image(render, teststack, filter=True,
+                             maxTileSpecsToRender=50)
 
 
 def fail_image_get(render, teststack, render_example_tilespec_and_transforms):
@@ -404,3 +373,45 @@ def fail_image_get(render, teststack, render_example_tilespec_and_transforms):
         render.run(renderapi.image.get_tile_image_data, teststack,
                    'test', img_format='JUNK')
 
+
+def test_get_tilespecs_from_z(render, teststack,
+                              render_example_tilespec_and_transforms):
+    (tilespecs, tforms) = render_example_tilespec_and_transforms
+    tiles = renderapi.tilespec.get_tile_specs_from_z(
+        teststack, tilespecs[0].z, render=render)
+    tsz = [ts for ts in tilespces if ts.z == tilespecs[0].z]
+    assert len(ts) == len(tsz)
+
+
+def test_get_tile_specs_from_minmax_box(
+        render, teststack, render_example_tilespec_and_transforms):
+    (tilespecs, tforms) = render_example_tilespec_and_transforms
+    z = tilespecs[0].z
+    tsz = [ts for ts in tilespecs if ts.z == tilespecs[0].z ]
+    zbounds = renderapi.stack.get_bounds_from_z(teststack, z, render=render)
+    ts = renderapi.tilespec.get_tile_specs_from_minmax_box(
+        teststack, z, zbounds['minX'], zbounds['maxX'],
+        zbounds['minY'], zbounds['maxY'], render=render)
+    assert len(ts) == len(tsz)
+
+
+def test_get_tile_specs_from_box(render, teststack,
+                                 render_example_tilespec_and_transforms):
+    (tilespecs, tforms) = render_example_tilespec_and_transforms
+    z = tilespecs[0].z
+    tsz = [ts for ts in tilespecs if ts.z == tilespecs[0].z ]
+    zbounds = renderapi.stack.get_bounds_from_z(teststack, z, render=render)
+    width = zbounds['maxX']-zbounds['minX']
+    height = zbounds['maxY']-zbounds['minY']
+
+    ts = renderapi.tilespec.get_tile_specs_from_box(
+        teststack, z, zbounds['minX'],
+        zbounds['minY'], width, height, render=render)
+    assert len(ts) == len(tsz)
+
+
+def test_get_tile_specs_from_stack(render, teststack,
+                                   render_example_tilespec_and_transforms):
+    (tilespecs, tforms) = render_example_tilespec_and_transforms
+    ts = renderapi.tilespec.get_tile_specs_from_stack(teststack, render=render)
+    assert len(ts) == len(tsz)
