@@ -222,14 +222,15 @@ def get_z_value_for_section(stack, sectionId, **kwargs):
     return get_section_z_value(stack, sectionId, **kwargs)
 
 
-@renderaccess
-def put_resolved_tilespecs(stack, json_dict, host=None, port=None,
-                           owner=None, project=None,
-                           session=requests.session(), render=None, **kwargs):
-    request_url = format_preamble(
-        host, port, owner, project, stack) + "/resolvedTiles"
-    r = post_json(session, request_url, json_dict)
-    return r
+# haven't fully supported this yet
+# @renderaccess
+# def put_resolved_tilespecs(stack, json_dict, host=None, port=None,
+#                            owner=None, project=None,
+#                            session=requests.session(), render=None, **kwargs):
+#     request_url = format_preamble(
+#         host, port, owner, project, stack) + "/resolvedTiles"
+#     r = post_json(session, request_url, json_dict)
+#     return r
 
 
 @renderaccess

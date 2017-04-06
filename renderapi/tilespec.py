@@ -11,74 +11,6 @@ logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
 
 
-class ResolvedTileSpecMap:
-    def __init__(self, tilespecs=[], transforms=[]):
-        self.tilespecs = tilespecs
-        self.transforms = transforms
-
-    def to_dict(self):
-        d = {}
-        d['tileIdToSpecMap'] = {}
-        for ts in self.tilespecs:
-            d['tileIdToSpecMap'][ts.tileId] = ts.to_dict()
-        d['transformIdToSpecMap'] = {}
-        for tf in self.transforms:
-            d['transformIdToSpecMap'][tf.transformId] = tf.to_dict()
-        return d
-
-    def from_dict(self, d):
-        tsmap = d['tileIdToSpecMap']
-        tfmap = d['transformIdToSpecMap']
-        for tsd in tsmap.values():
-            ts = TileSpec()
-            ts.from_dict(tsd)
-            self.tilespecs.append(ts)
-        for tfd in tfmap.values():
-            tf = load_transform_json(tfd)
-            self.transforms.append(tf)
-
-
-class ResolvedTileSpecCollection:
-    def __init__(self, tilespecs=[], transforms=[]):
-        self.tilespecs = tilespecs
-        self.transforms = transforms
-
-    def to_dict(self):
-        d = {}
-        d['tileCount'] = len(self.tilespecs)
-        d['tileSpecs'] = [ts.to_dict() for ts in self.tilespecs]
-        d['transformCount'] = len(self.transforms)
-        d['transformSpecs'] = [tf.to_dict() for tf in self.transforms]
-        return d
-
-    def from_dict(self, d):
-        self.tilespecs = []
-        self.transforms = []
-        for i in range(d['tileCount']):
-            ts = TileSpec()
-            ts.from_dict(d['tileSpecs'][i])
-            self.tilespecs.append(ts)
-        for i in range(d['tranformCount']):
-            tfd = d['transformSpecs'][i]
-            tf = load_transform_json(tfd)
-            self.transforms.append(tf)
-
-
-class Filter:
-    def __init__(self, classname, params={}):
-        self.classname = classname
-        self.params = params
-
-    def to_dict(self):
-        d = {}
-        d['className'] = self.classname
-        d['params'] = self.params
-        return d
-
-    def from_dict(self, d):
-        self.classname = d['className']
-        self.params = d['params']
-
 
 class Layout:
     def __init__(self, sectionId=None, scopeId=None, cameraId=None,
@@ -410,3 +342,72 @@ def get_tile_specs_from_stack(stack, host=None, port=None,
         for z in get_z_values_for_stack(stack, host=host, port=port,
                                         owner=owner, project=project,
                                         session=session)] for i in sl]
+
+#TODO: ADD FEATURES THAT REQUIRED THESE TO SUPPORT.. NOT YET FULLY IMPLEMENTED
+# class ResolvedTileSpecMap:
+#     def __init__(self, tilespecs=[], transforms=[]):
+#         self.tilespecs = tilespecs
+#         self.transforms = transforms
+
+#     def to_dict(self):
+#         d = {}
+#         d['tileIdToSpecMap'] = {}
+#         for ts in self.tilespecs:
+#             d['tileIdToSpecMap'][ts.tileId] = ts.to_dict()
+#         d['transformIdToSpecMap'] = {}
+#         for tf in self.transforms:
+#             d['transformIdToSpecMap'][tf.transformId] = tf.to_dict()
+#         return d
+
+#     def from_dict(self, d):
+#         tsmap = d['tileIdToSpecMap']
+#         tfmap = d['transformIdToSpecMap']
+#         for tsd in tsmap.values():
+#             ts = TileSpec()
+#             ts.from_dict(tsd)
+#             self.tilespecs.append(ts)
+#         for tfd in tfmap.values():
+#             tf = load_transform_json(tfd)
+#             self.transforms.append(tf)
+
+
+# class ResolvedTileSpecCollection:
+#     def __init__(self, tilespecs=[], transforms=[]):
+#         self.tilespecs = tilespecs
+#         self.transforms = transforms
+
+#     def to_dict(self):
+#         d = {}
+#         d['tileCount'] = len(self.tilespecs)
+#         d['tileSpecs'] = [ts.to_dict() for ts in self.tilespecs]
+#         d['transformCount'] = len(self.transforms)
+#         d['transformSpecs'] = [tf.to_dict() for tf in self.transforms]
+#         return d
+
+#     def from_dict(self, d):
+#         self.tilespecs = []
+#         self.transforms = []
+#         for i in range(d['tileCount']):
+#             ts = TileSpec()
+#             ts.from_dict(d['tileSpecs'][i])
+#             self.tilespecs.append(ts)
+#         for i in range(d['tranformCount']):
+#             tfd = d['transformSpecs'][i]
+#             tf = load_transform_json(tfd)
+#             self.transforms.append(tf)
+
+
+# class Filter:
+#     def __init__(self, classname, params={}):
+#         self.classname = classname
+#         self.params = params
+
+#     def to_dict(self):
+#         d = {}
+#         d['className'] = self.classname
+#         d['params'] = self.params
+#         return d
+
+#     def from_dict(self, d):
+#         self.classname = d['className']
+#         self.params = d['params']
