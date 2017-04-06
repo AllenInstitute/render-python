@@ -99,6 +99,7 @@ def test_tile_pair_client(render,teststack,**kwargs):
 
     renderapi.client.tilePairClient(teststack, np.min(zvalues),
                                     np.max(zvalues), outjson=outjson, 
+                                    render = render,
                                     **kwargs)
     
     tilepairjson = json.load(open(outjson,'r'))
