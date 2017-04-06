@@ -2,6 +2,8 @@
 exclude_lines =
     pragma: no cover
 
+    raise NotImplementedError
+
     # bad form, but annoying when reported
     except Exception
 
@@ -10,3 +12,10 @@ exclude_lines =
 
     # __repr__ is usually only important in debugging
     def __repr__
+
+    # ignore logger messages
+    logger.debug
+    logger.info
+    logger.warning
+    logger.error
+    logger.critical

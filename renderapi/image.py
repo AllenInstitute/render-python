@@ -43,7 +43,7 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
     '''
     try:
         image_ext = IMAGE_FORMATS[img_format]
-    except KeyError as e:
+    except KeyError as e:  # pragma no cover
         raise ValueError('{} is not a valid render image format!'.format(e))
 
     request_url = format_preamble(
@@ -81,7 +81,7 @@ def get_tile_image_data(stack, tileId, normalizeForMatching=True, scale=None,
     '''
     try:
         image_ext = IMAGE_FORMATS[img_format]
-    except KeyError as e:
+    except KeyError as e:  # pragma no cover
         raise ValueError('{} is not a valid render image format!'.format(e))
 
     request_url = format_preamble(
@@ -122,7 +122,7 @@ def get_section_image(stack, z, scale=1.0, filter=False,
     '''
     try:
         image_ext = IMAGE_FORMATS[img_format]
-    except KeyError as e:
+    except KeyError as e:  # pragma no cover
         raise ValueError('{} is not a valid render image format!'.format(e))
 
     request_url = format_preamble(
