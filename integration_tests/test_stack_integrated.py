@@ -181,39 +181,6 @@ def test_import_tilespecs(render, simpletilespec):
     render.run(renderapi.stack.delete_stack, stack)
 
 
-def test_import_tilespecs_parallel(render):
-    root.debug('test not implemented yet')
-    assert False
-
-
-def test_import_jsonfiles_validate_client(render):
-    root.debug('test not implemented yet')
-    assert False
-
-
-def test_import_jsonfiles(render):
-    root.debug('test not implemented yet')
-    assert False
-
-
-def test_import_parallel(render):
-    root.debug('test not implemented yet')
-    assert False
-
-
-def test_tile_pair_client(render):
-    root.debug('test not implemented yet')
-    assert False
-
-
-def test_importTransformChangesClient(render):
-    root.debug('test not implemented yet')
-    assert False
-
-
-def test_coordinateClient(render):
-    root.debug('test not implemented yet')
-    assert False
 
 
 @pytest.fixture(scope="module")
