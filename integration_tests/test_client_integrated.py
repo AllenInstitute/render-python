@@ -65,15 +65,22 @@ def test_import_jsonfiles(render,render_example_tilespec_and_transforms,stack='t
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     tfiles=[]
     for ts in tilespecs:
-        tfile = tempfile.NamedTemporaryFile(mode = 'w', suffix = '.json', delete=False)
-        tfile.write(renderapi.utils.renderdumps(ts))
-        tfile.close()
-        tfiles.append(tfile.name)
-    transformFile = tempfile.NamedTemporaryFile(mode = 'w',suffix = '.json', delete=False)
-    transformFile.write(renderapi.utils.renderdumps(tforms))
-    transformFile.close()
+        tempjson = tempfile.NamedTemporaryFile(
+            suffix=".json", mode='r', delete=False)
+        tempjson.close()
+        tsjson = tempjson.name
+        with open(tsjson, 'w') as f:
+            renderapi.utils.renderdump(tilespecs, f)   
+        tfiles.append(tsjson)
 
-    renderapi.client.import_jsonfiles(stack, tfiles, transformFile = transformFile.name, render=render)
+    transformFile = tempfile.NamedTemporaryFile(
+        suffix=".json", mode='r', delete=False)
+    transformFile.close()
+    tfjson = transformFile.name
+    with open(tfjson, 'w') as f:
+        renderapi.utils.renderdump(tforms, f)   
+
+    renderapi.client.import_jsonfiles(stack, tfiles, transformFile = tfjson, render=render)
     
     stacks = renderapi.render.get_stacks_by_owner_project(render=render)
     assert stack in stacks
