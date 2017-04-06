@@ -140,14 +140,14 @@ def unpackage_world_to_local_point_match_from_json(json_answer, tileId):
 #         logger.error(json_answer)
 
 
-# def unpackage_local_to_world_point_match_from_json(json_answer):
-#     logger.debug("json_answer_length %d" % len(json_answer))
-#     answer = np.zeros((len(json_answer), 2))
-#     for i, coord in enumerate(json_answer):
-#         c = coord['world']
-#         answer[i, 0] = c[0]
-#         answer[i, 1] = c[1]
-#     return answer
+def unpackage_local_to_world_point_match_from_json(json_answer):
+    logger.debug("json_answer_length %d" % len(json_answer))
+    answer = np.zeros((len(json_answer), 2))
+    for i, coord in enumerate(json_answer):
+        c = coord['world']
+        answer[i, 0] = c[0]
+        answer[i, 1] = c[1]
+    return answer
 
 
 @renderaccess
