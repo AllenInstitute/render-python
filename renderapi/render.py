@@ -136,7 +136,7 @@ def connect(host=None, port=None, owner=None, project=None,
     if host is None:
         if 'RENDER_HOST' not in os.environ:
             host = str(raw_input("Enter Render Host: "))
-            if host == '':
+            if host == '':  # pragma no cover
                 logger.critical('Render Host must not be empty!')
                 raise ValueError('Render Host must not be empty!')
         else:
@@ -148,7 +148,7 @@ def connect(host=None, port=None, owner=None, project=None,
     if port is None:
         if 'RENDER_PORT' not in os.environ:
             port = str(int(raw_input("Enter Render Port: ")))
-            if port == '':
+            if port == '':  # pragma no cover
                 # TODO better (no) port handling
                 logger.critical('Render Port must not be empty!')
                 raise ValueError('Render Port must not be empty!')
@@ -160,7 +160,7 @@ def connect(host=None, port=None, owner=None, project=None,
             project = str(raw_input("Enter Render Project: "))
         else:
             project = str(os.environ['RENDER_PROJECT'])
-        if project == '':
+        if project == '':  # pragma no cover
             logger.critical('Render Project must not be empty!')
             raise ValueError('Render Project must not be empty!')
 
@@ -169,7 +169,7 @@ def connect(host=None, port=None, owner=None, project=None,
             owner = str(raw_input("Enter Render Owner: "))
         else:
             owner = str(os.environ['RENDER_OWNER'])
-        if owner == '':
+        if owner == '':  # pragma no cover
             logger.critical('Render Owner must not be empty!')
             raise ValueError('Render Owner must not be empty!')
 
@@ -180,7 +180,7 @@ def connect(host=None, port=None, owner=None, project=None,
                 "Enter Render Client Scripts location: "))
         else:
             client_scripts = str(os.environ['RENDER_CLIENT_SCRIPTS'])
-        if client_scripts == '':
+        if client_scripts == '':  # pragma no cover
             logger.critical('Render Client Scripts must '
                             'not be empty!')
             raise ValueError('Render Client Scripts must '
