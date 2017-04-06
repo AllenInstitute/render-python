@@ -129,11 +129,15 @@ class TileSpec:
                 thedict['transforms']['specList'].append(strlist)
             else:
                 thedict['transforms']['specList'].append(t.to_dict())
+
+        # TODO filters not implemented
+        '''
         if len(self.inputfilters):
             thedict['inputfilters'] = {}
             thedict['inputfilters']['type'] = 'list'
             thedict['inputfilters']['specList'] = [f.to_dict() for f
                                                    in self.inputfilters]
+        '''
 
         thedict = {k: v for k, v in thedict.items() if v is not None}
         return thedict
