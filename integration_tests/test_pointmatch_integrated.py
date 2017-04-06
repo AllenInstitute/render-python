@@ -101,7 +101,7 @@ def test_pm_collection(render):
     renderapi.pointmatch.import_matches(collection,test_matches,render=render)
     return collection
 
-def test_get_matchcollection_owners(render):
+def test_get_matchcollection_owners(render,test_pm_collection):
     owners = renderapi.pointmatch.get_matchcollection_owners(render=render)
     assert 'test' in owners
 
