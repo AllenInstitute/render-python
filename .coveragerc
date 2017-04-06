@@ -1,0 +1,12 @@
+[report]
+exclude_lines =
+    pragma: no cover
+
+    # bad form, but annoying when reported
+    except Exception
+
+    # raw input is low priority and may be removed
+    raw_input
+
+    # __repr__ is usually only important in debugging
+    def __repr__
