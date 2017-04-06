@@ -74,7 +74,7 @@ def test_import_jsonfiles(render,render_example_tilespec_and_transforms,stack=No
     transformFile = tempfile.NamedTemporaryFile(mode = 'w',suffix = '.json', delete=False)
     transformFile.write(renderapi.utils.renderdumps(tforms))
 
-    renderapi.client.import_jsonfiles(stack, tfiles, transformFile = transformFile)
+    renderapi.client.import_jsonfiles(stack, tfiles, transformFile = transformFile, render=render)
     
     stacks = renderapi.render.get_stacks_by_owner_project(render=render)
     assert stack in stacks
@@ -92,7 +92,7 @@ def teststack(render,render_example_tilespec_and_transforms):
 
 
 def test_tile_pair_client(render,teststack,**kwargs):
-    zvalues = np.array(renderapi.stack.get_z_values_for_stack(teststack))
+    zvalues = np.array(renderapi.stack.get_z_values_for_stack(teststack, render=render))
     outjson = kwargs.pop('outjson',None)
     if outjson is None:
         outjson = 'test_tile_pair_client.json'
