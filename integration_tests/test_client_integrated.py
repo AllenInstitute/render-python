@@ -82,7 +82,7 @@ def test_import_jsonfiles(render,render_example_tilespec_and_transforms,stack=No
     assert len(ts) == len(tilespecs)
 
 
-@pytest.fixture(scope = "moudle")
+@pytest.fixture(scope = "module")
 def teststack(render,render_example_tilespec_and_transforms):
 
     stack = 'teststack'
