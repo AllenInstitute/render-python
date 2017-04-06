@@ -74,7 +74,7 @@ def test_import_jsonfiles(render,render_example_tilespec_and_transforms,stack=No
     transformFile = tempfile.NamedTemporaryFile(mode = 'w',suffix = '.json', delete=False)
     transformFile.write(renderapi.utils.renderdumps(tforms))
     transformFile.close()
-    
+
     renderapi.client.import_jsonfiles(stack, tfiles, transformFile = transformFile.name, render=render)
     
     stacks = renderapi.render.get_stacks_by_owner_project(render=render)
@@ -87,7 +87,7 @@ def test_import_jsonfiles(render,render_example_tilespec_and_transforms,stack=No
 def teststack(render,render_example_tilespec_and_transforms):
 
     stack = 'teststack'
-    test_import_jsonfiles(render,render_example_tilespec_and_transforms,stack=stack, render=render)
+    test_import_jsonfiles(render,render_example_tilespec_and_transforms,stack=stack)
     yield stack
     renderapi.stack.delete_stack(stack, render=render)
 
