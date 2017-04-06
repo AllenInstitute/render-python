@@ -107,47 +107,47 @@ def unpackage_world_to_local_point_match_from_json(json_answer, tileId):
     return answer
 
 
-@renderaccess
-def old_world_to_local_coordinates_array(stack, dataarray, tileId, z=0,
-                                         host=None, port=None,
-                                         owner=None, project=None,
-                                         session=requests.session(),
-                                         render=None, **kwargs):
-    ''''''
+# @renderaccess
+# def old_world_to_local_coordinates_array(stack, dataarray, tileId, z=0,
+#                                          host=None, port=None,
+#                                          owner=None, project=None,
+#                                          session=requests.session(),
+#                                          render=None, **kwargs):
+#     ''''''
 
-    request_url = format_preamble(
-        host, port, owner, project, stack) + \
-        "/z/%d/world-to-local-coordinates" % (z)
-    dlist = []
-    for i in range(dataarray.shape[0]):
-        d = {}
-        d['tileId'] = tileId
-        d['world'] = [dataarray[i, 0], dataarray[i, 1]]
-        dlist.append(d)
-    jsondata = json.dumps(dlist)
-    r = session.put(request_url, data=jsondata,
-                    headers={"content-type": "application/json"})
-    json_answer = r.json()
-    try:
-        answer = np.zeros(dataarray.shape)
-        for i, coord in enumerate(json_answer):
-            c = coord['local']
-            answer[i, 0] = c[0]
-            answer[i, 1] = c[1]
-        return answer
-    except Exception as e:
-        logger.error(e)
-        logger.error(json_answer)
+#     request_url = format_preamble(
+#         host, port, owner, project, stack) + \
+#         "/z/%d/world-to-local-coordinates" % (z)
+#     dlist = []
+#     for i in range(dataarray.shape[0]):
+#         d = {}
+#         d['tileId'] = tileId
+#         d['world'] = [dataarray[i, 0], dataarray[i, 1]]
+#         dlist.append(d)
+#     jsondata = json.dumps(dlist)
+#     r = session.put(request_url, data=jsondata,
+#                     headers={"content-type": "application/json"})
+#     json_answer = r.json()
+#     try:
+#         answer = np.zeros(dataarray.shape)
+#         for i, coord in enumerate(json_answer):
+#             c = coord['local']
+#             answer[i, 0] = c[0]
+#             answer[i, 1] = c[1]
+#         return answer
+#     except Exception as e:
+#         logger.error(e)
+#         logger.error(json_answer)
 
 
-def unpackage_local_to_world_point_match_from_json(json_answer):
-    logger.debug("json_answer_length %d" % len(json_answer))
-    answer = np.zeros((len(json_answer), 2))
-    for i, coord in enumerate(json_answer):
-        c = coord['world']
-        answer[i, 0] = c[0]
-        answer[i, 1] = c[1]
-    return answer
+# def unpackage_local_to_world_point_match_from_json(json_answer):
+#     logger.debug("json_answer_length %d" % len(json_answer))
+#     answer = np.zeros((len(json_answer), 2))
+#     for i, coord in enumerate(json_answer):
+#         c = coord['world']
+#         answer[i, 0] = c[0]
+#         answer[i, 1] = c[1]
+#     return answer
 
 
 @renderaccess
@@ -171,38 +171,38 @@ def world_to_local_coordinates_array(stack, dataarray, tileId, z,
     return unpackage_world_to_local_point_match_from_json(json_answer, tileId)
 
 
-@renderaccess
-def old_local_to_world_coordinates_array(stack, dataarray, tileId, z=0,
-                                         host=None, port=None,
-                                         owner=None, project=None,
-                                         session=requests.session(),
-                                         render=None, **kwargs):
-    ''''''
-    request_url = format_preamble(
-        host, port, owner, project, stack) + \
-        "/z/%d/local-to-world-coordinates" % (z)
-    dlist = []
-    for i in range(dataarray.shape[0]):
-        d = {}
-        d['tileId'] = tileId
-        d['local'] = [dataarray[i, 0], dataarray[i, 1]]
-        dlist.append(d)
-    jsondata = json.dumps(dlist)
-    r = session.put(request_url, data=jsondata,
-                    headers={"content-type": "application/json"})
-    json_answer = r.json()
-    try:
-        answer = np.zeros(dataarray.shape)
-        logger.debug('shape {}'.format(dataarray.shape))
-        logger.debug('length of json_answer {}'.format(len(json_answer)))
-        for i, coord in enumerate(json_answer):
-            c = coord['world']
-            answer[i, 0] = c[0]
-            answer[i, 1] = c[1]
-        return answer
-    except Exception as e:
-        logger.error(e)
-        logger.error(json_answer)
+# @renderaccess
+# def old_local_to_world_coordinates_array(stack, dataarray, tileId, z=0,
+#                                          host=None, port=None,
+#                                          owner=None, project=None,
+#                                          session=requests.session(),
+#                                          render=None, **kwargs):
+#     ''''''
+#     request_url = format_preamble(
+#         host, port, owner, project, stack) + \
+#         "/z/%d/local-to-world-coordinates" % (z)
+#     dlist = []
+#     for i in range(dataarray.shape[0]):
+#         d = {}
+#         d['tileId'] = tileId
+#         d['local'] = [dataarray[i, 0], dataarray[i, 1]]
+#         dlist.append(d)
+#     jsondata = json.dumps(dlist)
+#     r = session.put(request_url, data=jsondata,
+#                     headers={"content-type": "application/json"})
+#     json_answer = r.json()
+#     try:
+#         answer = np.zeros(dataarray.shape)
+#         logger.debug('shape {}'.format(dataarray.shape))
+#         logger.debug('length of json_answer {}'.format(len(json_answer)))
+#         for i, coord in enumerate(json_answer):
+#             c = coord['world']
+#             answer[i, 0] = c[0]
+#             answer[i, 1] = c[1]
+#         return answer
+#     except Exception as e:
+#         logger.error(e)
+#         logger.error(json_answer)
 
 
 @renderaccess
