@@ -379,7 +379,7 @@ def test_get_tilespecs_from_z(render, teststack,
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     tiles = renderapi.tilespec.get_tile_specs_from_z(
         teststack, tilespecs[0].z, render=render)
-    tsz = [ts for ts in tilespces if ts.z == tilespecs[0].z]
+    tsz = [ts for ts in tilespecs if ts.z == tilespecs[0].z]
     assert len(ts) == len(tsz)
 
 
