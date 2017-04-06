@@ -365,13 +365,13 @@ def test_section_image(render, teststack, **kwargs):
 def test_get_tilespecs_from_z(render, teststack,render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     tiles = renderapi.tilespec.get_tile_specs_from_z(teststack, tilespecs[0].z, render=render)
-    tsz = [ts for ts in tilespces if ts.z == tilespecs[0].z ]
+    tsz = [ts for ts in tilespecs if ts.z == tilespecs[0].z ]
     assert len(ts)==len(tsz)
     
 def test_get_tile_specs_from_minmax_box(render, teststack, render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     z = tilespecs[0].z
-    tsz = [ts for ts in tilespces if ts.z == tilespecs[0].z]
+    tsz = [ts for ts in tilespecs if ts.z == tilespecs[0].z ]
     zbounds = renderapi.stack.get_bounds_from_z(teststack, z, render=render)
     ts = renderapi.tilespec.get_tile_specs_from_minmax_box(teststack, z, zbounds['minX'],
         zbounds['maxX'], zbounds['minY'], zbounds['maxY'], render=render)
@@ -380,7 +380,7 @@ def test_get_tile_specs_from_minmax_box(render, teststack, render_example_tilesp
 def test_get_tile_specs_from_box(render,teststack,render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     z = tilespecs[0].z
-    tsz = [ts for ts in tilespces if ts.z == tilespecs[0].z]
+    tsz = [ts for ts in tilespecs if ts.z == tilespecs[0].z ]
     zbounds = renderapi.stack.get_bounds_from_z(teststack, z, render=render)
     width = zbounds['maxX']-zbounds['minX']
     height = zbounds['maxY']-zbounds['minY']
