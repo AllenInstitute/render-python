@@ -86,7 +86,7 @@ def test_import_jsonfiles(render,render_example_tilespec_and_transforms,stack=No
 def teststack(render,render_example_tilespec_and_transforms):
 
     stack = 'teststack'
-    test_import_jsonfiles(render,render_example_tilespec_and_transforms,stack=stack)
+    test_import_jsonfiles(render,render_example_tilespec_and_transforms,stack=stack, render=render)
     yield stack
     renderapi.stack.delete_stack(stack, render=render)
 
