@@ -3,7 +3,7 @@ import logging
 from time import strftime
 import requests
 from .errors import RenderError
-from .utils import jbool, NullHandler, post_json
+from .utils import jbool, NullHandler, post_json, put_json
 from .render import (format_baseurl, format_preamble,
                      renderaccess)
 
@@ -197,7 +197,7 @@ def clone_stack(inputstack, outputstack, skipTransforms=False, toProject=None,
         host, port, owner, project, inputstack), outputstack)
 
     logger.debug(request_url)
-    r = post_json(session, request_url, sv.to_dict(), params=qparams)
+    r = put_json(session, request_url, sv.to_dict(), params=qparams)
 
     if close_stack:
         set_stack_state(outputstack, 'COMPLETE', host, port, owner,
