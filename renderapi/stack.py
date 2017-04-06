@@ -3,9 +3,9 @@ import logging
 from time import strftime
 import requests
 from .errors import RenderError
-from .utils import jbool, NullHandler
+from .utils import jbool, NullHandler, post_json
 from .render import (format_baseurl, format_preamble,
-                     renderaccess, post_json)
+                     renderaccess)
 
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -166,26 +166,39 @@ def create_stack(stack, cycleNumber=None, cycleStepNumber=None,
         logger.error(r.text)
 
 
-# FIXME multiple z indices require multiple params?
 @renderaccess
-def clone_stack(inputstack, outputstack, host=None, port=None,
-                owner=None, project=None, skipTransforms=False, toProject=None,
-                z=None, session=None, render=None, **kwargs):
+def clone_stack(inputstack, outputstack, skipTransforms=False, toProject=None,
+                zs=None, close_stack=True, host=None, port=None,
+                owner=None, project=None, session=None, render=None, **kwargs):
     '''
-    result:
-        cloned stack in LOADING state with tiles in layers specified by z'
+    input:
+        inputstack: string name of input stack to clone
+        outputstack: string name of destination stack.
+            if exists, must be LOADING
+        close_stack: boolean, whether to set stack to COMPLETE when finished
+        toProject: optional, string name of project
+        skipTransforms: optional, boolean whether to strip transformations
+            in new stack
+        zs: optional, list of selected z values to clone into stack
     '''
-    if z is not None:
-        zs = [float(i) for i in z]  # TODO test me
     session = requests.session() if session is None else session
     sv = StackVersion(**kwargs)
+    qparams = {}
+    if zs is not None:
+        qparams['z'] = [float(i) for i in zs]
+    if skipTransforms is not None:
+        qparams['skipTransforms'] = jbool(skipTransforms)
+    if toProject is not None:
+        qparams['toProject'] = toProject
+
     request_url = '{}/{}'.format(format_preamble(
         host, port, owner, project, inputstack), outputstack)
 
     logger.debug(request_url)
-    r = post_json(session, request_url, sv.to_dict(), params={
-        'z': zs, 'toProject': toProject,
-        'skipTransforms': jbool(skipTransforms)})
+    r = post_json(session, request_url, sv.to_dict(), params=qparams)
+
+    if close_stack:
+        set_stack_state(outputstack, 'COMPLETE', host, port, owner, project)
     return r
 
 

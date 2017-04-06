@@ -273,7 +273,7 @@ def test_clone_stack_subset(render, teststack):
     stack2 = 'cloned_stack_subset'
     zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
     renderapi.stack.clone_stack(
-        teststack, cloned_stack, z=zvalues[0:1], render=render)
+        teststack, cloned_stack, zs=zvalues[0:1], render=render)
     zvalues2 = renderapi.stack.get_z_values_for_stack(stack2, render=render)
     renderapi.stack.delete_stack(stack2, render=render)
     assert zvalues[0:1] == zvalues2
@@ -319,7 +319,8 @@ def test_bb_image(render, teststack, **kwargs):
 
 def test_bb_image_options(render, teststack):
     test_bb_image(render, teststack, filter=True,
-                  binaryMask=True, maxTileSpecsToRender=20)
+                  binaryMask=True, maxTileSpecsToRender=20, minIntensity=0,
+                  maxIntensity=255)
 
 
 def test_tile_image(render, teststack, render_example_tilespec_and_transforms,
