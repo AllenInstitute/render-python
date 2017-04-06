@@ -414,4 +414,4 @@ def test_get_tile_specs_from_stack(render, teststack,
                                    render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     ts = renderapi.tilespec.get_tile_specs_from_stack(teststack, render=render)
-    assert len(ts) == len(tsz)
+    assert len(ts) == len(tilespecs)
