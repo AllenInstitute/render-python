@@ -20,7 +20,6 @@ from .utils import NullHandler
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
 
-# TODO preference for svd version?
 try:
     from scipy.linalg import svd, LinAlgError
 except ImportError as e:
@@ -475,7 +474,7 @@ class Polynomial2DTransform(Transform):
         while (tries < max_tries and not estimated):
             tries += 1
             try:
-                params = Polynomial2DTransform.fit(src, dst, order=2)
+                params = Polynomial2DTransform.fit(src, dst, order=order)
             except (LinAlgError, ValueError) as e:
                 logger.debug('Encountered error {}'.format(e))
                 continue
@@ -498,9 +497,7 @@ class Polynomial2DTransform(Transform):
         generate datastring and param attributes from datastring
         '''
         dsList = datastring.split(' ')
-        self.params = np.array(
-            [[float(d) for d in dsList[:len(dsList)/2]],
-             [float(d) for d in dsList[len(dsList)/2:]]])
+        self.params = Polynomial2DTransform._format_raveled_params(dsList)
 
     @staticmethod
     def _format_raveled_params(raveled_params):
@@ -543,7 +540,7 @@ class Polynomial2DTransform(Transform):
                 'transformation {} is order {} -- conversion to '
                 'order {} not supported'.format(
                     self.dataString, self.order, order))
-        new_params = np.zeros([2, self.coefficients(order)])
+        new_params = np.zeros([2, self.coefficients(order) // 2])
         new_params[:self.params.shape[0], :self.params.shape[1]] = self.params
         return Polynomial2DTransform(params=new_params)
 
@@ -555,46 +552,9 @@ class Polynomial2DTransform(Transform):
         '''
         if not isinstance(aff, AffineModel):
             raise ConversionError('attempting to convert a nonaffine model!')
-        return Polynomial2DTransform(params=np.array([
+        return Polynomial2DTransform(order=1, params=np.array([
             [aff.M[0, 2], aff.M[0, 0], aff.M[0, 1]],
             [aff.M[1, 2], aff.M[1, 0], aff.M[1, 1]]]))
-
-    def concatenate(self, othertform, order=None, srcpts=None):
-        '''
-        currently uses an estimation to represent composition of transforms
-        '''
-        if isinstance(othertform, AffineModel):
-            othertform = self._fromAffine(othertform)
-        if order is None:
-            order = max([self.order, othertform.order])
-        # TODO define srcpts and dstpts
-        if srcpts is None:
-            raise NotImplementedError('default source points unavailable!')
-        dstpts = othertform.tform(self.tform(srcpts))
-        return Polynomial2DTransform(src=srcpts, dst=dstpts, order=order)
-
-
-def transformsum(transformlist, src=None):
-    '''
-    summation of all transforms in a list of transforms.
-        Will force affines as polynomials.  Does not support LC.
-    input:
-        src -- test points representing the
-    Returns:
-        Polynomial2DTransform representing the sum of the
-            input list
-    '''
-    logger.warning('This implementation of transformsum is not recommended!  '
-                   'Please consider using estimate_transformsum')
-    sumtform = Polynomial2DTransform(identity=True)
-    for tform in transformlist:
-        if isinstance(tform, list):
-            logger.debug('found transformlist!')
-            sumtform = sumtform.concatenate(
-                transformsum(tform, src=src), srcpts=src)
-        else:
-            sumtform = sumtform.concatenate(tform, srcpts=src)
-    return sumtform
 
 
 def estimate_dstpts(transformlist, src=None):
@@ -621,4 +581,4 @@ def estimate_transformsum(transformlist, src=None, order=2):
     input: trans
     '''
     dstpts = estimate_dstpts(transformlist, src)
-    return Polynomial2DTransform(src=src, dst=dstpts)
+    return Polynomial2DTransform(src=src, dst=dstpts, order=order)

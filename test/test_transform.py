@@ -105,5 +105,67 @@ def test_Polynomial_estimation_numpy():
     test_Polynomial_estimation(use_numpy=True)
 
 
-def test_transformsum():
-    pass
+def test_transformsum_polynomial_identity():
+    srcpts = np.random.rand(50, 2)
+    am = renderapi.transform.AffineModel(M00=.9,
+                                         M10=-0.2,
+                                         M01=0.3,
+                                         M11=.85,
+                                         B0=245.3,
+                                         B1=-234.1)
+    invam = am.invert()
+
+    datastring = ('67572.7356991 0.972637082773 -0.0266434803369 '
+                  '-3.08962731867E-06 3.52672451824E-06 1.36924119761E-07 '
+                  '5446.85340052 0.0224047626583 0.961202608454 '
+                  '-3.36753624487E-07 -8.97219078255E-07 -5.49854010072E-06')
+    pt = renderapi.transform.Polynomial2DTransform(
+        dataString=datastring)
+    ptest_dstpts = pt.tform(srcpts)
+    invpt = renderapi.transform.Polynomial2DTransform(
+        src=ptest_dstpts, dst=srcpts)
+
+    tformlist = [am, pt, invpt, invam]
+    new_tform = renderapi.transform.estimate_transformsum(
+        tformlist, src=srcpts)
+
+    poly_identity = renderapi.transform.Polynomial2DTransform(
+        identity=True).asorder(new_tform.order)
+    assert all([i < 1e-3 for i in
+                (new_tform.params[:, 0] - poly_identity.params[:, 0]).ravel()])
+
+    assert np.allclose(
+        new_tform.params[:, 1:-1],
+        poly_identity.params[:, 1:-1], atol=1e-5)
+
+
+def test_load_polynomial():
+    datastring = ('67572.7356991 0.972637082773 -0.0266434803369 '
+                  '-3.08962731867E-06 3.52672451824E-06 1.36924119761E-07 '
+                  '5446.85340052 0.0224047626583 0.961202608454 '
+                  '-3.36753624487E-07 -8.97219078255E-07 -5.49854010072E-06')
+    pt = renderapi.transform.Polynomial2DTransform(
+        dataString=datastring)
+    pt_dict = renderapi.transform.Polynomial2DTransform(json=pt.to_dict())
+    pt_dataString = renderapi.transform.Polynomial2DTransform(
+        dataString=pt.dataString)
+    pt_params = renderapi.transform.Polynomial2DTransform(params=pt.params)
+    assert (pt_dict.to_dict() == pt_dataString.to_dict() ==
+            pt_params.to_dict() == pt.to_dict())
+
+
+def test_Polynomial_from_affine():
+    am1 = renderapi.transform.AffineModel(M00=.9,
+                                          M10=-0.2,
+                                          M01=0.3,
+                                          M11=.85,
+                                          B0=245.3,
+                                          B1=-234.1)
+    pt = renderapi.transform.Polynomial2DTransform.fromAffine(am1)
+    pt_params_raveled = pt.params.ravel()
+    assert pt_params_raveled[0] == am1.M[0, 2]
+    assert pt_params_raveled[1] == am1.M[0, 0]
+    assert pt_params_raveled[2] == am1.M[0, 1]
+    assert pt_params_raveled[3] == am1.M[1, 2]
+    assert pt_params_raveled[4] == am1.M[1, 0]
+    assert pt_params_raveled[5] == am1.M[1, 1]
