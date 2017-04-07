@@ -95,7 +95,7 @@ def test_import_tilespecs_parallel(render, render_example_tilespec_and_transform
     renderapi.stack.create_stack(stack, render=render)
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     renderapi.client.import_tilespecs_parallel(stack, tilespecs, sharedTransforms=tforms,
-                                               render=render)
+                                               poolsize=3, render=render)
     validate_stack_import(render, stack, tilespecs)
 
 def test_import_jsonfiles(render, render_example_tilespec_and_transforms,
@@ -104,7 +104,7 @@ def test_import_jsonfiles(render, render_example_tilespec_and_transforms,
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     (tfiles, transformFile) = render_example_json_files(render_example_tilespec_and_transforms)
 
-    renderapi.client.import_jsonfiles(stack, tfiles, transformFile=transformFile, render=render)
+    renderapi.client.import_jsonfiles(stack, tfiles, transformFile=transformFile, poolsize=3, render=render)
     validate_stack_import(render, stack, tilespecs)
 
 @pytest.fixture(scope = "module")
@@ -128,6 +128,7 @@ def test_tile_pair_client(render, teststack, **kwargs):
 def test_renderSectionClient(render, teststack):
     zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
     section_directory = tempfile.mkdtemp()
+    root.debug('section_directory:{}'.format(section_directory))
     renderapi.client.renderSectionClient(teststack,
                                          section_directory,
                                          zvalues,
