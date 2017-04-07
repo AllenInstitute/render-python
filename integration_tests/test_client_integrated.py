@@ -44,7 +44,7 @@ def render_example_tilespec_and_transforms():
     print tforms
     return (tilespecs, tforms)
 
-
+@pytest.fixture(scope='module')
 def render_example_json_files(render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     tfiles=[]
@@ -67,6 +67,7 @@ def render_example_json_files(render_example_tilespec_and_transforms):
     os.remove(transformFile)
     for tf in tfiles:
         os.remove(tfiles)
+    return (tfiles,transformFile)
 
 def validate_stack_import(render,stack,tilespecs):
     stacks = renderapi.render.get_stacks_by_owner_project(render=render)
@@ -112,7 +113,6 @@ def test_import_jsonfiles(render, render_example_tilespec_and_transforms,
     renderapi.client.import_jsonfiles(stack, tfiles, transformFile=transformFile, render=render)
     validate_stack_import(render, stack, tilespecs)
 
-
 @pytest.fixture(scope = "module")
 def teststack(render, render_example_tilespec_and_transforms,
     render_example_json_files):
@@ -122,7 +122,6 @@ def teststack(render, render_example_tilespec_and_transforms,
     yield stack
     renderapi.stack.delete_stack(stack, render=render)
 
-
 def test_tile_pair_client(render, teststack, **kwargs):
     zvalues = np.array(renderapi.stack.get_z_values_for_stack(teststack, render=render))
     outjson = kwargs.pop('outjson', None)
@@ -130,7 +129,6 @@ def test_tile_pair_client(render, teststack, **kwargs):
                                     np.max(zvalues), outjson=outjson, 
                                     render = render,
                                     **kwargs)
-    
     assert isinstance(tilepairjson, dict)
     assert len(tilepairjson['neighborPairs']) > 3
 
