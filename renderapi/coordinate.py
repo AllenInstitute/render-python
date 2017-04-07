@@ -233,6 +233,7 @@ def map_coordinates_clientside(stack, jsondata, z, host, port, owner,
     json_infile, json_inpath = tempfile.mkstemp(
         prefix='render_coordinates_in_', suffix='.json')
     with open(json_inpath, 'w') as fp:
+        logger.debug('jsondata:{}'.format(jsondata))
         # d = json.loads(jsondata)
         json.dump(jsondata, fp)
         fp.close()
