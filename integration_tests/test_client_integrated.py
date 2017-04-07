@@ -83,7 +83,7 @@ def test_import_jsonfiles_validate_client(render, render_example_tilespec_and_tr
     (tfiles, transformFile) = render_example_json_files
     renderapi.client.import_jsonfiles_validate_client(stack, tfiles, transformFile=transformFile)
     validate_stack_import(render, stack, tilespecs)
-    renderapi.stack.delete_stack(stack,render=render)
+    renderapi.stack.delete_stack(stack, render=render)
 
 def test_import_jsonfiles_parallel(render, render_example_tilespec_and_transforms,
                                    render_example_json_files,
@@ -115,7 +115,7 @@ def test_import_jsonfiles(render, render_example_tilespec_and_transforms,
 
 @pytest.fixture(scope = "module")
 def teststack(render, render_example_tilespec_and_transforms,
-    render_example_json_files):
+              render_example_json_files):
     stack = 'teststack'
     test_import_jsonfiles(render, render_example_tilespec_and_transforms,
                           render_example_json_files, stack=stack)
@@ -133,9 +133,9 @@ def test_tile_pair_client(render, teststack, **kwargs):
     assert len(tilepairjson['neighborPairs']) > 3
 
 def test_renderSectionClient(render, teststack):
-    zvalues = renderapi.stack.get_z_values_for_stack(stack, render=render)
+    zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
     section_directory = tempfile.mkdtemp()
-    renderapi.client.renderSectionClient(stack,
+    renderapi.client.renderSectionClient(teststack,
                                          section_directory,
                                          zvalues,
                                          scale=.05,
