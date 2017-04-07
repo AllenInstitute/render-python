@@ -44,24 +44,7 @@ def render_example_tilespec_and_transforms():
     print tforms
     return (tilespecs, tforms)
 
-
-def test_import_tilespecs_parallel(render, render_example_tilespec_and_transforms, stack = 'test_import_tilespecs_parallel'):
-    renderapi.stack.create_stack(stack,render=render)
-    (tilespecs, tforms) = render_example_tilespec_and_transforms
-    renderapi.client.import_tilespecs_parallel(stack, tilespecs, sharedTransforms=tforms,
-                                               render=render)
-    stacks = renderapi.render.get_stacks_by_owner_project(render=render)
-    assert stack in stacks
-    ts = renderapi.tilespec.get_tile_specs_from_stack(stack, render=render)
-    assert len(ts) == len(tilespecs)
-    
-# def test_import_jsonfiles_validate_client(render):
-#     root.debug('test not implemented yet')
-#     assert False
-
-
-def test_import_jsonfiles(render,render_example_tilespec_and_transforms,stack='test_import_jsonfiles'):
-    renderapi.stack.create_stack(stack,render=render)
+def render_example_json_files(render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     tfiles=[]
     for ts in tilespecs:
@@ -70,7 +53,8 @@ def test_import_jsonfiles(render,render_example_tilespec_and_transforms,stack='t
         tempjson.close()
         tsjson = tempjson.name
         with open(tsjson, 'w') as f:
-            renderapi.utils.renderdump(tilespecs, f)   
+            renderapi.utils.renderdump(tilespecs, f)
+            f.close()
         tfiles.append(tsjson)
 
     transformFile = tempfile.NamedTemporaryFile(
@@ -78,39 +62,85 @@ def test_import_jsonfiles(render,render_example_tilespec_and_transforms,stack='t
     transformFile.close()
     tfjson = transformFile.name
     with open(tfjson, 'w') as f:
-        renderapi.utils.renderdump(tforms, f)   
+        renderapi.utils.renderdump(tforms, f)
+        f.close()
+    return (tfiles,tfjson)
 
-    renderapi.client.import_jsonfiles(stack, tfiles, transformFile = tfjson, render=render)
-    
+def validate_stack_import(render,stack,tilespecs):
     stacks = renderapi.render.get_stacks_by_owner_project(render=render)
     assert stack in stacks
     ts = renderapi.tilespec.get_tile_specs_from_stack(stack, render=render)
     assert len(ts) == len(tilespecs)
 
+# def test_import_jsonfiles_validate_client(render, render_example_tilespec_and_transforms):
+#     stack = 'test_import_jsonfiles_validate_client'
+#     renderapi.stack.create_stack(stack, render=render)
+#     (tilespecs, tforms) = render_example_tilespec_and_transforms
+#     (tfiles, transformFile) = render_example_json_files(render_example_tilespec_and_transforms)
+#     renderapi.client.import_jsonfiles_validate_client(stack, tfiles, transformFile=transformFile)
+#     validate_stack_import(render, stack, tilespecs)
+#     renderapi.stack.delete_stack(stack, render=render)
+
+def test_import_jsonfiles_parallel(render, render_example_tilespec_and_transforms,
+                                   stack='test_import_jsonfiles_parallel'):
+    renderapi.stack.create_stack(stack, render=render)
+    (tilespecs, tforms) = render_example_tilespec_and_transforms
+    (tfiles, transformFile) = render_example_json_files(render_example_tilespec_and_transforms)
+    renderapi.client.import_jsonfiles_parallel(stack, tfiles, transformFile=transformFile, render=render)
+    validate_stack_import(render, stack, tilespecs)
+    renderapi.stack.delete_stack(stack, render=render)
+
+def test_import_tilespecs_parallel(render, render_example_tilespec_and_transforms,
+                                   stack='test_import_tilespecs_parallel'):
+    renderapi.stack.create_stack(stack, render=render)
+    (tilespecs, tforms) = render_example_tilespec_and_transforms
+    renderapi.client.import_tilespecs_parallel(stack, tilespecs, sharedTransforms=tforms,
+                                               poolsize=3, render=render)
+    validate_stack_import(render, stack, tilespecs)
+
+def test_import_jsonfiles(render, render_example_tilespec_and_transforms,
+                          stack='test_import_jsonfiles'):
+    renderapi.stack.create_stack(stack, render=render)
+    (tilespecs, tforms) = render_example_tilespec_and_transforms
+    (tfiles, transformFile) = render_example_json_files(render_example_tilespec_and_transforms)
+
+    renderapi.client.import_jsonfiles(stack, tfiles, transformFile=transformFile, poolsize=3, render=render)
+    validate_stack_import(render, stack, tilespecs)
 
 @pytest.fixture(scope = "module")
-def teststack(render,render_example_tilespec_and_transforms):
-
+def teststack(render, render_example_tilespec_and_transforms):
     stack = 'teststack'
-    test_import_jsonfiles(render,render_example_tilespec_and_transforms,stack=stack)
+    test_import_jsonfiles(render, render_example_tilespec_and_transforms,
+                          stack=stack)
     yield stack
     renderapi.stack.delete_stack(stack, render=render)
 
-
-def test_tile_pair_client(render,teststack,**kwargs):
+def test_tile_pair_client(render, teststack, **kwargs):
     zvalues = np.array(renderapi.stack.get_z_values_for_stack(teststack, render=render))
-    outjson = kwargs.pop('outjson',None)
-    if outjson is None:
-        outjson = 'test_tile_pair_client.json'
-
-    renderapi.client.tilePairClient(teststack, np.min(zvalues),
+    outjson = kwargs.pop('outjson', None)
+    tilepairjson=renderapi.client.tilePairClient(teststack, np.min(zvalues),
                                     np.max(zvalues), outjson=outjson, 
                                     render = render,
                                     **kwargs)
-    
-    tilepairjson = json.load(open(outjson,'r'))
-    assert isinstance(tilepairjson,dict)
-    assert len(tilepairjson['neighborPairs'])>3
+    assert isinstance(tilepairjson, dict)
+    assert len(tilepairjson['neighborPairs']) > 3
+
+def test_renderSectionClient(render, teststack):
+    zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
+    section_directory = tempfile.mkdtemp()
+    root.debug('section_directory:{}'.format(section_directory))
+    renderapi.client.renderSectionClient(teststack,
+                                         section_directory,
+                                         zvalues,
+                                         scale=.05,
+                                         render=render,
+                                         format='png')
+    (dirpath, dirnames, filenames) = os.walk(section_directory)
+    pngfiles = [f for f in filenames if f.endswith('png')]
+    assert len(pngfiles) == len(zvalues)
+
+
+
 
 # def test_importTransformChangesClient(render):
 #     root.debug('test not implemented yet')
