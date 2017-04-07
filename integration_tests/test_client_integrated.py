@@ -125,18 +125,20 @@ def test_tile_pair_client(render, teststack, **kwargs):
     assert isinstance(tilepairjson, dict)
     assert len(tilepairjson['neighborPairs']) > 3
 
-# def test_renderSectionClient(render, teststack):
-#     zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
-#     section_directory = tempfile.mkdtemp()
-#     renderapi.client.renderSectionClient(teststack,
-#                                          section_directory,
-#                                          zvalues,
-#                                          scale=.05,
-#                                          render=render,
-#                                          format='png')
-#     (dirpath, dirnames, filenames) = os.walk(section_directory)
-#     pngfiles = [f for f in filenames if f.endswith('png')]
-#     assert len(pngfiles) == len(zvalues)
+def test_renderSectionClient(render, teststack):
+    zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
+    section_directory = tempfile.mkdtemp()
+    renderapi.client.renderSectionClient(teststack,
+                                         section_directory,
+                                         zvalues,
+                                         scale=.05,
+                                         render=render,
+                                         format='png')
+    (dirpath, dirnames, filenames) = os.walk(section_directory)
+    pngfiles = [f for f in filenames if f.endswith('png')]
+    assert len(pngfiles) == len(zvalues)
+
+
 
 
 # def test_importTransformChangesClient(render):
