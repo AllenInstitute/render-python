@@ -1,6 +1,8 @@
+import json
 import renderapi
 import numpy as np
 import scipy.linalg
+import rendersettings
 
 
 def test_affine_rot_90():
@@ -172,3 +174,93 @@ def test_transformsum_affine_concatenate():
         tformlist, src=srcpts)
     concat_tform = am4.concatenate(am3.concatenate(am2)).concatenate(am1)
     assert np.allclose(new_tform.M, concat_tform.M)
+
+
+def test_load_polynomial():
+    datastring = ('67572.7356991 0.972637082773 -0.0266434803369 '
+                  '-3.08962731867E-06 3.52672451824E-06 1.36924119761E-07 '
+                  '5446.85340052 0.0224047626583 0.961202608454 '
+                  '-3.36753624487E-07 -8.97219078255E-07 -5.49854010072E-06')
+    pt = renderapi.transform.Polynomial2DTransform(
+        dataString=datastring)
+    pt_dict = renderapi.transform.Polynomial2DTransform(json=pt.to_dict())
+    pt_dataString = renderapi.transform.Polynomial2DTransform(
+        dataString=pt.dataString)
+    pt_params = renderapi.transform.Polynomial2DTransform(params=pt.params)
+    assert (pt_dict.to_dict() == pt_dataString.to_dict() ==
+            pt_params.to_dict() == pt.to_dict())
+
+
+def test_Polynomial_from_affine():
+    am1 = renderapi.transform.AffineModel(M00=.9,
+                                          M10=-0.2,
+                                          M01=0.3,
+                                          M11=.85,
+                                          B0=245.3,
+                                          B1=-234.1)
+    pt = renderapi.transform.Polynomial2DTransform.fromAffine(am1)
+    pt_params_raveled = pt.params.ravel()
+    assert pt.order == 1
+    assert pt_params_raveled[0] == am1.B0
+    assert pt_params_raveled[1] == am1.M00
+    assert pt_params_raveled[2] == am1.M01
+    assert pt_params_raveled[3] == am1.B1
+    assert pt_params_raveled[4] == am1.M10
+    assert pt_params_raveled[5] == am1.M11
+
+
+def test_interpolated_transform():
+    with open(rendersettings.INTERPOLATED_TRANSFORM_TILESPEC, 'r') as f:
+        j = json.load(f)
+    ts = renderapi.tilespec.TileSpec(json=j)
+    it_ts = [tform for tform in ts.tforms
+             if isinstance(
+                 tform, renderapi.transform.InterpolatedTransform)][0]
+    it_args = renderapi.transform.InterpolatedTransform(
+        it_ts.a, it_ts.b, it_ts.lambda_)
+    it_dd = renderapi.transform.InterpolatedTransform(
+        json=it_ts.to_dict())
+
+    assert (dict(it_args) == it_args.to_dict() == dict(it_ts) ==
+            it_ts.to_dict() == dict(it_dd) == it_dd.to_dict())
+
+
+def test_reference_transform():
+    with open(rendersettings.REFERENCE_TRANSFORM_TILESPEC, 'r') as f:
+        j = json.load(f)
+    ts = renderapi.tilespec.TileSpec(json=j)
+    ref_ts = [tform for tform in ts.tforms
+              if isinstance(
+                 tform, renderapi.transform.ReferenceTransform)][0]
+    ref_args = renderapi.transform.ReferenceTransform(ref_ts.refId)
+    ref_dd = renderapi.transform.ReferenceTransform(json=ref_ts.to_dict())
+
+    assert (dict(ref_args) == ref_args.to_dict() == dict(ref_ts) ==
+            ref_ts.to_dict() == dict(ref_dd) == ref_dd.to_dict())
+
+
+def test_transform_hash_eq():
+    t1 = renderapi.transform.Transform(
+        **rendersettings.NONLINEAR_TRANSFORM_KWARGS)
+    t2 = renderapi.transform.Transform(
+        **rendersettings.NONLINEAR_TRANSFORM_KWARGS)
+
+    assert t1 is not t2
+    assert t1 == t2
+    assert len({t1, t2}) == 1
+
+    am1 = renderapi.transform.AffineModel(M00=.9,
+                                          M10=-0.2,
+                                          M01=0.3,
+                                          M11=.85,
+                                          B0=245.3,
+                                          B1=-234.1)
+    am2 = renderapi.transform.AffineModel(M00=.9,
+                                          M10=-0.2,
+                                          M01=0.3,
+                                          M11=.85,
+                                          B0=245.3,
+                                          B1=-234.1)
+    assert am1 is not am2
+    assert am1 == am2
+    assert len({am1, am2}) == 1
