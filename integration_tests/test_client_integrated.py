@@ -67,7 +67,7 @@ def render_example_json_files(render_example_tilespec_and_transforms):
     os.remove(transformFile)
     for tf in tfiles:
         os.remove(tfiles)
-    return (tfiles,transformFile)
+  
 
 def validate_stack_import(render,stack,tilespecs):
     stacks = renderapi.render.get_stacks_by_owner_project(render=render)
