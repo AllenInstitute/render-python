@@ -103,12 +103,11 @@ def test_tile_pair_client(render,teststack,**kwargs):
     if outjson is None:
         outjson = 'test_tile_pair_client.json'
 
-    renderapi.client.tilePairClient(teststack, np.min(zvalues),
+    tilepairjson=renderapi.client.tilePairClient(teststack, np.min(zvalues),
                                     np.max(zvalues), outjson=outjson, 
                                     render = render,
                                     **kwargs)
     
-    tilepairjson = json.load(open(outjson,'r'))
     assert isinstance(tilepairjson,dict)
     assert len(tilepairjson['neighborPairs'])>3
 
