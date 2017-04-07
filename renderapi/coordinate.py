@@ -235,7 +235,7 @@ def map_coordinates_clientside(stack, jsondata, z, host, port, owner,
     with open(json_inpath, 'w') as fp:
         # d = json.loads(jsondata)
         json.dump(jsondata, fp)
-        # fp.close()
+        fp.close()
         # fp.write(jsondata)
 
     # json.dump(jsondata,open(json_inpath,'w'))
