@@ -279,6 +279,9 @@ def call_run_ws_client(className, add_args=[], renderclient=None,
     '''
     simple call for run_ws_client.sh -- all arguments set in add_args
     '''
+    logger.debug('call_run_ws_client -- classname:{} add_args:{} client_script:{} memGB:{}'\
+                 .format(className, add_args, client_script, memGB))
+
     if renderclient is not None:
         if isinstance(renderclient, RenderClient):
             return call_run_ws_client(className, add_args=add_args,
