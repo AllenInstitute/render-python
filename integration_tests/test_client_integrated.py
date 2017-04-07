@@ -108,8 +108,7 @@ def test_import_jsonfiles(render, render_example_tilespec_and_transforms,
     validate_stack_import(render, stack, tilespecs)
 
 @pytest.fixture(scope = "module")
-def teststack(render, render_example_tilespec_and_transforms,
-              render_example_json_files):
+def teststack(render, render_example_tilespec_and_transforms):
     stack = 'teststack'
     test_import_jsonfiles(render, render_example_tilespec_and_transforms,
                           stack=stack)
