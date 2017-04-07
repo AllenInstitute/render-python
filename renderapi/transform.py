@@ -13,6 +13,7 @@ TODO:
 '''
 import json
 import logging
+from collections import Iterable
 import numpy as np
 from .errors import ConversionError, EstimationError, RenderError
 from .utils import NullHandler
@@ -581,7 +582,28 @@ def estimate_transformsum(transformlist, src=None, order=2):
     '''
     pseudo-composition of transforms in list of transforms using source point
         transformation and a single estimation.
-    input: trans
+        Will produce an Affine Model if all input transforms are Affine,
+           otherwise will produce a Polynomial of specified order
+    inputs:
+        transformlist: recursive list of transform objects
+        src: Nx2 numpy array of source points for estimation
+        order: optional, order of Polynomial output if transformlist
+            inputs are non-Affine
     '''
+    def flatten(l):
+        for i in l:
+            if (isinstance(i, Iterable) and not
+                    isinstance(i, basestring)):
+                for sub in flatten(i):
+                    yield sub
+            else:
+                yield i
+
     dstpts = estimate_dstpts(transformlist, src)
+    tforms = flatten(transformlist)
+    if all([tform.className == AffineModel.className
+            for tform in tforms]):
+                am = AffineModel()
+                _ = am.estimate(A=src, B=dstpts)
+                return am
     return Polynomial2DTransform(src=src, dst=dstpts, order=order)
