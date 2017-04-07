@@ -114,23 +114,25 @@ def test_import_jsonfiles(render, render_example_tilespec_and_transforms,
 
 
 @pytest.fixture(scope = "module")
-def teststack(render, render_example_tilespec_and_transforms):
+def teststack(render, render_example_tilespec_and_transforms,
+    render_example_json_files):
     stack = 'teststack'
-    test_import_jsonfiles(render, render_example_tilespec_and_transforms, stack=stack)
+    test_import_jsonfiles(render, render_example_tilespec_and_transforms,
+                          render_example_json_files, stack=stack)
     yield stack
     renderapi.stack.delete_stack(stack, render=render)
 
 
 def test_tile_pair_client(render, teststack, **kwargs):
     zvalues = np.array(renderapi.stack.get_z_values_for_stack(teststack, render=render))
-    outjson = kwargs.pop('outjson',None)
+    outjson = kwargs.pop('outjson', None)
     tilepairjson=renderapi.client.tilePairClient(teststack, np.min(zvalues),
                                     np.max(zvalues), outjson=outjson, 
                                     render = render,
                                     **kwargs)
     
-    assert isinstance(tilepairjson,dict)
-    assert len(tilepairjson['neighborPairs'])>3
+    assert isinstance(tilepairjson, dict)
+    assert len(tilepairjson['neighborPairs']) > 3
 
 def test_renderSectionClient(render, teststack):
     zvalues = renderapi.stack.get_z_values_for_stack(stack, render=render)
