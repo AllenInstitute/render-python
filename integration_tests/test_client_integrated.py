@@ -109,7 +109,7 @@ def test_import_jsonfiles(render, render_example_tilespec_and_transforms,
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     (tfiles, transformFile) = render_example_json_files
 
-    renderapi.client.import_jsonfiles(stack, tfiles, transformFile=tfjson, render=render)
+    renderapi.client.import_jsonfiles(stack, tfiles, transformFile=transformFile, render=render)
     validate_stack_import(render, stack, tilespecs)
 
 
@@ -144,7 +144,7 @@ def test_renderSectionClient(render, teststack):
     (dirpath, dirnames, filenames) = os.walk(section_directory)
     pngfiles = [f for f in filenames if f.endswith('png')]
     assert len(pngfiles) == len(zvalues)
-    
+
 
 # def test_importTransformChangesClient(render):
 #     root.debug('test not implemented yet')
