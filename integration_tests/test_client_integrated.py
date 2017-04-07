@@ -81,14 +81,14 @@ def validate_stack_import(render,stack,tilespecs):
 #     validate_stack_import(render, stack, tilespecs)
 #     renderapi.stack.delete_stack(stack, render=render)
 
-# def test_import_jsonfiles_parallel(render, render_example_tilespec_and_transforms,
-#                                    stack='test_import_jsonfiles_parallel'):
-#     renderapi.stack.create_stack(stack, render=render)
-#     (tilespecs, tforms) = render_example_tilespec_and_transforms
-#     (tfiles, transformFile) = render_example_json_files(render_example_tilespec_and_transforms)
-#     renderapi.client.import_jsonfiles_parallel(stack, tfiles, transformFile=transformFile, render=render)
-#     validate_stack_import(render, stack, tilespecs)
-#     renderapi.stack.delete_stack(stack, render=render)
+def test_import_jsonfiles_parallel(render, render_example_tilespec_and_transforms,
+                                   stack='test_import_jsonfiles_parallel'):
+    renderapi.stack.create_stack(stack, render=render)
+    (tilespecs, tforms) = render_example_tilespec_and_transforms
+    (tfiles, transformFile) = render_example_json_files(render_example_tilespec_and_transforms)
+    renderapi.client.import_jsonfiles_parallel(stack, tfiles, transformFile=transformFile, render=render)
+    validate_stack_import(render, stack, tilespecs)
+    renderapi.stack.delete_stack(stack, render=render)
 
 def test_import_tilespecs_parallel(render, render_example_tilespec_and_transforms,
                                    stack='test_import_tilespecs_parallel'):
