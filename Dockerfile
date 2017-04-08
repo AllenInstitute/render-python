@@ -45,6 +45,7 @@ RUN apt-get clean
 
 
 RUN easy_install pip
+RUN pip install -U pip setuptools
 RUN pip install shapely==1.6b2
 RUN pip install opencv-python
 RUN pip install dill==0.2.6
