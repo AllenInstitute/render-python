@@ -72,14 +72,14 @@ def validate_stack_import(render,stack,tilespecs):
     ts = renderapi.tilespec.get_tile_specs_from_stack(stack, render=render)
     assert len(ts) == len(tilespecs)
 
-# def test_import_jsonfiles_validate_client(render, render_example_tilespec_and_transforms):
-#     stack = 'test_import_jsonfiles_validate_client'
-#     renderapi.stack.create_stack(stack, render=render)
-#     (tilespecs, tforms) = render_example_tilespec_and_transforms
-#     (tfiles, transformFile) = render_example_json_files(render_example_tilespec_and_transforms)
-#     renderapi.client.import_jsonfiles_validate_client(stack, tfiles, transformFile=transformFile)
-#     validate_stack_import(render, stack, tilespecs)
-#     renderapi.stack.delete_stack(stack, render=render)
+def test_import_jsonfiles_validate_client(render, render_example_tilespec_and_transforms):
+    stack = 'test_import_jsonfiles_validate_client'
+    renderapi.stack.create_stack(stack, render=render)
+    (tilespecs, tforms) = render_example_tilespec_and_transforms
+    (tfiles, transformFile) = render_example_json_files(render_example_tilespec_and_transforms)
+    renderapi.client.import_jsonfiles_validate_client(stack, tfiles, transformFile=transformFile)
+    validate_stack_import(render, stack, tilespecs)
+    renderapi.stack.delete_stack(stack, render=render)
 
 def test_import_jsonfiles_parallel(render, render_example_tilespec_and_transforms,
                                    stack='test_import_jsonfiles_parallel'):
