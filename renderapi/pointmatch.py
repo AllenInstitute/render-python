@@ -163,7 +163,7 @@ def get_matches_involving_tile(matchCollection, pGroupId, pTileId,
                                owner=None,host=None, port=None,
                                session=requests.session(), **kwargs):
     request_url = format_baseurl(host, port) + \
-        "/owner/{}/matchCollection/{}/pGroup/{}/pTileId/{}/matchesWith/".format(\
+        "/owner/{}/matchCollection/{}/group/{}/id/{}/".format(\
             owner, matchCollection, pGroupId, pTileId)
     r = session.get(request_url)
     try:
