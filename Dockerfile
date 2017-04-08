@@ -38,6 +38,7 @@ RUN apt-get install python-setuptools python-dev -y
 RUN apt-get install libblas-dev liblapack-dev -y
 RUN apt-get clean
 
+
 #install components for common render-python apps
 #jupyter notebook, shapely with geos
 # RUN /opt/conda/bin/conda install jupyter -y
