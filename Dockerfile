@@ -35,7 +35,7 @@ ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 RUN apt-get update 
 RUN apt-get install gcc build-essential libgeos-dev imagemagick -y
 RUN apt-get install python-setuptools python-dev -y
-RUN apt-get install libblas-dev liblapack-dev
+RUN apt-get install libblas-dev liblapack-dev -y
 RUN apt-get clean
 
 #install components for common render-python apps
