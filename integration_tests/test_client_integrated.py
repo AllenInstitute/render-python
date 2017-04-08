@@ -127,16 +127,19 @@ def test_tile_pair_client(render, teststack, **kwargs):
 
 def test_renderSectionClient(render, teststack):
     zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
-    section_directory = tempfile.mkdtemp()
+    root_directory = tempfile.mkdtemp()
     root.debug('section_directory:{}'.format(section_directory))
     renderapi.client.renderSectionClient(teststack,
-                                         section_directory,
+                                         root_directory,
                                          zvalues,
                                          scale=.05,
                                          render=render,
                                          format='png')
-    (dirpath, dirnames, filenames) = os.walk(section_directory)
-    pngfiles = [f for f in filenames if f.endswith('png')]
+
+    section_directory=os.path.join(section_directory,teststack,'sections_at_.05')
+    pngfiles = []
+    for (dirpath, dirname, filenames) in os.walk(section_directory):
+        pngfiles += [f for f in filenames if f.endswith('png')]
     assert len(pngfiles) == len(zvalues)
 
 

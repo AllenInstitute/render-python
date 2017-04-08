@@ -158,7 +158,21 @@ def get_match_groupIds_to_only(matchCollection, render=None, owner=None,
         logger.error(e)
         logger.error(r.text)
 
+@renderaccess
+def get_matches_involving_tile(matchCollection, pGroupId, pTileId,
+                               owner=None,host=None, port=None,
+                               session=requests.session(), **kwargs):
+    request_url = format_baseurl(host, port) + \
+        "/owner/{}/matchCollection/{}/pGroup/{}/pTileId/{}/matchesWith/".format(\
+            owner, matchCollection, pGroupId, pTileId)
+    r = session.get(request_url)
+    try:
+        return r.json()
+    except Exception as e:
+        logger.error(e)
+        logger.error(r.text)
 
+        
 @renderaccess
 def delete_point_matches_between_groups(matchCollection, pGroupId, qGroupId,
                                         render=None, owner=None, host=None,

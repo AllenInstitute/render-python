@@ -110,6 +110,10 @@ def test_get_matchcollections(render,test_pm_collection):
     matched_collection = next(coljson for coljson in collections if coljson['collectionId']['name']==test_pm_collection)
     assert matched_collection is not None
 
+def test_get_matches_involving_tile(render,test_pm_collection):
+    matches = renderapi.pointmatch.get_matches_involving_tile(test_pm_collection, "0", "0-1", render=render)
+    assert len(matches) == 3
+
 def test_get_match_groupIds(render,test_pm_collection):
     groups = renderapi.pointmatch.get_match_groupIds(test_pm_collection,render=render)
     assert len(groups)==3
