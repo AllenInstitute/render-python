@@ -136,7 +136,7 @@ def test_renderSectionClient(render, teststack):
                                          render=render,
                                          format='png')
 
-    section_directory=os.path.join(section_directory,teststack,'sections_at_.05')
+    section_directory=os.path.join(root_directory,teststack,'sections_at_.05')
     pngfiles = []
     for (dirpath, dirname, filenames) in os.walk(section_directory):
         pngfiles += [f for f in filenames if f.endswith('png')]
