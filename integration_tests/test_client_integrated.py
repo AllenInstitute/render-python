@@ -128,7 +128,7 @@ def test_tile_pair_client(render, teststack, **kwargs):
 def test_renderSectionClient(render, teststack):
     zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
     root_directory = tempfile.mkdtemp()
-    root.debug('section_directory:{}'.format(section_directory))
+    root.debug('section_directory:{}'.format(root_directory))
     renderapi.client.renderSectionClient(teststack,
                                          root_directory,
                                          zvalues,
