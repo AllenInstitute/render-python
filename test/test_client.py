@@ -27,25 +27,27 @@ def test_default_kwargs_client():
 
 def test_environment_variables(
         rkwargs=rendersettings.DEFAULT_RENDER,
-        renvkwargs=rendersettings.DEFAULT_RENDER_ENVIRONMENT_VARIABLES):
+        renvkwargs=rendersettings.DEFAULT_RENDER_ENVIRONMENT_VARIABLES,
+        **kwargs):
     def valstostring(d):
         return {k: str(v) for k, v in d.items()}
     old_env = os.environ.copy()
     os.environ.update(valstostring(renvkwargs))
 
-    env_render = renderapi.connect()
+    env_render = renderapi.connect(**kwargs)
 
     # restore environment
     os.environ.clear()
     os.environ.update(old_env)
 
-    kwarg_render = renderapi.connect(**valstostring(rkwargs))
+    kwarg_render = renderapi.connect(**dict(valstostring(rkwargs), **kwargs))
     assert(valstostring(kwarg_render.DEFAULT_KWARGS) ==
            valstostring(env_render.DEFAULT_KWARGS) ==
            valstostring(rkwargs))
 
 
-'''
 def test_environment_variables_client():
-    test_environment_variables(rkwargs=rendersettings.DEFAULT_RENDER_CLIENT)
-'''
+    test_environment_variables(
+        rkwargs=rendersettings.DEFAULT_RENDER_CLIENT,
+        renvkwargs=rendersettings.DEFAULT_RENDER_CLIENT_ENVIRONMENT_VARIABLES,
+        validate_client=False)

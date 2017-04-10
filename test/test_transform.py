@@ -264,3 +264,41 @@ def test_transform_hash_eq():
     assert am1 is not am2
     assert am1 == am2
     assert len({am1, am2}) == 1
+
+
+def test_polynomial_transform_asorder_identity():
+    srcpts = np.random.rand(50, 2)
+    pt1 = renderapi.transform.Polynomial2DTransform(identity=True)
+    pt2 = renderapi.transform.Polynomial2DTransform(identity=True).asorder(2)
+
+    dstpts1 = pt1.tform(srcpts)
+    dstpts2 = pt2.tform(srcpts)
+
+    assert pt1.order != pt2.order
+    assert np.allclose(dstpts1, dstpts2)
+
+
+
+def test_transformsum_identity_polynomial():
+    srcpts = np.random.rand(50, 2)
+    pt = renderapi.transform.Polynomial2DTransform(identity=True)
+    am1 = renderapi.transform.AffineModel(M00=.9,
+                                          M10=-0.2,
+                                          M01=0.3,
+                                          M11=.85,
+                                          B0=245.3,
+                                          B1=-234.1)
+    am2 = renderapi.transform.AffineModel(M00=.9,
+                                          M10=-0.2,
+                                          M01=0.3,
+                                          M11=.85,
+                                          B0=-100,
+                                          B1=3)
+    tformlist = [pt, am1, am2]
+    new_tform = renderapi.transform.estimate_transformsum(
+        tformlist, src=srcpts, order=1)
+
+    new_srcpts = np.random.rand(50, 2)
+    new_dstpts_comp = new_tform.tform(new_srcpts)
+    new_dstpts = am2.concatenate(am1).tform(new_srcpts)
+    assert np.allclose(new_dstpts_comp, new_dstpts)
