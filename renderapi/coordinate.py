@@ -216,7 +216,7 @@ def local_to_world_coordinates_array(stack, dataarray, tileId, z,
     jsondata = package_point_match_data_into_json(dataarray, tileId, 'local')
     if doClientSide:
         json_answer = local_to_world_coordinates_clientside(
-            stack, jsondata, z, host=host, port=port, owner=owner,
+            stack, [[lp] for lp in jsondata], z, host=host, port=port, owner=owner,
             project=project, client_script=client_script,
             number_of_threads=number_of_threads)
     else:

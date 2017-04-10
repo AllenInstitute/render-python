@@ -72,14 +72,14 @@ def validate_stack_import(render,stack,tilespecs):
     ts = renderapi.tilespec.get_tile_specs_from_stack(stack, render=render)
     assert len(ts) == len(tilespecs)
 
-# def test_import_jsonfiles_validate_client(render, render_example_tilespec_and_transforms):
-#     stack = 'test_import_jsonfiles_validate_client'
-#     renderapi.stack.create_stack(stack, render=render)
-#     (tilespecs, tforms) = render_example_tilespec_and_transforms
-#     (tfiles, transformFile) = render_example_json_files(render_example_tilespec_and_transforms)
-#     renderapi.client.import_jsonfiles_validate_client(stack, tfiles, transformFile=transformFile)
-#     validate_stack_import(render, stack, tilespecs)
-#     renderapi.stack.delete_stack(stack, render=render)
+def test_import_jsonfiles_validate_client(render, render_example_tilespec_and_transforms):
+    stack = 'test_import_jsonfiles_validate_client'
+    renderapi.stack.create_stack(stack, render=render)
+    (tilespecs, tforms) = render_example_tilespec_and_transforms
+    (tfiles, transformFile) = render_example_json_files(render_example_tilespec_and_transforms)
+    renderapi.client.import_jsonfiles_validate_client(stack, tfiles, transformFile=transformFile, render=render)
+    validate_stack_import(render, stack, tilespecs)
+    renderapi.stack.delete_stack(stack, render=render)
 
 def test_import_jsonfiles_parallel(render, render_example_tilespec_and_transforms,
                                    stack='test_import_jsonfiles_parallel'):
@@ -127,16 +127,19 @@ def test_tile_pair_client(render, teststack, **kwargs):
 
 def test_renderSectionClient(render, teststack):
     zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
-    section_directory = tempfile.mkdtemp()
-    root.debug('section_directory:{}'.format(section_directory))
+    root_directory = tempfile.mkdtemp()
+    root.debug('section_directory:{}'.format(root_directory))
     renderapi.client.renderSectionClient(teststack,
-                                         section_directory,
+                                         root_directory,
                                          zvalues,
                                          scale=.05,
                                          render=render,
                                          format='png')
-    (dirpath, dirnames, filenames) = os.walk(section_directory)
-    pngfiles = [f for f in filenames if f.endswith('png')]
+
+    section_directory=os.path.join(root_directory,'test_project',teststack,'sections_at_0.05')
+    pngfiles = []
+    for (dirpath, dirname, filenames) in os.walk(section_directory):
+        pngfiles += [f for f in filenames if f.endswith('png')]
     assert len(pngfiles) == len(zvalues)
 
 
