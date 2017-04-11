@@ -4,7 +4,7 @@ import os
 from functools import wraps
 import requests
 import json
-from .utils import defaultifNone, NullHandler, fitargspec
+from .utils import defaultifNone, NullHandler, fitargspec, post_json, put_json
 from .errors import ClientScriptError
 
 logger = logging.getLogger(__name__)
@@ -231,18 +231,6 @@ def renderaccess(f):
         else:
             return f(*args, **kwargs)
     return wrapper
-
-
-def post_json(session, request, jsondict):
-    payload = json.dumps(jsondict)
-    r = session.post(request, data=payload,
-                     headers={"content-type": "application/json",
-                              "Accept": "application/json"})
-    try:
-        return r
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
 
 
 def format_baseurl(host, port):
