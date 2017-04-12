@@ -278,7 +278,6 @@ def test_polynomial_transform_asorder_identity():
     assert np.allclose(dstpts1, dstpts2)
 
 
-
 def test_transformsum_identity_polynomial():
     srcpts = np.random.rand(50, 2)
     pt = renderapi.transform.Polynomial2DTransform(identity=True)
