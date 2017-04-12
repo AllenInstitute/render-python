@@ -181,6 +181,33 @@ def test_import_tilespecs(render, simpletilespec):
     render.run(renderapi.stack.delete_stack, stack)
 
 
+def test_remove_section(render, simpletilespec, tmpdir):
+    # open a temporary file
+    tfile = tmpdir.join('testfile.json')
+    fp = tfile.open('w')
+
+    # write the file to disk
+    renderapi.utils.renderdump([simpletilespec], fp)
+    fp.close()
+
+    r = render.run(renderapi.stack.create_stack,
+                   'test_insert', force_resolution=True)
+    render.run(renderapi.client.import_single_json_file,
+               'test_insert', str(tfile))
+    r = render.run(renderapi.stack.set_stack_state,
+                   'test_insert', 'COMPLETE')
+    stack_zs_before = render.run(renderapi.stack.get_z_values_for_stack,
+                                 'test_insert')
+    assert simpletilespec.z in stack_zs_before
+    r = render.run(renderapi.stack.set_stack_state,
+                   'test_insert', 'LOADING')
+    r = renderapi.stack.delete_section('test_insert',
+                                       simpletilespec.z, render=render)
+    stack_zs_after = render.run(renderapi.stack.get_z_values_for_stack,
+                                'test_insert')
+    assert len(stack_zs_after) == (len(stack_zs_before) - 1)
+    assert simpletilespec.z not in stack_zs_after
+    render.run(renderapi.stack.delete_stack, 'test_insert')
 
 
 @pytest.fixture(scope="module")
