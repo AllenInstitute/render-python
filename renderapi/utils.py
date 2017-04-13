@@ -2,12 +2,12 @@
 '''
 utilities to make render/java/web/life interfacing easier
 '''
+import tempfile
 import logging
 import inspect
 import copy
 import json
 from .errors import RenderError
-import tempfile
 
 class NullHandler(logging.Handler):
     '''handler to avoid logging errors for, e.g., missing logger setup'''

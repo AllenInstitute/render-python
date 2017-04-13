@@ -208,7 +208,6 @@ def test_remove_section(render, simpletilespec, tmpdir):
     assert simpletilespec.z not in stack_zs_after
     render.run(renderapi.stack.delete_stack, 'test_insert')
 
-
 @pytest.fixture(scope="module")
 def teststack(request, render, render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
