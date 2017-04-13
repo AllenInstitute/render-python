@@ -8,7 +8,7 @@ from functools import partial
 import logging
 import subprocess
 import tempfile
-from .utils import renderdump, NullHandler
+from .utils import renderdump, NullHandler, renderdump_temp
 from .errors import ClientScriptError
 from .render import RenderClient, renderaccess
 from .stack import set_stack_state, make_stack_params
@@ -185,20 +185,11 @@ def import_tilespecs(stack, tilespecs, sharedTransforms=None,
          sharedTransforms -- list of shared
              referenced transforms to be ingested
     '''
-    tempjson = tempfile.NamedTemporaryFile(
-        suffix=".json", mode='r', delete=False)
-    tempjson.close()
-    tsjson = tempjson.name
-    with open(tsjson, 'w') as f:
-        renderdump(tilespecs, f)
+    tsjson = renderdump_temp(tilespecs)
 
     if sharedTransforms is not None:
-        tempjson = tempfile.NamedTemporaryFile(
-            suffix=".json", mode='r', delete=False)
-        tempjson.close()
-        trjson = tempjson.name
-        with open(trjson, 'w') as f:
-            renderdump(sharedTransforms, f)
+        trjson = renderdump_temp(tilespecs)
+       
     importJsonClient(stack, tileFiles=[tsjson], transformFile=(
                          trjson if sharedTransforms is not None else None),
                      subprocess_mode=subprocess_mode, host=host, port=port,
