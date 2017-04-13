@@ -200,7 +200,7 @@ class AffineModel(Transform):
     className = 'mpicbg.trakem2.transform.AffineModel2D'
 
     def __init__(self, M00=1.0, M01=0.0, M10=0.0, M11=1.0, B0=0.0, B1=0.0,
-                 transformId = None, json=None):
+                 transformId=None, json=None):
         if json is not None:
             self.from_dict(json)
         else:

@@ -9,6 +9,7 @@ import copy
 import json
 from .errors import RenderError
 
+
 class NullHandler(logging.Handler):
     '''handler to avoid logging errors for, e.g., missing logger setup'''
     def emit(self, record):
@@ -85,18 +86,6 @@ def put_json(session, request_url, d, params=None):
                 d, request_url, params))
 
 
-def renderdump_temp(obj):
-    '''json.dump into a temporary file
-    renderdump_temp(obj), obj will be dumped through renderdump
-    into a temporary file
-    returns tempfilename, path to file it was dumped into'''
-    tfile = tempfile.NamedTemporaryFile(suffix=".json", mode='r', delete=False)
-    tfile.close()
-    tempfilename = tfile.name
-    with open(tempfilename, 'w') as filepointer:
-        renderdump(obj, filepointer)
-    return tempfilename
-
 def renderdumps(obj, *args, **kwargs):
     '''json.dumps using the RenderEncoder'''
     cls_ = kwargs.pop('cls', RenderEncoder)
@@ -107,6 +96,18 @@ def renderdump(obj, *args, **kwargs):
     '''json.dump using the RenderEncoder'''
     cls_ = kwargs.pop('cls', RenderEncoder)
     return json.dump(obj, *args, cls=cls_, **kwargs)
+
+
+def renderdump_temp(obj):
+    '''json.dump into a temporary file
+    renderdump_temp(obj), obj will be dumped through renderdump
+    into a temporary file
+    returns tempfilename, path to file it was dumped into'''
+    with tempfile.NamedTemporaryFile(
+            suffix=".json", mode='w', delete=False) as tf:
+        tempfilename = tf.name
+        renderdump(obj, tf)
+    return tempfilename
 
 
 def jbool(val):

@@ -189,7 +189,7 @@ def import_tilespecs(stack, tilespecs, sharedTransforms=None,
 
     if sharedTransforms is not None:
         trjson = renderdump_temp(tilespecs)
-       
+
     importJsonClient(stack, tileFiles=[tsjson], transformFile=(
                          trjson if sharedTransforms is not None else None),
                      subprocess_mode=subprocess_mode, host=host, port=port,
