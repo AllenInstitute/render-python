@@ -180,9 +180,6 @@ def test_import_tilespecs(render, simpletilespec):
     assert ts_out.z == simpletilespec.z
     render.run(renderapi.stack.delete_stack, stack)
 
-<<<<<<< HEAD
-=======
-
 def test_remove_section(render, simpletilespec, tmpdir):
     # open a temporary file
     tfile = tmpdir.join('testfile.json')
@@ -212,7 +209,6 @@ def test_remove_section(render, simpletilespec, tmpdir):
     render.run(renderapi.stack.delete_stack, 'test_insert')
 
 
->>>>>>> 91e46c12f996cc04fc85dac3150b810d5361984e
 @pytest.fixture(scope="module")
 def teststack(request, render, render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
