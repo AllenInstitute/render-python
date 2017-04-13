@@ -48,22 +48,10 @@ def render_example_json_files(render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     tfiles=[]
     for ts in tilespecs:
-        tempjson = tempfile.NamedTemporaryFile(
-            suffix=".json", mode='r', delete=False)
-        tempjson.close()
-        tsjson = tempjson.name
-        with open(tsjson, 'w') as f:
-            renderapi.utils.renderdump(tilespecs, f)
-            f.close()
-        tfiles.append(tsjson)
-
-    transformFile = tempfile.NamedTemporaryFile(
-        suffix=".json", mode='r', delete=False)
-    transformFile.close()
-    tfjson = transformFile.name
-    with open(tfjson, 'w') as f:
-        renderapi.utils.renderdump(tforms, f)
-        f.close()
+        tfile = renderapi.utils.renderdump_temp(ts)
+        tfiles.append(tfile)
+    tfjson = renderapi.utils.renderdump_temp(tforms)
+   
     return (tfiles,tfjson)
 
 def validate_stack_import(render,stack,tilespecs):
@@ -150,6 +138,27 @@ def test_renderSectionClient(render, teststack):
 #     assert False
 
 
-# def test_coordinateClient(render):
-#     root.debug('test not implemented yet')
-#     assert False
+def test_importTransformChangesClient(render, teststack, render_example_tilespec_and_transforms):
+    (tilespecs, tforms) = render_example_tilespec_and_transforms
+    new_tforms = {}
+    for tform in tforms:
+        tformid = tform.transformId
+        new_tforms[tformid] = AffineModel(B0=np.random.rand(), B1=np.random.rand())
+    transformFile = renderapi.utils.renderdump_temp(new_tforms.values())
+    
+    renderapi.client.importTransformChangesClient(teststack, transformFile, render=render)
+
+    tilespecs = renderapi.tilespec.get_tile_specs_from_stack(stack)
+    for ts in tilespecs:
+        for tf in ts.tforms:
+            if tf.transformId in new_tforms.keys():
+                assert tf == new_tforms[tf.transformId]
+
+
+# @renderaccess
+# def importTransformChangesClient(stack, targetStack, transformFile,
+#                                  targetOwner=None, targetProject=None,
+#                                  changeMode=None, subprocess_mode=None,
+#                                  host=None, port=None, owner=None,
+#                                  project=None, client_script=None, memGB=None,
+#                                  render=None, **kwargs):

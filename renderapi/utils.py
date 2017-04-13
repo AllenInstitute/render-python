@@ -7,7 +7,7 @@ import inspect
 import copy
 import json
 from .errors import RenderError
-
+import tempfile
 
 class NullHandler(logging.Handler):
     '''handler to avoid logging errors for, e.g., missing logger setup'''
@@ -84,6 +84,20 @@ def put_json(session, request_url, d, params=None):
             'cannot put {} to {} with params {}'.format(
                 d, request_url, params))
 
+
+def renderdump_temp(obj):
+    '''json.dump into a temporary file
+    renderdump_temp(obj), obj will be dumped through renderdump
+    into a temporary file
+    returns tempfilename, path to file it was dumped into'''
+    tempfile = tempfile.NamedTemporaryFile(
+    suffix=".json", mode='r', delete=False)
+    tempfile.close()
+    tempfilename = tempfile.name
+    with open(tempfilename, 'w') as f:
+        renderdump(obj, f)
+        f.close()
+    return tempfilename
 
 def renderdumps(obj, *args, **kwargs):
     '''json.dumps using the RenderEncoder'''

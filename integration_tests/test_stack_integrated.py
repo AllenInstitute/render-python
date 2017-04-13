@@ -180,9 +180,6 @@ def test_import_tilespecs(render, simpletilespec):
     assert ts_out.z == simpletilespec.z
     render.run(renderapi.stack.delete_stack, stack)
 
-
-
-
 @pytest.fixture(scope="module")
 def teststack(request, render, render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
