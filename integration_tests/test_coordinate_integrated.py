@@ -35,7 +35,8 @@ def render():
 
 
 @pytest.fixture(scope='module')
-def teststack_tilespec():
+def teststack_tilespec(render):
+    '''
     render_test_parameters = {
             'host': render_host,
             'port': 8080,
@@ -44,6 +45,7 @@ def teststack_tilespec():
             'client_scripts': client_script_location
     }
     render = renderapi.render.connect(**render_test_parameters)
+    '''
     with open(tilespec_file, 'r') as f:
         ts_json = json.load(f)
     with open(tform_file, 'r') as f:
