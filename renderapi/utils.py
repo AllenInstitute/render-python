@@ -90,13 +90,11 @@ def renderdump_temp(obj):
     renderdump_temp(obj), obj will be dumped through renderdump
     into a temporary file
     returns tempfilename, path to file it was dumped into'''
-    tempfile = tempfile.NamedTemporaryFile(
-    suffix=".json", mode='r', delete=False)
-    tempfile.close()
-    tempfilename = tempfile.name
-    with open(tempfilename, 'w') as f:
-        renderdump(obj, f)
-        f.close()
+    tfile = tempfile.NamedTemporaryFile(suffix=".json", mode='r', delete=False)
+    tfile.close()
+    tempfilename = tfile.name
+    with open(tempfilename, 'w') as filepointer:
+        renderdump(obj, filepointer)
     return tempfilename
 
 def renderdumps(obj, *args, **kwargs):
