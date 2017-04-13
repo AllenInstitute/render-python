@@ -48,10 +48,10 @@ def render_example_json_files(render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     tfiles=[]
     for ts in tilespecs:
-        tfile = renderapi.utils.renderdump_temp(ts)
+        tfile = renderapi.utils.renderdump_temp([ts])
         tfiles.append(tfile)
     tfjson = renderapi.utils.renderdump_temp(tforms)
-   
+
     return (tfiles,tfjson)
 
 def validate_stack_import(render,stack,tilespecs):
