@@ -251,7 +251,6 @@ def local_to_world_array(stack, points, tileId, subprocess_mode=None,
         list of points in world coordinates corresponding to local points
     '''
     raise NotImplementedError('Whoops')
-    pass
 
 
 @renderaccess
@@ -270,7 +269,6 @@ def world_to_local_array(stack, points, subprocess_mode=None,
             and tileIds corresponding to world point
     '''
     raise NotImplementedError('Whoops.')
-    pass
 
 
 def call_run_ws_client(className, add_args=[], renderclient=None,
@@ -279,8 +277,9 @@ def call_run_ws_client(className, add_args=[], renderclient=None,
     '''
     simple call for run_ws_client.sh -- all arguments set in add_args
     '''
-    logger.debug('call_run_ws_client -- classname:{} add_args:{} client_script:{} memGB:{}'\
-                 .format(className, add_args, client_script, memGB))
+    logger.debug('call_run_ws_client -- classname:{} add_args:{} '
+                 'client_script:{} memGB:{}'.format(
+                     className, add_args, client_script, memGB))
 
     if renderclient is not None:
         if isinstance(renderclient, RenderClient):

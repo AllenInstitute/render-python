@@ -140,6 +140,17 @@ def delete_stack(stack, host=None, port=None, owner=None,
 
 
 @renderaccess
+def delete_section(stack, z, host=None, port=None, owner=None,
+                   project=None, session=requests.session(),
+                   render=None, **kwargs):
+    request_url = '{}/z/{}'.format(
+        format_preamble(host, port, owner, project, stack), z)
+    r = session.delete(request_url)
+    logger.debug(r.text)
+    return r
+
+
+@renderaccess
 def create_stack(stack, cycleNumber=None, cycleStepNumber=None,
                  stackResolutionX=None, stackResolutionY=None,
                  stackResolutionZ=None, force_resolution=True,
