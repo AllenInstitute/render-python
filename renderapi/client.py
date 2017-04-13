@@ -188,7 +188,7 @@ def import_tilespecs(stack, tilespecs, sharedTransforms=None,
     tsjson = renderdump_temp(tilespecs)
 
     if sharedTransforms is not None:
-        trjson = renderdump_temp(tilespecs)
+        trjson = renderdump_temp(sharedTransforms)
 
     importJsonClient(stack, tileFiles=[tsjson], transformFile=(
                          trjson if sharedTransforms is not None else None),
