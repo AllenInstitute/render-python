@@ -370,31 +370,31 @@ def tilePairClient(stack, minz, maxz, outjson=None, delete_json=False,
         os.remove(outjson)
     return jsondata
 
-
-@renderaccess
-def importTransformChangesClient(stack, targetStack, transformFile,
-                                 targetOwner=None, targetProject=None,
-                                 changeMode=None, subprocess_mode=None,
-                                 host=None, port=None, owner=None,
-                                 project=None, client_script=None, memGB=None,
-                                 render=None, **kwargs):
-    '''
-    run ImportTransformChangesClient.java
-    '''
-    if changeMode not in ['APPEND', 'REPLACE_LAST', 'REPLACE_ALL']:
-        raise ClientScriptError(
-            'changeMode {} is not valid!'.format(changeMode))
-
-    argvs = (make_stack_params(host, port, owner, project, stack) +
-             ['--targetStack', targetStack] +
-             ['--transformFile', transformFile] +
-             get_param(targetOwner, '--targetOwner') +
-             get_param(targetProject, '--targetProject') +
-             get_param(changeMode, '--changeMode'))
-    call_run_ws_client(
-        'org.janelia.render.client.ImportTransformChangesClient', memGB=memGB,
-        client_script=client_script, subprocess_mode=subprocess_mode,
-        add_args=argvs)
+# FIXME I do not know what input file this client takes
+# @renderaccess
+# def importTransformChangesClient(stack, targetStack, transformFile,
+#                                  targetOwner=None, targetProject=None,
+#                                  changeMode=None, subprocess_mode=None,
+#                                  host=None, port=None, owner=None,
+#                                  project=None, client_script=None, memGB=None,
+#                                  render=None, **kwargs):
+#     '''
+#     run ImportTransformChangesClient.java
+#     '''
+#     if changeMode not in ['APPEND', 'REPLACE_LAST', 'REPLACE_ALL']:
+#         raise ClientScriptError(
+#             'changeMode {} is not valid!'.format(changeMode))
+#
+#     argvs = (make_stack_params(host, port, owner, project, stack) +
+#              ['--targetStack', targetStack] +
+#              ['--transformFile', transformFile] +
+#              get_param(targetOwner, '--targetOwner') +
+#              get_param(targetProject, '--targetProject') +
+#              get_param(changeMode, '--changeMode'))
+#     call_run_ws_client(
+#         'org.janelia.render.client.ImportTransformChangesClient', memGB=memGB,
+#         client_script=client_script, subprocess_mode=subprocess_mode,
+#         add_args=argvs)
 
 
 @renderaccess

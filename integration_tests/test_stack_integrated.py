@@ -180,6 +180,7 @@ def test_import_tilespecs(render, simpletilespec):
     assert ts_out.z == simpletilespec.z
     render.run(renderapi.stack.delete_stack, stack)
 
+
 def test_remove_section(render, simpletilespec, tmpdir):
     # open a temporary file
     tfile = tmpdir.join('testfile.json')
@@ -207,6 +208,7 @@ def test_remove_section(render, simpletilespec, tmpdir):
     assert len(stack_zs_after) == (len(stack_zs_before) - 1)
     assert simpletilespec.z not in stack_zs_after
     render.run(renderapi.stack.delete_stack, 'test_insert')
+
 
 @pytest.fixture(scope="module")
 def teststack(request, render, render_example_tilespec_and_transforms):
@@ -379,7 +381,7 @@ def test_get_tile_specs_from_minmax_box(
         render, teststack, render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     z = tilespecs[0].z
-    tsz = [ts for ts in tilespecs if ts.z == tilespecs[0].z ]
+    tsz = [ts for ts in tilespecs if ts.z == tilespecs[0].z]
     zbounds = renderapi.stack.get_bounds_from_z(teststack, z, render=render)
     ts = renderapi.tilespec.get_tile_specs_from_minmax_box(
         teststack, z, zbounds['minX'], zbounds['maxX'],
@@ -391,7 +393,7 @@ def test_get_tile_specs_from_box(render, teststack,
                                  render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     z = tilespecs[0].z
-    tsz = [ts for ts in tilespecs if ts.z == tilespecs[0].z ]
+    tsz = [ts for ts in tilespecs if ts.z == tilespecs[0].z]
     zbounds = renderapi.stack.get_bounds_from_z(teststack, z, render=render)
     width = zbounds['maxX']-zbounds['minX']
     height = zbounds['maxY']-zbounds['minY']
