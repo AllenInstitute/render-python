@@ -3,7 +3,6 @@ import logging
 import os
 from functools import wraps
 import requests
-import json
 from .utils import defaultifNone, NullHandler, fitargspec, post_json, put_json
 from .errors import ClientScriptError
 

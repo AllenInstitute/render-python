@@ -8,8 +8,7 @@ from functools import partial
 import logging
 import subprocess
 import tempfile
-from .utils import renderdump, NullHandler, renderdump_temp
-from .errors import ClientScriptError
+from .utils import NullHandler, renderdump_temp
 from .render import RenderClient, renderaccess
 from .stack import set_stack_state, make_stack_params
 from pathos.multiprocessing import ProcessingPool as Pool
