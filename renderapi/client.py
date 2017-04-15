@@ -33,7 +33,9 @@ def import_single_json_file(stack, jsonfile, transformFile=None,
                             owner=None, project=None, render=None, **kwargs):
     '''
     calls client script to import given jsonfile:
-        transformFile: ?
+        stack: stack to import into
+        jsonfile: path to jsonfile to import
+        transformFile: path to a file that contains shared transform references if necessary
     '''
     if transformFile is None:
         transform_params = []
@@ -59,8 +61,12 @@ def import_jsonfiles_and_transforms_parallel_by_z(
         project=None, close_stack=True, render=None, **kwargs):
     '''
     imports json files and transform files in parallel:
+        stack: the stack to import within
         jsonfiles: "list of tilespec" jsons to import
-        transformfiles: ?
+        transformfiles: "list of transform files" which matches in a 1-1 way with 
+        jsonfiles, so referenced transforms are shared only within a single element
+        of these matched lists. Useful cases where there is as single z transforms shared
+        by all tiles within a single z, but not across z's 
         poolsize: number of processes for multiprocessing pool
         close_stack: mark render stack as COMPLETE after successful import
     '''
@@ -82,10 +88,12 @@ def import_jsonfiles_parallel(
         project=None, close_stack=True, render=None, **kwargs):
     '''
     import jsons using client script in parallel
+        stack: the stack to upload into
         jsonfiles: list of jsonfiles to upload
         poolsize: number of upload processes spawned by multiprocessing pool
         transformFile: a single json file containing transforms referenced
             in the jsonfiles
+        close_stack: mark render stack as COMPLETE after successful import
     '''
     set_stack_state(stack, 'LOADING', host, port, owner, project)
     
@@ -109,8 +117,8 @@ def import_jsonfiles(stack, jsonfiles, transformFile=None,
     '''
     import jsons using client script serially
         jsonfiles: iterator of filenames to be uploaded
-        transformFile: ?
-        close_stack: ?
+        transformFile: path to a jsonfile that contains shared transform references (if necessary)
+        close_stack: mark render stack as COMPLETE after successful import
     '''
     set_stack_state(stack, 'LOADING', host, port, owner, project)
     if transformFile is None:
@@ -213,6 +221,16 @@ def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
                               owner=None, project=None,
                               client_script=None, memGB=None, render=None,
                               **kwargs):
+    '''
+    input:
+         stack -- stack to which tilespecs will be added
+         tilespecs -- list of tilespecs
+         sharedTransforms -- list of shared
+             referenced transforms to be ingested
+         poolsize -- degree of parallelism to use
+         subprocess_mode -- subprocess mode used when calling client side java
+         close_stack: mark render stack as COMPLETE after successful import
+    '''
     set_stack_state(stack, 'LOADING', host, port, owner, project)
     partial_import = partial(
         import_tilespecs, stack, sharedTransforms=sharedTransforms,
@@ -241,6 +259,7 @@ def local_to_world_array(stack, points, tileId, subprocess_mode=None,
         stack -- stack to which world coordinates are mapped
         points -- local points to map to world
         tileId -- tileId to which points correspond
+        subprocess_mode -- subprocess mode used when calling clientside java client
     outputs:
         list of points in world coordinates corresponding to local points
     '''
@@ -309,7 +328,9 @@ def importJsonClient(stack, tileFiles=None, transformFile=None,
                      host=None, port=None, owner=None, project=None,
                      client_script=None, memGB=None,
                      render=None, **kwargs):
-    '''run ImportJsonClient.java'''
+    '''run ImportJsonClient.java
+        see render documentation (add link here)
+    '''
     argvs = (make_stack_params(host, port, owner, project, stack) +
              (['--transformFile', transformFile] if transformFile else []) +
              (tileFiles if isinstance(tileFiles, list)
@@ -333,7 +354,9 @@ def tilePairClient(stack, minz, maxz, outjson=None, delete_json=False,
                    host=None, port=None, owner=None, project=None,
                    client_script=None, memGB=None,
                    render=None, **kwargs):
-    '''run TilePairClient.java'''
+    '''run TilePairClient.java
+        see render documentation (#add link here)
+    '''
     if outjson is None:
         tempjson = tempfile.NamedTemporaryFile(
             suffix=".json", mode='r', delete=False)

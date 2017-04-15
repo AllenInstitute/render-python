@@ -12,6 +12,17 @@ logger.addHandler(NullHandler())
 
 
 class StackVersion:
+    '''StackVersion
+    cycleNumber -- cycleNumber, use as you wish to track versions
+    cycleStepNumber -- cycleStepNumber, use as you with to track versions
+    stackResolutionX -- stackResolutionX, resolution of scale = 1.0 in nm (float)
+    stackResolutionY -- stackResolutionY, resolution of scale = 1.0 in nm (float)
+    stackResolutionZ -- stackResolutionZ, resolution of scale = 1.0 in nm (float)
+    mipmapPathBuilder -- ?
+    materializedBoxRootPath -- ?
+    createTimeStamp -- time stamp of stack creation (default to now)
+    versionNotes -- string of notes about this stack (optional)
+    '''
     def __init__(self, cycleNumber=None, cycleStepNumber=None,
                  stackResolutionX=None, stackResolutionY=None,
                  stackResolutionZ=None,
@@ -30,6 +41,9 @@ class StackVersion:
         self.versionNotes = versionNotes
 
     def to_dict(self):
+        '''to_dict
+        turns this object into a json dictionary
+        '''
         d = {}
         d.update(({'cycleNumber': self.cycleNumber}
                   if self.cycleNumber is not None else {}))
@@ -52,6 +66,9 @@ class StackVersion:
         return d
 
     def from_dict(self, d):
+        '''from_dict
+        update the properties of this object with a json dictonary
+        '''
         self.__dict__.update({k: v for k, v in d.items()})
 
 
@@ -59,6 +76,10 @@ class StackVersion:
 def set_stack_metadata(stack, sv, host=None, port=None, owner=None,
                        project=None, session=requests.session(),
                        render=None, **kwargs):
+    ''' set_stack_metadata
+        --stack: stack to set the metadata for
+        --sv: StackVersion to set the metadata to
+    '''
     request_url = format_preamble(host, port, owner, project, stack)
     logger.debug(request_url)
     return post_json(session, request_url, sv.to_dict())
@@ -67,6 +88,13 @@ def set_stack_metadata(stack, sv, host=None, port=None, owner=None,
 @renderaccess
 def get_stack_metadata(stack, host=None, port=None, owner=None, project=None,
                        session=requests.session(), render=None, **kwargs):
+    ''' get_stack_metadata
+    inputs:
+        --stack: render stack to get metadata from
+    outputs:
+        StackVersion object of the metadata of the stack
+    raises: RenderError
+    '''
     request_url = format_preamble(host, port, owner, project, stack)
 
     logger.debug(request_url)
@@ -92,6 +120,13 @@ def set_stack_state(stack, state='LOADING', host=None, port=None,
         OFFLINE: stack is not in use.
         READ_ONLY: stack cannot be changed.
     TODO there is a limited direction in which these stack changes can go
+    inputs:
+        --stack: name of render stack to input
+        --state: state to qset the stack
+    returns:
+        session.response object
+    raises:
+        RenderError if not successful
     '''
     if state not in ['LOADING', 'COMPLETE', 'OFFLINE', 'READ_ONLY']:
         raise RenderError('state {} not in known states {}'.format(
