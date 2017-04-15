@@ -18,6 +18,15 @@ logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
 
 
+class WithPool(Pool):
+    '''pathos ProcessingPool with functioning __exit__ call'''
+    def __init__(self, *args, **kwargs):
+        super(WithPool, self).__init__(*args, **kwargs)
+
+    def __exit__(self, *args, **kwargs):
+        super(WithPool, self)._clear()
+
+
 @renderaccess
 def import_single_json_file(stack, jsonfile, transformFile=None,
                             client_scripts=None, host=None, port=None,
@@ -208,7 +217,6 @@ def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
                               client_script=None, memGB=None, render=None,
                               **kwargs):
     set_stack_state(stack, 'LOADING', host, port, owner, project)
-    pool = Pool(poolsize)
     partial_import = partial(
         import_tilespecs, stack, sharedTransforms=sharedTransforms,
         subprocess_mode=subprocess_mode, host=host, port=port,
@@ -217,9 +225,8 @@ def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
 
     # TODO this is a weird way to do splits.... is that okay?
     tilespec_groups = [tilespecs[i::poolsize] for i in xrange(poolsize)]
-    pool.map(partial_import, tilespec_groups)
-    pool.close()
-    pool.join()
+    with WithPool(poolsize) as pool:
+        pool.map(partial_import, tilespec_groups)
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
