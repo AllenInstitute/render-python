@@ -65,14 +65,12 @@ def import_jsonfiles_and_transforms_parallel_by_z(
         close_stack: mark render stack as COMPLETE after successful import
     '''
     set_stack_state(stack, 'LOADING', host, port, owner, project)
-    pool = Pool(poolsize)
     partial_import = partial(import_single_json_file, stack, render=render,
                              client_scripts=client_scripts, host=host,
                              port=port, owner=owner, project=project)
-    rs = pool.amap(partial_import, jsonfiles, transformfiles)
-    rs.wait()
-    pool.close()
-    pool.join()
+    with WithPool(poolsize) as pool:
+        rs = pool.map(partial_import, jsonfiles, transformfiles)
+
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
@@ -90,16 +88,15 @@ def import_jsonfiles_parallel(
             in the jsonfiles
     '''
     set_stack_state(stack, 'LOADING', host, port, owner, project)
-    pool = Pool(poolsize)
+    
     partial_import = partial(import_single_json_file, stack, render=render,
                              transformFile=transformFile,
                              client_scripts=client_scripts,
                              host=host, port=port, owner=owner,
                              project=project)
+    with WithPool(poolsize) as pool:
+        pool.map(partial_import, jsonfiles)
 
-    pool.map(partial_import, jsonfiles)
-    pool.close()
-    pool.join()
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
