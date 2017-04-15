@@ -12,6 +12,20 @@ logger.addHandler(NullHandler())
 
 
 class Layout:
+    '''Layout class to describe acquisition settings
+    inputs:
+    keyword arguments
+    --sectionId: unique string to describe sectionId this tile was taken from
+    --scopeId: string to track what microscope this came from
+    --cameraId: string to track what camera this was taken with
+    --imageRow: integer to track what row from a row,col layout this was taken
+    --imageCol: integer to track what column form a row,col layout this was taken
+    --stageX: X stage coordinates (float) for where this was taken
+    --stageY: Y stage coordinates (float) for where this taken from
+    --rotation: angle of camera when this was taken 
+    --pixelsize: size of pixels in units of choice of camera at the magnification it was taken
+    --force_pixelsize: whether to default pixelsize to 0.1 (default True)
+    '''
     def __init__(self, sectionId=None, scopeId=None, cameraId=None,
                  imageRow=None, imageCol=None, stageX=None, stageY=None,
                  rotation=None, pixelsize=None,
@@ -29,6 +43,11 @@ class Layout:
         self.pixelsize = pixelsize
 
     def to_dict(self):
+        '''return a dictionary representation of this object
+        no inputs
+        returns:
+        json dictionary of object
+        '''
         d = {}
         d['sectionId'] = self.sectionId
         d['temca'] = self.scopeId
@@ -43,6 +62,10 @@ class Layout:
         return d
 
     def from_dict(self, d):
+        '''set this object equal to the fields found in dictionary
+        inputs:
+        --d:dictionary to use
+        '''
         if d is not None:
             self.sectionId = d.get('sectionId')
             self.cameraId = d.get('camera')
