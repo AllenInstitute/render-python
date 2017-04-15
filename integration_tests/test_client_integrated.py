@@ -96,11 +96,10 @@ def test_import_jsonfiles_parallel_multiple(render,
    stacks = ['testmultiple1','testmultiple2','testmultiple3']
    mylist = range(10)
    for stack in stacks:
-       pool = Pool(poolsize)
-       results=pool.map(lambda x:x**2,mylist)
-       test_import_jsonfiles_parallel(render,render_example_tilespec_and_transforms,stack,poolsize)
+        with renderapi.client.WithPool(poolsize) as pool:
+            results=pool.map(lambda x:x**2,mylist)
+        test_import_jsonfiles_parallel(render,render_example_tilespec_and_transforms,stack,poolsize)
 
-    
 def test_import_tilespecs_parallel(render,
                                    render_example_tilespec_and_transforms,
                                    stack='test_import_tilespecs_parallel'):
