@@ -168,6 +168,12 @@ def make_stack_params(host, port, owner, project, stack):
 def delete_stack(stack, host=None, port=None, owner=None,
                  project=None, session=requests.session(),
                  render=None, **kwargs):
+    '''deletes a stack from render
+    inputs:
+    --stack: render stack to delete
+    returns:
+    --r: response object of response from server
+    '''
     request_url = format_preamble(host, port, owner, project, stack)
     r = session.delete(request_url)
     logger.debug(r.text)
@@ -178,6 +184,13 @@ def delete_stack(stack, host=None, port=None, owner=None,
 def delete_section(stack, z, host=None, port=None, owner=None,
                    project=None, session=requests.session(),
                    render=None, **kwargs):
+    '''removes a single z from a stack
+    inputs:
+    --stack: stack from which to remove
+    --z: z value to remove
+    returns:
+    response object from server
+    '''
     request_url = '{}/z/{}'.format(
         format_preamble(host, port, owner, project, stack), z)
     r = session.delete(request_url)
@@ -191,6 +204,18 @@ def create_stack(stack, cycleNumber=None, cycleStepNumber=None,
                  stackResolutionZ=None, force_resolution=True,
                  host=None, port=None, owner=None, project=None,
                  session=requests.session(), render=None, **kwargs):
+    '''creates a new stack
+    inputs:
+    --stack: stack name to create
+    --cycleNumber: cycleNumber to use to track stages
+    --cycleStepNumber: cycleStepNumber to use to track stages
+    --stackResolutionX: resolution of x pixels at scale=1.0
+    --stackResolutionY: resolution of y pixels at scale=1.0
+    --stackResoluiontZ: resolution of z sections at scale=1.0
+    --force_resolution: fill in resolution of 1.0 for missing resolutions (default True)
+    returns:
+    reponse object from server
+    '''
     if force_resolution:
         stackResolutionX, stackResolutionY, stackResolutionZ = [
             (1.0 if res is None else res)
@@ -255,6 +280,12 @@ def clone_stack(inputstack, outputstack, skipTransforms=False, toProject=None,
 def get_z_values_for_stack(stack, project=None, host=None, port=None,
                            owner=None, session=requests.session(),
                            render=None, **kwargs):
+    '''get a list of z values for which there are tiles in the stack
+    inputs:
+    --stack: stack to get z values for
+    returns:
+    list of z values
+    '''
     request_url = format_preamble(
         host, port, owner, project, stack) + "/zValues/"
     logger.debug(request_url)
@@ -268,6 +299,13 @@ def get_z_values_for_stack(stack, project=None, host=None, port=None,
 
 
 def get_z_value_for_section(stack, sectionId, **kwargs):
+    '''get a list of z values for which there are tiles in the stack
+    inputs:
+    --stack: stack to get z values for
+    returns:
+    list of z values
+    '''
+    logger.warning("Deprecated, use get_section_z_value instead")
     return get_section_z_value(stack, sectionId, **kwargs)
 
 
@@ -286,6 +324,13 @@ def get_z_value_for_section(stack, sectionId, **kwargs):
 def get_bounds_from_z(stack, z, host=None, port=None, owner=None,
                       project=None, session=requests.session(),
                       render=None, **kwargs):
+    '''get a bounds dictionary for a specific z
+    inputs:
+    --stack: stack to get bounds from
+    --z: z values (float) to get bounds from
+    return:
+    dictionary of bounds with keys minY,minY,maxX,maxY
+    '''
     request_url = format_preamble(
         host, port, owner, project, stack) + '/z/%f/bounds' % (z)
 
@@ -301,6 +346,12 @@ def get_bounds_from_z(stack, z, host=None, port=None, owner=None,
 @renderaccess
 def get_stack_bounds(stack, host=None, port=None, owner=None, project=None,
                      session=requests.session(), render=None, **kwargs):
+    '''get bounds of a whole stack
+    inputs:
+    --stack: stack to get bounds from
+    return:
+    dictionary of bounds with keys minY,minY,maxX,maxY,minZ,maxZ
+    '''
     request_url = format_preamble(
         host, port, owner, project, stack) + '/bounds'
     r = session.get(request_url)
@@ -316,6 +367,21 @@ def get_stack_bounds(stack, host=None, port=None, owner=None, project=None,
 def get_stack_sectionData(stack, host=None, port=None, owner=None,
                           project=None, session=requests.session(),
                           render=None, **kwargs):
+    '''returns information about the sectionIds of each slice in stack 
+    inputs:
+    --stack: name of stack to get data about
+    returns:
+    list of dictionaries containing sectionData as below
+    [{
+    "sectionId": "string",
+    "z": 0,
+    "tileCount": 0,
+    "minX": 0,
+    "maxX": 0,
+    "minY": 0,
+    "maxY": 0
+    }]
+    '''
     request_url = format_preamble(
         host, port, owner, project, stack) + '/sectionData'
     r = session.get(request_url)
@@ -331,6 +397,15 @@ def get_stack_sectionData(stack, host=None, port=None, owner=None,
 def get_section_z_value(stack, sectionId, host=None, port=None,
                         owner=None, project=None, session=requests.session(),
                         render=None, **kwargs):
+    '''get the z value for a specific sectionId (string)
+    inputs:
+    --stack: name of stack to get info about
+    --sectionId: string of sectionId
+    outputs:
+    z value (float) that corresponds to that sectionId
+    raises:
+    RenderError
+    '''
     request_url = format_preamble(
         host, port, owner, project, stack) + "/section/%s/z" % sectionId
     r = session.get(request_url)
