@@ -64,23 +64,46 @@ class Layout:
     def from_dict(self, d):
         '''set this object equal to the fields found in dictionary
         inputs:
-        --d:dictionary to use
+        --d:dictionary to use to update
         '''
         if d is not None:
-            self.sectionId = d.get('sectionId')
-            self.cameraId = d.get('camera')
-            self.scopeId = d.get('temca')
-            self.imageRow = d.get('imageRow')
-            self.imageCol = d.get('imageCol')
-            self.stageX = d.get('stageX')
-            self.stageY = d.get('stageY')
-            self.rotation = d.get('rotation')
-            self.pixelsize = d.get('pixelsize')
+            self.sectionId = d.get('sectionId',self.sectionId)
+            self.cameraId = d.get('camera',self.cameraId)
+            self.scopeId = d.get('temca',self.scopeId)
+            self.imageRow = d.get('imageRow',self.imageRow)
+            self.imageCol = d.get('imageCol',self.imageCol)
+            self.stageX = d.get('stageX',self.stageX)
+            self.stageY = d.get('stageY',self.stageY)
+            self.rotation = d.get('rotation',self.rotation)
+            self.pixelsize = d.get('pixelsize',self.pixelsize)
 
 
 class TileSpec:
+    '''Fundamental class of render that store image tiles and their transformations
+    init:
+    Keyword arguments:
+    --tileId: unique string specifying a tile's identity
+    --z: z values this tile exists within (float)
+    --width: width in pixels of the raw tile
+    --height: height in pixels of the raw tile
+    --imageUrl: an image path that can be accessed by the render server, with an ImageJ.open command
+    or as an s3 url.  files on disk should be specified with file:
+    --maskUrl: an image path that can be accessed by the render server which can be interpreted as an
+    alpha mask for the image (same as spec imageUrl)
+    --minint: pixel intensity value to display as black in a linear colormap (default 0)
+    --maxint: pixel intensity value to display as white in a linaer colormap (default 65535)
+    --layout: a Layout object for this tile
+    --tforms: a list of Transform objects (see AffineModel, TransformList, Polynomial2DTransform, Transform, ReferenceTransform) to apply to this tile
+    --inputfilters: a list of filters to apply to this tile (not yet implemented)
+    --scale3Url: url of a mipmap level 3 image of this tile  (deprecated, see mipMapLevels, but will override)
+    --scale2Url: url of a mipmap level 2 image of this tile  (deprecated, see mipMapLevels, but will override)
+    --scale1Url: url of a mipmap level 1 image of this tile (deprecated, see mipMapLevels, but will override)
+    --mipMapLevels: a list of MipMapLevel objects for this tile
+    --json: a json dictionary to initialize this object with (if not None overrides and ignores all keyword arguments)
+
+    '''
     def __init__(self, tileId=None, z=None, width=None, height=None,
-                 imageUrl=None, frameId=None, maskUrl=None,
+                 imageUrl=None, maskUrl=None,
                  minint=0, maxint=65535, layout=None, tforms=[],
                  inputfilters=[], scale3Url=None, scale2Url=None,
                  scale1Url=None, json=None, mipMapLevels=[], **kwargs):
@@ -95,7 +118,6 @@ class TileSpec:
             self.minint = minint
             self.maxint = maxint
             self.tforms = tforms
-            self.frameId = frameId
             self.inputfilters = inputfilters
             self.layout = Layout(**kwargs) if layout is None else layout
 
@@ -127,6 +149,9 @@ class TileSpec:
         return box
 
     def to_dict(self):
+        '''method to produce a json tilespec for this tile
+        returns a json compatible dictionary
+        '''
         thedict = {}
         thedict['tileId'] = self.tileId
         thedict['z'] = self.z
@@ -134,7 +159,6 @@ class TileSpec:
         thedict['height'] = self.height
         thedict['minIntensity'] = self.minint
         thedict['maxIntensity'] = self.maxint
-        thedict['frameId'] = self.frameId
         if self.layout is not None:
             thedict['layout'] = self.layout.to_dict()
         thedict['mipmapLevels'] = self.ip.to_ordered_dict()
@@ -284,6 +308,21 @@ class ImagePyramid:
 def get_tile_spec(stack, tile, host=None, port=None, owner=None,
                   project=None, session=requests.session(),
                   render=None, **kwargs):
+    '''renderapi call to get a specific tilespec by tileId
+    note that this will return a tilespec with resolved transform references
+    by accessing the render-parameters version of this tile
+
+    args:
+    --stack: name of render stack to retrieve
+    --tile: tileId of tile to retrieve
+    keyword args:
+    --render: render connect object
+    (or host, port, owner, project)
+    --session: sessions object to connect with (default make a new one)
+    outputs:
+    A TileSpec object with dereferenced transforms
+    '''
+
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/tile/%s/render-parameters" % (tile)
@@ -295,6 +334,34 @@ def get_tile_spec(stack, tile, host=None, port=None, owner=None,
         logger.error(r.text)
     return TileSpec(json=tilespec_json['tileSpecs'][0])
 
+@renderaccess
+def get_tile_spec_raw(stack, tile, host=None, port=None, owner=None,
+                  project=None, session=requests.session(),
+                  render=None, **kwargs):
+    '''renderapi call to get a specific tilespec by tileId
+    note that this will return a tilespec without resolved transform references
+    
+    args:
+    --stack: name of render stack to retrieve
+    --tile: tileId of tile to retrieve
+    keyword args:
+    --render: render connect object
+    (or host, port, owner, project)
+    --session: sessions object to connect with (default make a new one)
+    outputs:
+    a TileSpec object with referenced transforms if present
+    '''
+
+    request_url = format_preamble(
+        host, port, owner, project, stack) + \
+        "/tile/%s/render-parameters" % (tile)
+    r = session.get(request_url)
+    try:
+        tilespec_json = r.json()
+    except Exception as e:
+        logger.error(e)
+        logger.error(r.text)
+    return TileSpec(json=tilespec_json)
 
 @renderaccess
 def get_tile_specs_from_minmax_box(stack, z, xmin, xmax, ymin, ymax,
@@ -302,6 +369,25 @@ def get_tile_specs_from_minmax_box(stack, z, xmin, xmax, ymin, ymax,
                                    port=None, owner=None, project=None,
                                    session=requests.session(),
                                    render=None, **kwargs):
+    '''renderapi call to get all tilespec that exist within a 2d bounding box
+    specified with min and max x,y values
+    note that this will return a tilespec with resolved transform references
+    
+    args:
+    --stack: name of render stack to retrieve
+    --z: z value of bounding box (float)
+    --xmin: minimum x value (float)
+    --ymin: minimum y value (float)
+    --xmax: maximum x value (float)
+    --ymax: maximum y value (float)
+    keyword args:
+    --scale: scale to use when retrieving render parameters (not important)
+    --render: render connect object
+    (or host, port, owner, project)
+    --session: sessions object to connect with (default make a new one)
+    outputs:
+    a list of TileSpec objects
+    '''                              
     x = xmin
     y = ymin
     width = xmax - xmin
@@ -317,6 +403,25 @@ def get_tile_specs_from_box(stack, z, x, y, width, height,
                             scale=1.0, host=None, port=None, owner=None,
                             project=None, session=requests.session(),
                             render=None, **kwargs):
+    '''renderapi call to get all tilespec that exist within a 2d bounding box
+    specified with min  x,y values and width, height
+    note that this will return a tilespec with resolved transform references
+    
+    args:
+    --stack: name of render stack to retrieve
+    --z: z value of bounding box (float)
+    --xmin: minimum x value (float)
+    --ymin: minimum y value (float)
+    --xmax: maximum x value (float)
+    --ymax: maximum y value (float)
+    keyword args:
+    --scale: scale to use when retrieving render parameters (not important)
+    --render: render connect object
+    (or host, port, owner, project)
+    --session: sessions object to connect with (default make a new one)
+    outputs:
+    a list of TileSpec objects
+    '''         
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%d/box/%d,%d,%d,%d,%3.2f/render-parameters" % (
