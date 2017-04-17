@@ -67,15 +67,15 @@ class Layout:
         --d:dictionary to use to update
         '''
         if d is not None:
-            self.sectionId = d.get('sectionId',self.sectionId)
-            self.cameraId = d.get('camera',self.cameraId)
-            self.scopeId = d.get('temca',self.scopeId)
-            self.imageRow = d.get('imageRow',self.imageRow)
-            self.imageCol = d.get('imageCol',self.imageCol)
-            self.stageX = d.get('stageX',self.stageX)
-            self.stageY = d.get('stageY',self.stageY)
-            self.rotation = d.get('rotation',self.rotation)
-            self.pixelsize = d.get('pixelsize',self.pixelsize)
+            self.sectionId = d.get('sectionId')
+            self.cameraId = d.get('camera')
+            self.scopeId = d.get('temca')
+            self.imageRow = d.get('imageRow')
+            self.imageCol = d.get('imageCol')
+            self.stageX = d.get('stageX')
+            self.stageY = d.get('stageY')
+            self.rotation = d.get('rotation')
+            self.pixelsize = d.get('pixelsize')
 
 
 class TileSpec:
