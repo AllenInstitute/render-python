@@ -376,7 +376,12 @@ def test_get_tilespecs_from_z(render, teststack,
     tsz = [ts for ts in tilespecs if ts.z == tilespecs[0].z]
     assert len(tiles) == len(tsz)
 
-
+def test_get_tilespec_raw(
+        render, teststack, render_example_tilespec_and_transforms):
+    (tilespecs, tforms) = render_example_tilespec_and_transforms
+    ts = renderapi.tilespec.get_tile_spec_raw(teststack, tilespecs[0].tileId)
+    assert ts.to_dict() == tilespecs[0].to_dict()
+    
 def test_get_tile_specs_from_minmax_box(
         render, teststack, render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms

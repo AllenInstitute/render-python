@@ -354,7 +354,7 @@ def get_tile_spec_raw(stack, tile, host=None, port=None, owner=None,
 
     request_url = format_preamble(
         host, port, owner, project, stack) + \
-        "/tile/%s/render-parameters" % (tile)
+        "/tile/%s/" % (tile)
     r = session.get(request_url)
     try:
         tilespec_json = r.json()
