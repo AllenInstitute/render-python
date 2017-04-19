@@ -13,8 +13,9 @@ logger.addHandler(NullHandler())
 
 class StackVersion:
     '''StackVersion
-    cycleNumber -- cycleNumber, use as you wish to track versions
-    cycleStepNumber -- cycleStepNumber, use as you with to track versions
+    keyword arguments:
+    cycleNumber -- cycleNumber, use as you wish to track versions (default None)
+    cycleStepNumber -- cycleStepNumber, use as you with to track versions (default None)
     stackResolutionX -- stackResolutionX, resolution of scale = 1.0 in nm (float)
     stackResolutionY -- stackResolutionY, resolution of scale = 1.0 in nm (float)
     stackResolutionZ -- stackResolutionZ, resolution of scale = 1.0 in nm (float)
@@ -77,8 +78,12 @@ def set_stack_metadata(stack, sv, host=None, port=None, owner=None,
                        project=None, session=requests.session(),
                        render=None, **kwargs):
     ''' set_stack_metadata
-        --stack: stack to set the metadata for
-        --sv: StackVersion to set the metadata to
+    inputs:
+        stack -- stack to set the metadata for
+        sv -- StackVersion to set the metadata to
+    keyword arguments:
+        render -- render connect object (or host, port, owner, project)
+        session -- requests.session (default start a new one)
     '''
     request_url = format_preamble(host, port, owner, project, stack)
     logger.debug(request_url)
@@ -90,7 +95,10 @@ def get_stack_metadata(stack, host=None, port=None, owner=None, project=None,
                        session=requests.session(), render=None, **kwargs):
     ''' get_stack_metadata
     inputs:
-        --stack: render stack to get metadata from
+        stack -- render stack to get metadata from
+    keyword arguments:
+        render -- render connect object (or host, port, owner, project)
+        session -- requests.session (default start a new one)
     outputs:
         StackVersion object of the metadata of the stack
     raises: RenderError
@@ -123,7 +131,10 @@ def set_stack_state(stack, state='LOADING', host=None, port=None,
     inputs:
         --stack: name of render stack to input
         --state: state to qset the stack
-    returns:
+    keyword arguments:
+        render -- render connect object (or host, port, owner, project)
+        session -- requests.session (default start a new one)
+    outputs:
         session.response object
     raises:
         RenderError if not successful
@@ -145,7 +156,13 @@ def set_stack_state(stack, state='LOADING', host=None, port=None,
 @renderaccess
 def likelyUniqueId(host=None, port=None,
                    session=requests.session(), render=None, **kwargs):
-    '''return hex-code nearly-unique id from render server'''
+    '''return hex-code nearly-unique id from render server
+      keyword arguments:
+        render -- render connect object (or host, port)
+        session -- requests.session (default start a new one)
+     returns:
+        string representation of hex-code
+    '''
     request_url = '{}/likelyUniqueId'.format(format_baseurl(host, port))
     r = session.get(request_url, data=None,
                     headers={"content-type": "text/plain"})
@@ -170,9 +187,12 @@ def delete_stack(stack, host=None, port=None, owner=None,
                  render=None, **kwargs):
     '''deletes a stack from render
     inputs:
-    --stack: render stack to delete
-    returns:
-    --r: response object of response from server
+        stack -- render stack to delete
+    keyword arguments:
+        render -- render connect object (or host, port, owner, project)
+        session -- requests.session (default start a new one)
+    outputs:
+        r -- response object of response from server
     '''
     request_url = format_preamble(host, port, owner, project, stack)
     r = session.delete(request_url)
@@ -186,10 +206,13 @@ def delete_section(stack, z, host=None, port=None, owner=None,
                    render=None, **kwargs):
     '''removes a single z from a stack
     inputs:
-    --stack: stack from which to remove
-    --z: z value to remove
-    returns:
-    response object from server
+        stack -- stack from which to remove
+        z -- z value to remove
+    keyword arguments:
+        render -- render connect object (or host, port, owner, project)
+        session -- requests.session (default start a new one)
+    outputs:
+        r -- response object from server
     '''
     request_url = '{}/z/{}'.format(
         format_preamble(host, port, owner, project, stack), z)
@@ -206,15 +229,20 @@ def create_stack(stack, cycleNumber=None, cycleStepNumber=None,
                  session=requests.session(), render=None, **kwargs):
     '''creates a new stack
     inputs:
-    --stack: stack name to create
-    --cycleNumber: cycleNumber to use to track stages
-    --cycleStepNumber: cycleStepNumber to use to track stages
-    --stackResolutionX: resolution of x pixels at scale=1.0
-    --stackResolutionY: resolution of y pixels at scale=1.0
-    --stackResoluiontZ: resolution of z sections at scale=1.0
-    --force_resolution: fill in resolution of 1.0 for missing resolutions (default True)
+        stack -- stack name to create
+    keyword arguments:
+        cycleNumber -- cycleNumber to use to track stages
+        cycleStepNumber -- cycleStepNumber to use to track stages
+        stackResolutionX -- resolution of x pixels at scale=1.0
+        stackResolutionY -- resolution of y pixels at scale=1.0
+        stackResoluiontZ -- resolution of z sections at scale=1.0
+        force_resolution -- fill in resolution of 1.0 for missing resolutions (default True)
+        render -- render connect object (or host, port, owner, project)
+        session -- requests.session (default start a new one)
     returns:
-    reponse object from server
+        r -- reponse object from server
+    raises:
+        RenderError
     '''
     if force_resolution:
         stackResolutionX, stackResolutionY, stackResolutionZ = [
@@ -235,6 +263,8 @@ def create_stack(stack, cycleNumber=None, cycleStepNumber=None,
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
+        raise RenderError(r.text)
+
 
 
 @renderaccess
@@ -243,14 +273,19 @@ def clone_stack(inputstack, outputstack, skipTransforms=False, toProject=None,
                 owner=None, project=None, session=None, render=None, **kwargs):
     '''
     input:
-        inputstack: string name of input stack to clone
-        outputstack: string name of destination stack.
+        inputstack -- string name of input stack to clone
+        outputstack -- string name of destination stack.
             if exists, must be LOADING
-        close_stack: boolean, whether to set stack to COMPLETE when finished
-        toProject: optional, string name of project
-        skipTransforms: optional, boolean whether to strip transformations
+    keyword arguments:
+        skipTransforms -- optional, boolean whether to strip transformations
             in new stack
-        zs: optional, list of selected z values to clone into stack
+        toProject -- optional, string name of project
+        zs -- optional, list of selected z values to clone into stack
+        close_stack -- boolean, whether to set stack to COMPLETE when finished
+        render -- render connect object (or host, port, owner, project)
+        session -- optional, requests.session (default start a new one)
+    outputs:
+        r -- reponse object from server
     '''
     session = requests.session() if session is None else session
     sv = StackVersion(**kwargs)
@@ -282,9 +317,14 @@ def get_z_values_for_stack(stack, project=None, host=None, port=None,
                            render=None, **kwargs):
     '''get a list of z values for which there are tiles in the stack
     inputs:
-    --stack: stack to get z values for
+        stack -- stack to get z values for
+    keyword arguments:
+        render -- render connect object (or host, port, owner, project)
+        session -- optional, requests.session (default start a new one)
     returns:
-    list of z values
+        list of z values
+    raises:
+        RenderError
     '''
     request_url = format_preamble(
         host, port, owner, project, stack) + "/zValues/"
@@ -299,11 +339,17 @@ def get_z_values_for_stack(stack, project=None, host=None, port=None,
 
 
 def get_z_value_for_section(stack, sectionId, **kwargs):
-    '''get a list of z values for which there are tiles in the stack
+    '''DEPRECATED (use get_section_z_value) instead get z values for a specific sectionId 
     inputs:
-    --stack: stack to get z values for
+        stack -- render stack string to look within 
+        sectionId -- string of sectionId to find z value
+    keyword arguments:
+        render -- render connect object (or host, port, owner, project)
+        session -- optional, requests.session (default start a new one)
     returns:
-    list of z values
+        list of z values
+    raises:
+        RenderErorr
     '''
     logger.warning("Deprecated, use get_section_z_value instead")
     return get_section_z_value(stack, sectionId, **kwargs)
@@ -326,10 +372,13 @@ def get_bounds_from_z(stack, z, host=None, port=None, owner=None,
                       render=None, **kwargs):
     '''get a bounds dictionary for a specific z
     inputs:
-    --stack: stack to get bounds from
-    --z: z values (float) to get bounds from
-    return:
-    dictionary of bounds with keys minY,minY,maxX,maxY
+        stack -- stack to get bounds from
+        z -- z values (float) to get bounds from
+    keyword arguments:
+        render -- render connect object (or host, port, owner, project)
+        session -- optional, requests.session (default start a new one)
+    outputs:
+        dictionary of bounds with keys minY,minY,maxX,maxY
     '''
     request_url = format_preamble(
         host, port, owner, project, stack) + '/z/%f/bounds' % (z)
@@ -348,9 +397,14 @@ def get_stack_bounds(stack, host=None, port=None, owner=None, project=None,
                      session=requests.session(), render=None, **kwargs):
     '''get bounds of a whole stack
     inputs:
-    --stack: stack to get bounds from
-    return:
-    dictionary of bounds with keys minY,minY,maxX,maxY,minZ,maxZ
+        stack -- stack to get bounds from
+    keyword arguments:
+        render -- render connect object (or host, port, owner, project)
+        session -- optional, requests.session (default start a new one)
+    outputs:
+        dictionary of bounds with keys minY,minY,maxX,maxY,minZ,maxZ
+    raises:
+        RenderError
     '''
     request_url = format_preamble(
         host, port, owner, project, stack) + '/bounds'
@@ -369,18 +423,23 @@ def get_stack_sectionData(stack, host=None, port=None, owner=None,
                           render=None, **kwargs):
     '''returns information about the sectionIds of each slice in stack 
     inputs:
-    --stack: name of stack to get data about
+        stack -- name of stack to get data about
+    keyword arguments:
+        render -- render connect object (or host, port, owner, project)
+        session -- optional, requests.session (default start a new one)
     returns:
-    list of dictionaries containing sectionData as below
-    [{
-    "sectionId": "string",
-    "z": 0,
-    "tileCount": 0,
-    "minX": 0,
-    "maxX": 0,
-    "minY": 0,
-    "maxY": 0
-    }]
+        list of dictionaries containing sectionData as below
+        [{
+        "sectionId": "string",
+        "z": 0,
+        "tileCount": 0,
+        "minX": 0,
+        "maxX": 0,
+        "minY": 0,
+        "maxY": 0
+        }]
+    raises:
+        RenderError
     '''
     request_url = format_preamble(
         host, port, owner, project, stack) + '/sectionData'
@@ -399,12 +458,15 @@ def get_section_z_value(stack, sectionId, host=None, port=None,
                         render=None, **kwargs):
     '''get the z value for a specific sectionId (string)
     inputs:
-    --stack: name of stack to get info about
-    --sectionId: string of sectionId
-    outputs:
-    z value (float) that corresponds to that sectionId
+        stack -- render stack string to look within 
+        sectionId -- string of sectionId to find z value
+    keyword arguments:
+        render -- render connect object (or host, port, owner, project)
+        session -- optional, requests.session (default start a new one)
+    returns:
+        list of z values
     raises:
-    RenderError
+        RenderError
     '''
     request_url = format_preamble(
         host, port, owner, project, stack) + "/section/%s/z" % sectionId

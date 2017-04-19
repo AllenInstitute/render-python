@@ -445,7 +445,10 @@ def get_tile_specs_from_z(stack, z, host=None, port=None,
     input:
         stack -- string render stack
         z -- render z
-    output: list of tilespec objects
+    keyword arguments:
+        render -- render connect object (or host, port, owner, project)
+        session -- requests.session (default start a new one)
+    output: list of TileSpec objects from that stack at that z
     '''
     request_url = format_preamble(
         host, port, owner, project, stack) + '/z/%f/tile-specs' % (z)
@@ -469,7 +472,15 @@ def get_tile_specs_from_stack(stack, host=None, port=None,
                               owner=None, project=None,
                               session=requests.session(),
                               render=None, **kwargs):
-    '''get flat list of tilespecs for stack using i for sl in l for i in sl'''
+    '''get flat list of tilespecs for stack using i for sl in l for i in sl
+    input: 
+    stack -- string render stack
+    keyword arguments:
+    render -- render connect object (or host, port, owner, project)
+    session -- requests.session (default start a new one)
+    output:
+    List of TileSpec objects from the stack
+    '''
     return [i for sl in [
         get_tile_specs_from_z(stack, z, host=host, port=port,
                               owner=owner, project=project, session=session)
