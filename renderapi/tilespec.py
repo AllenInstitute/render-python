@@ -3,6 +3,7 @@ from .render import format_preamble, renderaccess
 from .utils import NullHandler
 from .stack import get_z_values_for_stack
 from .transform import TransformList
+from .errors import RenderError
 from collections import OrderedDict
 import logging
 import requests
@@ -332,6 +333,7 @@ def get_tile_spec(stack, tile, host=None, port=None, owner=None,
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
+        raise RenderError(r.text)
     return TileSpec(json=tilespec_json['tileSpecs'][0])
 
 @renderaccess
@@ -361,6 +363,7 @@ def get_tile_spec_raw(stack, tile, host=None, port=None, owner=None,
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
+        raise RenderError(r.text)
     return TileSpec(json=tilespec_json)
 
 @renderaccess
@@ -433,6 +436,7 @@ def get_tile_specs_from_box(stack, z, x, y, width, height,
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
+        raise RenderError(r.text)
     return [TileSpec(json=tilespec_json)
             for tilespec_json in tilespecs_json['tileSpecs']]
 
@@ -459,6 +463,7 @@ def get_tile_specs_from_z(stack, z, host=None, port=None,
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
+        raise RenderError(r.text)
 
     if len(tilespecs_json) == 0:
         return None
