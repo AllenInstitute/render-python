@@ -35,7 +35,8 @@ def import_single_json_file(stack, jsonfile, transformFile=None,
     calls client script to import given jsonfile:
         stack: stack to import into
         jsonfile: path to jsonfile to import
-        transformFile: path to a file that contains shared transform references if necessary
+        transformFile: path to a file that contains shared
+            transform references if necessary
     '''
     if transformFile is None:
         transform_params = []
@@ -63,10 +64,11 @@ def import_jsonfiles_and_transforms_parallel_by_z(
     imports json files and transform files in parallel:
         stack: the stack to import within
         jsonfiles: "list of tilespec" jsons to import
-        transformfiles: "list of transform files" which matches in a 1-1 way with 
-        jsonfiles, so referenced transforms are shared only within a single element
-        of these matched lists. Useful cases where there is as single z transforms shared
-        by all tiles within a single z, but not across z's 
+        transformfiles: "list of transform files" which matches
+            in a 1-1 way with jsonfiles, so referenced transforms
+            are shared only within a single element of these matched lists.
+            Useful cases where there is as single z transforms shared
+            by all tiles within a single z, but not across z's
         poolsize: number of processes for multiprocessing pool
         close_stack: mark render stack as COMPLETE after successful import
     '''
@@ -96,7 +98,7 @@ def import_jsonfiles_parallel(
         close_stack: mark render stack as COMPLETE after successful import
     '''
     set_stack_state(stack, 'LOADING', host, port, owner, project)
-    
+
     partial_import = partial(import_single_json_file, stack, render=render,
                              transformFile=transformFile,
                              client_scripts=client_scripts,
@@ -117,7 +119,8 @@ def import_jsonfiles(stack, jsonfiles, transformFile=None,
     '''
     import jsons using client script serially
         jsonfiles: iterator of filenames to be uploaded
-        transformFile: path to a jsonfile that contains shared transform references (if necessary)
+        transformFile: path to a jsonfile that contains shared
+            transform references (if necessary)
         close_stack: mark render stack as COMPLETE after successful import
     '''
     set_stack_state(stack, 'LOADING', host, port, owner, project)
@@ -259,7 +262,8 @@ def local_to_world_array(stack, points, tileId, subprocess_mode=None,
         stack -- stack to which world coordinates are mapped
         points -- local points to map to world
         tileId -- tileId to which points correspond
-        subprocess_mode -- subprocess mode used when calling clientside java client
+        subprocess_mode -- subprocess mode used when calling
+            clientside java client
     outputs:
         list of points in world coordinates corresponding to local points
     '''

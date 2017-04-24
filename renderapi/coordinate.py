@@ -216,8 +216,8 @@ def local_to_world_coordinates_array(stack, dataarray, tileId, z,
     jsondata = package_point_match_data_into_json(dataarray, tileId, 'local')
     if doClientSide:
         json_answer = local_to_world_coordinates_clientside(
-            stack, [[lp] for lp in jsondata], z, host=host, port=port, owner=owner,
-            project=project, client_script=client_script,
+            stack, [[lp] for lp in jsondata], z, host=host, port=port,
+            owner=owner, project=project, client_script=client_script,
             number_of_threads=number_of_threads)
     else:
         json_answer = local_to_world_coordinates_batch(
@@ -236,7 +236,6 @@ def map_coordinates_clientside(stack, jsondata, z, host, port, owner,
         logger.debug('jsondata:{}'.format(jsondata))
         # d = json.loads(jsondata)
         json.dump(jsondata, fp)
-        fp.close()
         # fp.write(jsondata)
 
     # json.dump(jsondata,open(json_inpath,'w'))
@@ -253,7 +252,9 @@ def map_coordinates_clientside(stack, jsondata, z, host, port, owner,
                      client_script=client_script, memGB=memGB)
 
     # return the json results
-    return json.load(open(json_outpath, 'r'))
+    with open(json_outpath, 'r') as f:
+        j = json.load(f)
+    return j
 
 
 @renderaccess

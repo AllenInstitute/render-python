@@ -14,11 +14,16 @@ logger.addHandler(NullHandler())
 class StackVersion:
     '''StackVersion
     keyword arguments:
-    cycleNumber -- cycleNumber, use as you wish to track versions (default None)
-    cycleStepNumber -- cycleStepNumber, use as you with to track versions (default None)
-    stackResolutionX -- stackResolutionX, resolution of scale = 1.0 in nm (float)
-    stackResolutionY -- stackResolutionY, resolution of scale = 1.0 in nm (float)
-    stackResolutionZ -- stackResolutionZ, resolution of scale = 1.0 in nm (float)
+    cycleNumber -- cycleNumber, use as you wish to
+        track versions (default None)
+    cycleStepNumber -- cycleStepNumber, use as you with to
+        track versions (default None)
+    stackResolutionX -- stackResolutionX,
+        resolution of scale = 1.0 in nm (float)
+    stackResolutionY -- stackResolutionY,
+        resolution of scale = 1.0 in nm (float)
+    stackResolutionZ -- stackResolutionZ,
+        resolution of scale = 1.0 in nm (float)
     mipmapPathBuilder -- ?
     materializedBoxRootPath -- ?
     createTimeStamp -- time stamp of stack creation (default to now)
@@ -236,7 +241,8 @@ def create_stack(stack, cycleNumber=None, cycleStepNumber=None,
         stackResolutionX -- resolution of x pixels at scale=1.0
         stackResolutionY -- resolution of y pixels at scale=1.0
         stackResoluiontZ -- resolution of z sections at scale=1.0
-        force_resolution -- fill in resolution of 1.0 for missing resolutions (default True)
+        force_resolution -- fill in resolution of 1.0 for missing
+            resolutions (default True)
         render -- render connect object (or host, port, owner, project)
         session -- requests.session (default start a new one)
     returns:
@@ -264,7 +270,6 @@ def create_stack(stack, cycleNumber=None, cycleStepNumber=None,
         logger.error(e)
         logger.error(r.text)
         raise RenderError(r.text)
-
 
 
 @renderaccess
@@ -339,9 +344,10 @@ def get_z_values_for_stack(stack, project=None, host=None, port=None,
 
 
 def get_z_value_for_section(stack, sectionId, **kwargs):
-    '''DEPRECATED (use get_section_z_value) instead get z values for a specific sectionId 
+    '''DEPRECATED (use get_section_z_value) instead get z
+        values for a specific sectionId
     inputs:
-        stack -- render stack string to look within 
+        stack -- render stack string to look within
         sectionId -- string of sectionId to find z value
     keyword arguments:
         render -- render connect object (or host, port, owner, project)
@@ -421,7 +427,7 @@ def get_stack_bounds(stack, host=None, port=None, owner=None, project=None,
 def get_stack_sectionData(stack, host=None, port=None, owner=None,
                           project=None, session=requests.session(),
                           render=None, **kwargs):
-    '''returns information about the sectionIds of each slice in stack 
+    '''returns information about the sectionIds of each slice in stack
     inputs:
         stack -- name of stack to get data about
     keyword arguments:
@@ -458,7 +464,7 @@ def get_section_z_value(stack, sectionId, host=None, port=None,
                         render=None, **kwargs):
     '''get the z value for a specific sectionId (string)
     inputs:
-        stack -- render stack string to look within 
+        stack -- render stack string to look within
         sectionId -- string of sectionId to find z value
     keyword arguments:
         render -- render connect object (or host, port, owner, project)
