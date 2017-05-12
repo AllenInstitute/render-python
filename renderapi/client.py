@@ -454,7 +454,8 @@ def coordinateClient(stack, z, fromJson=None, toJson=None, localToWorld=None,
 
 
 @renderaccess
-def renderSectionClient(stack, rootDirectory, zs, scale=None, format=None,
+def renderSectionClient(stack, rootDirectory, zs, scale=None, 
+                        maxIntensity=None, minIntensity=None, format=None,
                         doFilter=None, fillWithNoise=None,
                         subprocess_mode=None, host=None, port=None, owner=None,
                         project=None, client_script=None, memGB=None,
@@ -466,6 +467,8 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None, format=None,
              ['--rootDirectory', rootDirectory] +
              get_param(scale, '--scale') + get_param(format, '--format') +
              get_param(doFilter, '--doFilter') +
+             get_param(minIntensity, '--minIntensity') +
+             get_param(maxIntensity, '--maxIntensity') +
              get_param(fillWithNoise, '--fillWithNoise') + zs)
     call_run_ws_client('org.janelia.render.client.RenderSectionClient',
                        memGB=memGB, client_script=client_script,
