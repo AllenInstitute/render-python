@@ -370,8 +370,11 @@ class TranslationModel(AffineModel):
         #     'TranslationModel not implemented. please use Affine')
 
     def _process_dataString(self, dataString):
-        '''expected dataString is tx, ty'''
-        raise NotImplementedError
+        '''expected dataString is "tx ty"'''
+        tx, ty = map(float(dataString.split(' ')))
+        self.B0 = tx
+        self.B1 = ty
+        self.load_M()
 
     @staticmethod
     def fit(src, dst):
@@ -395,8 +398,15 @@ class RigidModel(AffineModel):
         #     'RigidModel not implemented. please use Affine')
 
     def _process_dataString(self, dataString):
-        '''expected datastring is theta, tx, ty'''
-        raise NotImplementedError
+        '''expected datastring is "theta tx ty"'''
+        theta, tx, ty = map(float(dataString.split(' ')))
+        self.M00 = np.cos(theta)
+        self.M01 = -np.sin(theta)
+        self.M10 = np.sin(theta)
+        self.M11 = np.sin(theta)
+        self.B0 = tx
+        self.B1 = ty
+        self.load_M()
 
     @staticmethod
     def fit(src, dst, rigid=True):
@@ -454,8 +464,15 @@ class SimilarityModel(RigidModel):
         #     'SimilarityModel not implemented. please use Affine')
 
     def _process_dataString(self, dataString):
-        '''expected datastring is s, theta, tx, ty'''
-        raise NotImplementedError
+        '''expected datastring is "s theta tx ty"'''
+        s, theta, tx, ty = map(float(dataString.split(' ')))
+        self.M00 = s * np.cos(theta)
+        self.M01 = -s * np.sin(theta)
+        self.M10 = s * np.sin(theta)
+        self.M11 = s * np.sin(theta)
+        self.B0 = tx
+        self.B1 = ty
+        self.load_M()
 
     def estimate(self, src, dst, **kwargs):
         super(SimilarityModel, self).estimate(src, dst, rigid=False, **kwargs)
