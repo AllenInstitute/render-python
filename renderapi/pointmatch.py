@@ -24,6 +24,7 @@ def get_matchcollection_owners(host=None, port=None,
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
+        raise RenderError(r.text)
 
 
 @renderaccess
@@ -37,6 +38,7 @@ def get_matchcollections(owner=None, host=None, port=None,
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
+        raise RenderError(r.text)
 
 
 @renderaccess
@@ -51,6 +53,7 @@ def get_match_groupIds(matchCollection, owner=None, host=None,
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
+        raise RenderError(r.text)
 
 
 @renderaccess
@@ -66,6 +69,7 @@ def get_matches_outside_group(matchCollection, groupId, owner=None, host=None,
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
+        raise RenderError(r.text)
 
 
 @renderaccess
@@ -81,6 +85,7 @@ def get_matches_within_group(matchCollection, groupId, owner=None,
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
+        raise RenderError(r.text)
 
 
 @renderaccess
@@ -97,6 +102,7 @@ def get_matches_from_group_to_group(matchCollection, pgroup, qgroup,
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
+        raise RenderError(r.text)
 
 
 @renderaccess
@@ -114,6 +120,7 @@ def get_matches_from_tile_to_tile(matchCollection, pgroup, pid,
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
+        raise RenderError(r.text)
 
 
 @renderaccess
@@ -129,6 +136,7 @@ def get_matches_with_group(matchCollection, pgroup, render=None, owner=None,
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
+        raise RenderError(r.text)
 
 
 @renderaccess
@@ -143,6 +151,7 @@ def get_match_groupIds_from_only(matchCollection, render=None, owner=None,
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
+        raise RenderError(r.text)
 
 
 @renderaccess
@@ -157,6 +166,7 @@ def get_match_groupIds_to_only(matchCollection, render=None, owner=None,
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
+        raise RenderError(r.text)
 
 
 @renderaccess
@@ -172,6 +182,7 @@ def get_matches_involving_tile(matchCollection, pGroupId, pTileId,
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
+        raise RenderError(r.text)
 
 
 @renderaccess

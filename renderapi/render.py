@@ -3,8 +3,8 @@ import logging
 import os
 from functools import wraps
 import requests
-from .utils import defaultifNone, NullHandler, fitargspec, post_json, put_json
-from .errors import ClientScriptError
+from .utils import defaultifNone, NullHandler, fitargspec
+from .errors import ClientScriptError, RenderError
 
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -103,7 +103,7 @@ class RenderClient(Render):
 
 def connect(host=None, port=None, owner=None, project=None,
             client_scripts=None, client_script=None, memGB=None,
-            force_http=True, validate_client=True, **kwargs):
+            force_http=True, validate_client=True, web_only=False, **kwargs):
     '''
     helper function to connect to a render instance
         can default to using environment variables if not specified in call.
@@ -129,6 +129,10 @@ def connect(host=None, port=None, owner=None, project=None,
             Can be set by environment variable RENDER_CLIENT_HEAP.
         force_http -- boolean determining whether to prepend
             'http://' to render host
+        validate_client -- boolean whether to
+            validate existence of RenderClient run_ws_client.sh script
+        web_only -- boolean whether to check environment variables/prompt user
+            for client_scripts directory if not in arguments
     returns:
         RenderClient or Render object
     '''
@@ -172,8 +176,7 @@ def connect(host=None, port=None, owner=None, project=None,
             logger.critical('Render Owner must not be empty!')
             raise ValueError('Render Owner must not be empty!')
 
-    # TODO should client_scripts be required?
-    if client_scripts is None:
+    if client_scripts is None and not web_only:
         if 'RENDER_CLIENT_SCRIPTS' not in os.environ:
             client_scripts = str(raw_input(
                 "Enter Render Client Scripts location: "))
@@ -262,6 +265,7 @@ def get_owners(host=None, port=None, session=requests.session(),
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
+        raise RenderError(r.text)
 
 
 @renderaccess
@@ -282,6 +286,7 @@ def get_stack_metadata_by_owner(owner=None, host=None, port=None,
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
+        raise RenderError(r.text)
 
 
 @renderaccess

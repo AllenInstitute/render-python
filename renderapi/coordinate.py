@@ -5,12 +5,13 @@ coordinate mapping functions for render api
 from .render import format_preamble, renderaccess
 from .utils import NullHandler
 from .client import coordinateClient
+from .errors import RenderError
 import requests
 import json
 import numpy as np
 import logging
 import tempfile
-
+import os
 
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -84,6 +85,7 @@ def local_to_world_coordinates_batch(stack, d, z, host=None,
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
+        raise RenderError(r.text)
 
 
 def package_point_match_data_into_json(dataarray, tileId,
@@ -228,22 +230,21 @@ def local_to_world_coordinates_array(stack, dataarray, tileId, z,
 
 def map_coordinates_clientside(stack, jsondata, z, host, port, owner,
                                project, client_script, isLocalToWorld=False,
+                               store_injson=False, store_outjson=False,
                                number_of_threads=20, memGB='1G'):
     # write point match json to temp file on disk
-    json_infile, json_inpath = tempfile.mkstemp(
-        prefix='render_coordinates_in_', suffix='.json')
-    with open(json_inpath, 'w') as fp:
+    with tempfile.NamedTemporaryFile(
+            prefix='render_coordinates_in_', suffix='.json',
+            mode='w', delete=False) as f:
         logger.debug('jsondata:{}'.format(jsondata))
-        # d = json.loads(jsondata)
-        json.dump(jsondata, fp)
-        # fp.write(jsondata)
-
-    # json.dump(jsondata,open(json_inpath,'w'))
+        json_inpath = f.name
+        json.dump(jsondata, f)
 
     # get a temporary location for the output
-    json_outpath = tempfile.mktemp(
-        prefix='render_coordinates_out_', suffix='.json')
-
+    with tempfile.NamedTemporaryFile(
+            prefix='render_coordinates_out_', suffix='.json',
+            delete=False) as f:
+        json_outpath = f.name
     # call the java client
     coordinateClient(stack, z, fromJson=json_inpath, toJson=json_outpath,
                      localToWorld=isLocalToWorld,
@@ -254,6 +255,11 @@ def map_coordinates_clientside(stack, jsondata, z, host, port, owner,
     # return the json results
     with open(json_outpath, 'r') as f:
         j = json.load(f)
+    if not store_injson:
+        os.remove(json_inpath)
+    if not store_outjson:
+        os.remove(json_outpath)
+
     return j
 
 
