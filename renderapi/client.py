@@ -471,7 +471,7 @@ def coordinateClient(stack, z, fromJson=None, toJson=None, localToWorld=None,
 
 
 @renderaccess
-def renderSectionClient(stack, rootDirectory, zs, scale=None, 
+def renderSectionClient(stack, rootDirectory, zs, scale=None,
                         maxIntensity=None, minIntensity=None, format=None,
                         doFilter=None, fillWithNoise=None,
                         subprocess_mode=None, host=None, port=None, owner=None,
@@ -512,7 +512,6 @@ def transformSectionClient(stack, transformId, transformClass, transformData,
             replaceLast -- bool whether to have transform replace
                 last in specList (default false)
     '''
-    raise NotImplementedError
     argvs = (make_stack_params(host, port, owner, project, stack) +
              (['--replaceLast'] if replaceLast else []) +
              get_param(targetProject, '--targetProject') +

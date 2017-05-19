@@ -77,28 +77,30 @@ def test_import_jsonfiles_validate_client(
     renderapi.stack.delete_stack(stack, render=render)
 
 
-def test_import_jsonfiles_parallel(render,
-                                   render_example_tilespec_and_transforms,
-                                   stack='test_import_jsonfiles_parallel',
-                                   poolsize = 5):
+def test_import_jsonfiles_parallel(
+        render, render_example_tilespec_and_transforms,
+        stack='test_import_jsonfiles_parallel', poolsize=5):
     renderapi.stack.create_stack(stack, render=render)
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     (tfiles, transformFile) = render_example_json_files(
         render_example_tilespec_and_transforms)
     renderapi.client.import_jsonfiles_parallel(
-        stack, tfiles, transformFile=transformFile, render=render, poolsize=poolsize)
+        stack, tfiles, transformFile=transformFile,
+        render=render, poolsize=poolsize)
     validate_stack_import(render, stack, tilespecs)
     renderapi.stack.delete_stack(stack, render=render)
 
-def test_import_jsonfiles_parallel_multiple(render,
-                                            render_example_tilespec_and_transforms,
-                                            poolsize=5):
-   stacks = ['testmultiple1','testmultiple2','testmultiple3']
-   mylist = range(10)
-   for stack in stacks:
+
+def test_import_jsonfiles_parallel_multiple(
+        render, render_example_tilespec_and_transforms, poolsize=5):
+    stacks = ['testmultiple1', 'testmultiple2', 'testmultiple3']
+    mylist = range(10)
+    for stack in stacks:
         with renderapi.client.WithPool(poolsize) as pool:
-            results=pool.map(lambda x:x**2,mylist)
-        test_import_jsonfiles_parallel(render,render_example_tilespec_and_transforms,stack,poolsize)
+            results = pool.map(lambda x: x**2, mylist)
+        test_import_jsonfiles_parallel(
+            render, render_example_tilespec_and_transforms, stack, poolsize)
+
 
 def test_import_tilespecs_parallel(render,
                                    render_example_tilespec_and_transforms,
@@ -161,22 +163,45 @@ def test_renderSectionClient(render, teststack):
         pngfiles += [f for f in filenames if f.endswith('png')]
     assert len(pngfiles) == len(zvalues)
 
-# TODO importTransformChangesClient is not implemented
+
 # def test_importTransformChangesClient(render, teststack,
 #                                       render_example_tilespec_and_transforms):
 #     (tilespecs, tforms) = render_example_tilespec_and_transforms
 #     new_tforms = {}
-#     for tform in tforms:
+#     for tform in :
 #         tformid = tform.transformId
-#         new_tforms[tformid] = AffineModel(
+#         new_tforms[tformid] = renderapi.transform.AffineModel(
 #             B0=np.random.rand(), B1=np.random.rand())
-#     transformFile = renderapi.utils.renderdump_temp(new_tforms.values())
-#
+#     transformFile = renderapi.utils.renderdump_temp(new_tforms)
 #     renderapi.client.importTransformChangesClient(teststack, transformFile,
 #                                                   render=render)
-#
-#     tilespecs = renderapi.tilespec.get_tile_specs_from_stack(stack)
+#     tilespecs = renderapi.tilespec.get_tile_specs_from_stack(teststack)
 #     for ts in tilespecs:
 #         for tf in ts.tforms:
 #             if tf.transformId in new_tforms.keys():
 #                 assert tf == new_tforms[tf.transformId]
+
+def test_importTransformChangesClient(render, teststack,
+                                      render_example_tilespec_and_transforms):
+    (tilespecs, tforms) = render_example_tilespec_and_transforms
+    deststack = 'test_stack_TCC'
+
+    tform_to_append = renderapi.transform.AffineModel()
+
+    TCCjson = renderapi.utils.renderdump_temp(
+        [{'tileId': tileId, 'transform': tform_to_append}
+         for tileId in renderapi.stack.get_stack_tileIds(
+             teststack, render=render)])
+    renderapi.client.importTransformChangesClient(
+        teststack, deststack, TCCjson, changeMode='APPEND', render=render)
+    renderapi.stack.set_stack_state(deststack, 'COMPLETE', render=render)
+    os.remove(TCCjson)
+    assert all([ts.tforms[-1].to_dict() == tform_to_append.to_dict()
+                for ts in renderapi.tilespec.get_tile_specs_from_stack(
+                    deststack, render=render)])
+    renderapi.stack.delete_stack(deststack, render=render)
+
+
+def test_transformSectionClient(render, teststack,
+                                render_example_tilespec_and_transforms):
+    raise NotImplementedError
