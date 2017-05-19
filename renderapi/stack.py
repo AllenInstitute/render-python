@@ -483,3 +483,18 @@ def get_section_z_value(stack, sectionId, host=None, port=None,
         logger.error(e)
         logger.error(r.text)
         raise RenderError(r.text)
+
+
+@renderaccess
+def get_stack_tileIds(stack, host=None, port=None, owner=None, project=None,
+                      session=requests.session(), render=None, **kwargs):
+    '''get tileIds for a stack'''
+    request_url = '{}/tileIds'.format(
+        format_preamble(host, port, owner, project, stack))
+    r = session.get(request_url)
+    try:
+        return r.json()
+    except Exception as e:
+        logger.error(e)
+        logger.error(r.text)
+        raise RenderError(r.text)
