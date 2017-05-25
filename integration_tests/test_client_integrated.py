@@ -164,26 +164,7 @@ def test_renderSectionClient(render, teststack):
     assert len(pngfiles) == len(zvalues)
 
 
-# def test_importTransformChangesClient(render, teststack,
-#                                       render_example_tilespec_and_transforms):
-#     (tilespecs, tforms) = render_example_tilespec_and_transforms
-#     new_tforms = {}
-#     for tform in :
-#         tformid = tform.transformId
-#         new_tforms[tformid] = renderapi.transform.AffineModel(
-#             B0=np.random.rand(), B1=np.random.rand())
-#     transformFile = renderapi.utils.renderdump_temp(new_tforms)
-#     renderapi.client.importTransformChangesClient(teststack, transformFile,
-#                                                   render=render)
-#     tilespecs = renderapi.tilespec.get_tile_specs_from_stack(teststack)
-#     for ts in tilespecs:
-#         for tf in ts.tforms:
-#             if tf.transformId in new_tforms.keys():
-#                 assert tf == new_tforms[tf.transformId]
-
-def test_importTransformChangesClient(render, teststack,
-                                      render_example_tilespec_and_transforms):
-    (tilespecs, tforms) = render_example_tilespec_and_transforms
+def test_importTransformChangesClient(render, teststack):
     deststack = 'test_stack_TCC'
 
     tform_to_append = renderapi.transform.AffineModel()
