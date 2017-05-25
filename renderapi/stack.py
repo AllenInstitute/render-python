@@ -227,6 +227,25 @@ def delete_section(stack, z, host=None, port=None, owner=None,
 
 
 @renderaccess
+def delete_tile(stack, tileId, host=None, port=None, owner=None,
+                project=None, session=requests.session(),
+                render=None, **kwargs):
+    '''
+    removes a tile from a stack
+    inputs:
+        stack -- stack from which to remove
+        tileId -- tile Id of tilespec to remove from stack
+    outputs:
+        r -- response from server
+    '''
+    request_url = '{}/tile/{}'.format(
+        format_preamble(host, port, owner, project, stack), tileId)
+    r = session.delete(request_url)
+    logger.debug(r.text)
+    return r
+
+
+@renderaccess
 def create_stack(stack, cycleNumber=None, cycleStepNumber=None,
                  stackResolutionX=None, stackResolutionY=None,
                  stackResolutionZ=None, force_resolution=True,
