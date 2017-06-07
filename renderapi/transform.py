@@ -4,12 +4,6 @@ handling mpicbg transforms in python
 
 Currently only implemented to facilitate Affine, Polynomial2D,
     and LensCorrection used in Khaled Khairy's EM aligner workflow
-TODO:
-    interpolation functions
-    Affine as subset of Polynomial2D
-    approximation of other functions(TPS, meshtechniques) to Polynomial2D
-        ^ would this be better in Java using mpicbg implementation?
-    Allow reading datastring for Affine, Rigid, Translation into Affine
 '''
 import json
 import logging
@@ -409,7 +403,7 @@ class RigidModel(AffineModel):
         self.load_M()
 
     @staticmethod
-    def fit(src, dst, rigid=True):
+    def fit(src, dst, rigid=True, **kwargs):
         '''
         Umeyama estimation of similarity transformation
         '''
@@ -474,8 +468,12 @@ class SimilarityModel(RigidModel):
         self.B1 = ty
         self.load_M()
 
-    def estimate(self, src, dst, **kwargs):
-        super(SimilarityModel, self).estimate(src, dst, rigid=False, **kwargs)
+    @staticmethod
+    def fit(src, dst, rigid=False, **kwargs):
+        return RigidModel.fit(src, dst, rigid=rigid)
+
+    # def estimate(self, src, dst, **kwargs):
+    #     super(SimilarityModel, self).estimate(src, dst, rigid=False, **kwargs)
 
 
 class Polynomial2DTransform(Transform):
