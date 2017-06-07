@@ -98,7 +98,7 @@ def renderdump(obj, *args, **kwargs):
     return json.dump(obj, *args, cls=cls_, **kwargs)
 
 
-def renderdump_temp(obj):
+def renderdump_temp(obj, *args, **kwargs):
     '''json.dump into a temporary file
     renderdump_temp(obj), obj will be dumped through renderdump
     into a temporary file
@@ -106,7 +106,7 @@ def renderdump_temp(obj):
     with tempfile.NamedTemporaryFile(
             suffix=".json", mode='w', delete=False) as tf:
         tempfilename = tf.name
-        renderdump(obj, tf)
+        renderdump(obj, tf, *args, **kwargs)
     return tempfilename
 
 
