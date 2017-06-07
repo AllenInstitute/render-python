@@ -6,6 +6,7 @@ from PIL import Image
 import numpy as np
 import logging
 from .render import format_preamble, renderaccess
+from .errors import RenderError
 from .utils import NullHandler, jbool
 
 logger = logging.getLogger(__name__)
@@ -69,6 +70,7 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
+        return RenderError(r.text)
 
 
 @renderaccess
@@ -105,6 +107,7 @@ def get_tile_image_data(stack, tileId, normalizeForMatching=True, scale=None,
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
+        return RenderError(r.text)
 
 
 @renderaccess
