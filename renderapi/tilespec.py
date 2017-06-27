@@ -335,8 +335,12 @@ def get_tile_spec(stack, tile, host=None, port=None, owner=None,
         logger.error(e)
         logger.error(r.text)
         raise RenderError(r.text)
+<<<<<<< HEAD
 	return None
     #return TileSpec(json=tilespec_json['tileSpecs'][0])
+=======
+    
+>>>>>>> 00b251ef2675c98938fd2828ae0029e5a8284c41
 
 @renderaccess
 def get_tile_spec_raw(stack, tile, host=None, port=None, owner=None,
