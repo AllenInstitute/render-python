@@ -490,6 +490,7 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
     call_run_ws_client('org.janelia.render.client.RenderSectionClient',
                        memGB=memGB, client_script=client_script,
                        subprocess_mode=subprocess_mode, add_args=argvs)
+<<<<<<< HEAD
 
 
 @renderaccess
@@ -521,3 +522,6 @@ def transformSectionClient(stack, transformId, transformClass, transformData,
     call_run_ws_client('org.janelia.render.client.TransformSectionClient',
                        memGB=memGB, client_script=client_script,
                        subprocess_mode=subprocess_mode, add_args=argvs)
+=======
+                       
+>>>>>>> develop

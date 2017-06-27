@@ -6,3 +6,5 @@ build/
 *.egg
 dist/
 .DS_Store
+.coverage
+test-reports/
