@@ -470,3 +470,4 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None, format=None,
     call_run_ws_client('org.janelia.render.client.RenderSectionClient',
                        memGB=memGB, client_script=client_script,
                        subprocess_mode=subprocess_mode, add_args=argvs)
+                       
