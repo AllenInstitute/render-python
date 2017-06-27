@@ -20,11 +20,13 @@ class Layout:
     --scopeId: string to track what microscope this came from
     --cameraId: string to track what camera this was taken with
     --imageRow: integer to track what row from a row,col layout this was taken
-    --imageCol: integer to track what column form a row,col layout this was taken
+    --imageCol: integer to track what column form a
+        row,col layout this was taken
     --stageX: X stage coordinates (float) for where this was taken
     --stageY: Y stage coordinates (float) for where this taken from
-    --rotation: angle of camera when this was taken 
-    --pixelsize: size of pixels in units of choice of camera at the magnification it was taken
+    --rotation: angle of camera when this was taken
+    --pixelsize: size of pixels in units of choice of camera
+        at the magnification it was taken
     --force_pixelsize: whether to default pixelsize to 0.1 (default True)
     '''
     def __init__(self, sectionId=None, scopeId=None, cameraId=None,
@@ -87,21 +89,31 @@ class TileSpec:
     --z: z values this tile exists within (float)
     --width: width in pixels of the raw tile
     --height: height in pixels of the raw tile
-    --imageUrl: an image path that can be accessed by the render server, with an ImageJ.open command
-    or as an s3 url.  files on disk should be specified with file:
-    --maskUrl: an image path that can be accessed by the render server which can be interpreted as an
-    alpha mask for the image (same as spec imageUrl)
-    --minint: pixel intensity value to display as black in a linear colormap (default 0)
-    --maxint: pixel intensity value to display as white in a linaer colormap (default 65535)
+    --imageUrl: an image path that can be accessed by the render server,
+        with an ImageJ.open command or as an s3 url.
+        Files on disk should be specified with file:
+    --maskUrl: an image path that can be accessed by the render server
+        which can be interpreted as an
+        alpha mask for the image (same as spec imageUrl)
+    --minint: pixel intensity value to display as black in a
+        linear colormap (default 0)
+    --maxint: pixel intensity value to display as white in a
+        linear colormap (default 65535)
     --layout: a Layout object for this tile
-    --tforms: a list of Transform objects (see AffineModel, TransformList, Polynomial2DTransform, Transform, ReferenceTransform) to apply to this tile
-    --inputfilters: a list of filters to apply to this tile (not yet implemented)
-    --scale3Url: url of a mipmap level 3 image of this tile  (deprecated, see mipMapLevels, but will override)
-    --scale2Url: url of a mipmap level 2 image of this tile  (deprecated, see mipMapLevels, but will override)
-    --scale1Url: url of a mipmap level 1 image of this tile (deprecated, see mipMapLevels, but will override)
+    --tforms: a list of Transform objects
+        (see AffineModel, TransformList, Polynomial2DTransform,
+        Transform, ReferenceTransform) to apply to this tile
+    --inputfilters: a list of filters to apply to
+        this tile (not yet implemented)
+    --scale3Url: url of a mipmap level 3 image of this tile
+        (deprecated, see mipMapLevels, but will override)
+    --scale2Url: url of a mipmap level 2 image of this tile
+        (deprecated, see mipMapLevels, but will override)
+    --scale1Url: url of a mipmap level 1 image of this tile
+        (deprecated, see mipMapLevels, but will override)
     --mipMapLevels: a list of MipMapLevel objects for this tile
-    --json: a json dictionary to initialize this object with (if not None overrides and ignores all keyword arguments)
-
+    --json: a json dictionary to initialize this object with
+        (if not None overrides and ignores all keyword arguments)
     '''
     def __init__(self, tileId=None, z=None, width=None, height=None,
                  imageUrl=None, maskUrl=None,
@@ -340,13 +352,14 @@ def get_tile_spec(stack, tile, host=None, port=None, owner=None,
     #return TileSpec(json=tilespec_json['tileSpecs'][0])
 
 
+
 @renderaccess
 def get_tile_spec_raw(stack, tile, host=None, port=None, owner=None,
-                  project=None, session=requests.session(),
-                  render=None, **kwargs):
+                      project=None, session=requests.session(),
+                      render=None, **kwargs):
     '''renderapi call to get a specific tilespec by tileId
     note that this will return a tilespec without resolved transform references
-    
+
     args:
     --stack: name of render stack to retrieve
     --tile: tileId of tile to retrieve
@@ -370,6 +383,7 @@ def get_tile_spec_raw(stack, tile, host=None, port=None, owner=None,
         raise RenderError(r.text)
     return TileSpec(json=tilespec_json)
 
+
 @renderaccess
 def get_tile_specs_from_minmax_box(stack, z, xmin, xmax, ymin, ymax,
                                    scale=1.0, host=None,
@@ -379,7 +393,7 @@ def get_tile_specs_from_minmax_box(stack, z, xmin, xmax, ymin, ymax,
     '''renderapi call to get all tilespec that exist within a 2d bounding box
     specified with min and max x,y values
     note that this will return a tilespec with resolved transform references
-    
+
     args:
     --stack: name of render stack to retrieve
     --z: z value of bounding box (float)
@@ -394,7 +408,7 @@ def get_tile_specs_from_minmax_box(stack, z, xmin, xmax, ymin, ymax,
     --session: sessions object to connect with (default make a new one)
     outputs:
     a list of TileSpec objects
-    '''                              
+    '''
     x = xmin
     y = ymin
     width = xmax - xmin
@@ -413,7 +427,7 @@ def get_tile_specs_from_box(stack, z, x, y, width, height,
     '''renderapi call to get all tilespec that exist within a 2d bounding box
     specified with min  x,y values and width, height
     note that this will return a tilespec with resolved transform references
-    
+
     args:
     --stack: name of render stack to retrieve
     --z: z value of bounding box (float)
@@ -428,7 +442,7 @@ def get_tile_specs_from_box(stack, z, x, y, width, height,
     --session: sessions object to connect with (default make a new one)
     outputs:
     a list of TileSpec objects
-    '''         
+    '''
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%d/box/%d,%d,%d,%d,%3.2f/render-parameters" % (
@@ -482,7 +496,7 @@ def get_tile_specs_from_stack(stack, host=None, port=None,
                               session=requests.session(),
                               render=None, **kwargs):
     '''get flat list of tilespecs for stack using i for sl in l for i in sl
-    input: 
+    input:
     stack -- string render stack
     keyword arguments:
     render -- render connect object (or host, port, owner, project)

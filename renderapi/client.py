@@ -8,6 +8,7 @@ from functools import partial
 import logging
 import subprocess
 import tempfile
+from .errors import ClientScriptError
 from .utils import NullHandler, renderdump_temp
 from .render import RenderClient, renderaccess
 from .stack import set_stack_state, make_stack_params
@@ -19,7 +20,12 @@ logger.addHandler(NullHandler())
 
 
 class WithPool(Pool):
-    '''pathos ProcessingPool with functioning __exit__ call'''
+    '''
+    pathos ProcessingPool with functioning __exit__ call
+    usage:
+        with WithPool(*poolargs, **poolkwargs) as pool:
+            pool.map(*mapargs, **mapkwargs)
+    '''
     def __init__(self, *args, **kwargs):
         super(WithPool, self).__init__(*args, **kwargs)
 
@@ -35,7 +41,8 @@ def import_single_json_file(stack, jsonfile, transformFile=None,
     calls client script to import given jsonfile:
         stack: stack to import into
         jsonfile: path to jsonfile to import
-        transformFile: path to a file that contains shared transform references if necessary
+        transformFile: path to a file that contains shared
+            transform references if necessary
     '''
     if transformFile is None:
         transform_params = []
@@ -63,10 +70,11 @@ def import_jsonfiles_and_transforms_parallel_by_z(
     imports json files and transform files in parallel:
         stack: the stack to import within
         jsonfiles: "list of tilespec" jsons to import
-        transformfiles: "list of transform files" which matches in a 1-1 way with 
-        jsonfiles, so referenced transforms are shared only within a single element
-        of these matched lists. Useful cases where there is as single z transforms shared
-        by all tiles within a single z, but not across z's 
+        transformfiles: "list of transform files" which matches
+            in a 1-1 way with jsonfiles, so referenced transforms
+            are shared only within a single element of these matched lists.
+            Useful cases where there is as single z transforms shared
+            by all tiles within a single z, but not across z's
         poolsize: number of processes for multiprocessing pool
         close_stack: mark render stack as COMPLETE after successful import
     '''
@@ -75,7 +83,7 @@ def import_jsonfiles_and_transforms_parallel_by_z(
                              client_scripts=client_scripts, host=host,
                              port=port, owner=owner, project=project)
     with WithPool(poolsize) as pool:
-        rs = pool.map(partial_import, jsonfiles, transformfiles)
+        pool.map(partial_import, jsonfiles, transformfiles)
 
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
@@ -96,7 +104,7 @@ def import_jsonfiles_parallel(
         close_stack: mark render stack as COMPLETE after successful import
     '''
     set_stack_state(stack, 'LOADING', host, port, owner, project)
-    
+
     partial_import = partial(import_single_json_file, stack, render=render,
                              transformFile=transformFile,
                              client_scripts=client_scripts,
@@ -117,7 +125,8 @@ def import_jsonfiles(stack, jsonfiles, transformFile=None,
     '''
     import jsons using client script serially
         jsonfiles: iterator of filenames to be uploaded
-        transformFile: path to a jsonfile that contains shared transform references (if necessary)
+        transformFile: path to a jsonfile that contains shared
+            transform references (if necessary)
         close_stack: mark render stack as COMPLETE after successful import
     '''
     set_stack_state(stack, 'LOADING', host, port, owner, project)
@@ -259,7 +268,8 @@ def local_to_world_array(stack, points, tileId, subprocess_mode=None,
         stack -- stack to which world coordinates are mapped
         points -- local points to map to world
         tileId -- tileId to which points correspond
-        subprocess_mode -- subprocess mode used when calling clientside java client
+        subprocess_mode -- subprocess mode used when calling
+            clientside java client
     outputs:
         list of points in world coordinates corresponding to local points
     '''
@@ -358,11 +368,10 @@ def tilePairClient(stack, minz, maxz, outjson=None, delete_json=False,
         see render documentation (#add link here)
     '''
     if outjson is None:
-        tempjson = tempfile.NamedTemporaryFile(
-            suffix=".json", mode='r', delete=False)
-        tempjson.close()
+        with tempfile.NamedTemporaryFile(
+                suffix=".json", mode='r', delete=False) as f:
+            outjson = f.name
         delete_json = True
-        outjson = tempjson.name
 
     argvs = (make_stack_params(host, port, owner, project, stack) +
              get_param(baseowner, '--baseOwner') +
@@ -396,31 +405,39 @@ def tilePairClient(stack, minz, maxz, outjson=None, delete_json=False,
         os.remove(outjson)
     return jsondata
 
-# FIXME I do not know what input file this client takes
-# @renderaccess
-# def importTransformChangesClient(stack, targetStack, transformFile,
-#                                  targetOwner=None, targetProject=None,
-#                                  changeMode=None, subprocess_mode=None,
-#                                  host=None, port=None, owner=None,
-#                                  project=None, client_script=None, memGB=None,
-#                                  render=None, **kwargs):
-#     '''
-#     run ImportTransformChangesClient.java
-#     '''
-#     if changeMode not in ['APPEND', 'REPLACE_LAST', 'REPLACE_ALL']:
-#         raise ClientScriptError(
-#             'changeMode {} is not valid!'.format(changeMode))
-#
-#     argvs = (make_stack_params(host, port, owner, project, stack) +
-#              ['--targetStack', targetStack] +
-#              ['--transformFile', transformFile] +
-#              get_param(targetOwner, '--targetOwner') +
-#              get_param(targetProject, '--targetProject') +
-#              get_param(changeMode, '--changeMode'))
-#     call_run_ws_client(
-#         'org.janelia.render.client.ImportTransformChangesClient', memGB=memGB,
-#         client_script=client_script, subprocess_mode=subprocess_mode,
-#         add_args=argvs)
+
+@renderaccess
+def importTransformChangesClient(stack, targetStack, transformFile,
+                                 targetOwner=None, targetProject=None,
+                                 changeMode=None, close_stack=True,
+                                 subprocess_mode=None,
+                                 host=None, port=None, owner=None,
+                                 project=None, client_script=None, memGB=None,
+                                 render=None, **kwargs):
+    '''
+    run ImportTransformChangesClient.java
+    transformFile: json file in format defined below
+        [{{"tileId": <tileId>,
+           "transform": <transformDict>}},
+          {{"tileId": ...}},
+          ...
+        ]
+    '''
+    if changeMode not in ['APPEND', 'REPLACE_LAST', 'REPLACE_ALL']:
+        raise ClientScriptError(
+            'changeMode {} is not valid!'.format(changeMode))
+    argvs = (make_stack_params(host, port, owner, project, stack) +
+             ['--targetStack', targetStack] +
+             ['--transformFile', transformFile] +
+             get_param(targetOwner, '--targetOwner') +
+             get_param(targetProject, '--targetProject') +
+             get_param(changeMode, '--changeMode'))
+    call_run_ws_client(
+        'org.janelia.render.client.ImportTransformChangesClient', memGB=memGB,
+        client_script=client_script, subprocess_mode=subprocess_mode,
+        add_args=argvs)
+    if close_stack:
+        set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
 
 @renderaccess
@@ -454,7 +471,7 @@ def coordinateClient(stack, z, fromJson=None, toJson=None, localToWorld=None,
 
 
 @renderaccess
-def renderSectionClient(stack, rootDirectory, zs, scale=None, 
+def renderSectionClient(stack, rootDirectory, zs, scale=None,
                         maxIntensity=None, minIntensity=None, format=None,
                         doFilter=None, fillWithNoise=None,
                         subprocess_mode=None, host=None, port=None, owner=None,
@@ -473,4 +490,38 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
     call_run_ws_client('org.janelia.render.client.RenderSectionClient',
                        memGB=memGB, client_script=client_script,
                        subprocess_mode=subprocess_mode, add_args=argvs)
+<<<<<<< HEAD
+
+
+@renderaccess
+def transformSectionClient(stack, transformId, transformClass, transformData,
+                           zValues, targetProject=None, targetStack=None,
+                           replaceLast=None, subprocess_mode=None,
+                           host=None, port=None,
+                           owner=None, project=None, client_script=None,
+                           memGB=None, render=None, **kwargs):
+    '''
+    run TranformSectionClient.java
+    expects:
+        transformId -- string unique transform identifier
+        transformClass -- string representing mpicbg transform
+        transformData -- mpicbg datastring
+        zValues -- list of z values to apply tform
+        optional:
+            targetProject -- project to output the transformed sections
+            targetStack -- stack to ouput transformed sections
+            replaceLast -- bool whether to have transform replace
+                last in specList (default false)
+    '''
+    argvs = (make_stack_params(host, port, owner, project, stack) +
+             (['--replaceLast'] if replaceLast else []) +
+             get_param(targetProject, '--targetProject') +
+             get_param(targetStack, '--targetStack') +
+             ['--transformId', transformId, '--transformClass', transformClass,
+              '--transformData', transformData] + zValues)
+    call_run_ws_client('org.janelia.render.client.TransformSectionClient',
+                       memGB=memGB, client_script=client_script,
+                       subprocess_mode=subprocess_mode, add_args=argvs)
+=======
                        
+>>>>>>> develop

@@ -301,3 +301,56 @@ def test_transformsum_identity_polynomial():
     new_dstpts_comp = new_tform.tform(new_srcpts)
     new_dstpts = am2.concatenate(am1).tform(new_srcpts)
     assert np.allclose(new_dstpts_comp, new_dstpts)
+
+
+def estimate_homography_transform(
+        do_scale=True, do_translate=True, do_rotate=True, transformclass=None):
+    scale = np.random.rand()
+    random_scale = (renderapi.transform.AffineModel(
+        M00=scale, M11=scale)
+                    if do_scale else renderapi.transform.AffineModel())
+
+    random_translate = (renderapi.transform.AffineModel(
+        B0=np.random.rand(), B1=np.random.rand())
+                        if do_translate else renderapi.transform.AffineModel())
+
+    theta = np.random.rand() * 2 * np.pi
+    random_rotate = (renderapi.transform.AffineModel(
+        M00=np.cos(theta), M01=-np.sin(theta),
+        M10=np.sin(theta), M11=np.cos(theta))
+                     if do_rotate else renderapi.transform.AffineModel())
+
+    target_tform = random_translate.concatenate(
+        random_rotate.concatenate(random_scale))
+
+    src_pts = np.random.rand(50, 2)
+    dst_pts = target_tform.tform(src_pts)
+    tform = transformclass()
+    tform.estimate(src_pts, dst_pts, return_params=False)
+
+    assert np.allclose(target_tform.M, tform.M)
+    if do_scale:
+        assert np.isclose(tform.scale[0], scale)
+    if do_translate:
+        assert np.allclose(tform.translation, random_translate.translation)
+    if do_rotate:
+        assert np.isclose(tform.rotation, random_rotate.rotation)
+    # currently forces as affines
+    am = renderapi.transform.AffineModel(json=tform.to_dict())
+    assert am.to_dict() == tform.to_dict()
+
+
+def test_estimate_similarity_transform():
+    estimate_homography_transform(
+        transformclass=renderapi.transform.SimilarityModel)
+
+
+def test_estimate_rigid_transform():
+    estimate_homography_transform(
+        do_scale=False, transformclass=renderapi.transform.RigidModel)
+
+
+def test_estimate_translation_transform():
+    estimate_homography_transform(
+        do_scale=False, do_rotate=False,
+        transformclass=renderapi.transform.TranslationModel)
