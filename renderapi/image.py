@@ -99,7 +99,7 @@ def get_tile_image_data(stack, tileId, normalizeForMatching=True,
     if filter is not None:
         qparams['filter'] = jbool(filter)
     if removeAllOption is not None:
-        qparams['removeAllOptions']=jbool(removeAllOption)
+        qparams['removeAllOptions'] = jbool(removeAllOption)
     logger.debug(request_url)
 
     r = session.get(request_url, params=qparams)
