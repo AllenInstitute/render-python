@@ -503,7 +503,7 @@ def transformSectionClient(stack, transformId, transformClass, transformData,
     expects:
         transformId -- string unique transform identifier
         transformClass -- string representing mpicbg transform
-        transformData -- mpicbg datastring
+        transformData -- mpicbg datastring delimited by "," instead of " "
         zValues -- list of z values to apply tform
         optional:
             targetProject -- project to output the transformed sections

@@ -185,4 +185,17 @@ def test_importTransformChangesClient(render, teststack):
 
 def test_transformSectionClient(render, teststack,
                                 render_example_tilespec_and_transforms):
-    raise NotImplementedError
+    deststack = 'test_stack_TSC'
+    transformId = 'TSC_testtransform'
+    zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
+    tform = renderapi.transform.AffineModel()
+
+    renderapi.client.transformSectionClient(
+        teststack, transformId, tform.className,
+        tform.dataString.replace(" ", ","), zvalues, targetStack=deststack,
+        render=render)
+    renderapi.stack.set_stack_state(deststack, 'COMPLETE', render=render)
+    assert all([ts.tforms[-1].to_dict() == tform.to_dict()
+                for ts in renderapi.tilespec.get_tile_specs_from_stack(
+                    deststack, render=render)])
+    renderapi.stack.delete_stack(deststack, render=render)

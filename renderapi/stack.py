@@ -6,6 +6,7 @@ from .errors import RenderError
 from .utils import jbool, NullHandler, post_json, put_json
 from .render import (format_baseurl, format_preamble,
                      renderaccess)
+import json
 
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -512,7 +513,9 @@ def get_stack_tileIds(stack, host=None, port=None, owner=None, project=None,
         format_preamble(host, port, owner, project, stack))
     r = session.get(request_url)
     try:
-        return r.json()
+        # FIXME render bug return non-json formatted answer
+        # return r.json()
+        return json.loads(r.text.replace("'", '"'))
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
