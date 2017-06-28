@@ -74,7 +74,8 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
 
 
 @renderaccess
-def get_tile_image_data(stack, tileId, normalizeForMatching=True, scale=None,
+def get_tile_image_data(stack, tileId, normalizeForMatching=True,
+                        removeAllOption=False, scale=None,
                         filter=None, host=None, port=None, owner=None,
                         project=None, img_format=None,
                         session=requests.session(), render=None, **kwargs):
@@ -97,6 +98,8 @@ def get_tile_image_data(stack, tileId, normalizeForMatching=True, scale=None,
         qparams['scale'] = scale
     if filter is not None:
         qparams['filter'] = jbool(filter)
+    if removeAllOption is not None:
+        qparams['removeAllOptions']=jbool(removeAllOption)
     logger.debug(request_url)
 
     r = session.get(request_url, params=qparams)

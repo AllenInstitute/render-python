@@ -491,7 +491,6 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
                        memGB=memGB, client_script=client_script,
                        subprocess_mode=subprocess_mode, add_args=argvs)
 
-
 @renderaccess
 def transformSectionClient(stack, transformId, transformClass, transformData,
                            zValues, targetProject=None, targetStack=None,

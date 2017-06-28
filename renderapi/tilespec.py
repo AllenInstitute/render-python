@@ -342,11 +342,15 @@ def get_tile_spec(stack, tile, host=None, port=None, owner=None,
     r = session.get(request_url)
     try:
         tilespec_json = r.json()
+        return TileSpec(json=tilespec_json['tileSpecs'][0])
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
         raise RenderError(r.text)
-    return TileSpec(json=tilespec_json['tileSpecs'][0])
+
+	return None
+    #return TileSpec(json=tilespec_json['tileSpecs'][0])
+
 
 
 @renderaccess
