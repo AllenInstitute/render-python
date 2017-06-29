@@ -1,10 +1,10 @@
-*.pyc
+**/*.pyc
 *source_me.sh
 build/
 .eggs*
 *.egg-info
 *.egg
 dist/
-.DS_Store
+**/.DS_Store
 .coverage
 test-reports/
