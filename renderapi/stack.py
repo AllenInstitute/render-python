@@ -444,6 +444,26 @@ def get_stack_bounds(stack, host=None, port=None, owner=None, project=None,
 
 
 @renderaccess
+def get_sectionId_for_z(stack, z, host=None, port=None, owner=None,
+                        project=None, session=requests.session(),
+                        render=None, **kwargs):
+    '''returns the sectionId associated with a particular z value
+    inputs:
+        stack -- name of the stack to get zvalues about
+        z -- z values to look for
+        render -- render connect object (or host, port, owner, project)
+        session -- options, requests.session
+    returns:
+        z values that have that has sectionId
+    '''
+    sectionData=get_stack_sectionData(stack,host,port,owner,project,session)
+    try:
+        return next(sd['sectionId'] for sd in sectionData if sd['z']==z)
+    except:
+        raise RenderError('Could not find z value %f in stack %s'%(z,stack))
+        
+    
+@renderaccess
 def get_stack_sectionData(stack, host=None, port=None, owner=None,
                           project=None, session=requests.session(),
                           render=None, **kwargs):
