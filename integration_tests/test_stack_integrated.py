@@ -418,4 +418,4 @@ def test_get_tile_specs_from_stack(render, teststack,
 def test_get_sectionId_for_z(render, teststack, render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     sectionId = render.run(renderapi.stack.get_sectionId_for_z, teststack, tilespecs[0].z)
-    assert (sectionId == tilespecs[0].z)
+    assert (sectionId == tilespecs[0].layout.sectionId)
