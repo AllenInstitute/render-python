@@ -113,7 +113,7 @@ def get_matches_from_group_to_group(matchCollection, pgroup, qgroup,mergeCollect
 def add_merge_collections(request_url,mergeCollections):
     if mergeCollections is not None:
         if type(mergeCollections) is list:
-           request_url+="?"+"&".join(mergeCollections)
+           request_url+="?"+"&".join(['mergeCollection=%s'%mc for mc in mergeCollections])
     return request_url
 
 @renderaccess
