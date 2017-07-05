@@ -49,6 +49,13 @@ class RenderEncoder(json.JSONEncoder):
 
 
 def post_json(session, request_url, d, params=None):
+    '''
+    POST requests with RenderError handling
+    session: requests session
+    request_url: url
+    d: data payload (will be json dumpsed)
+    params: requests parameters
+    '''
     headers = {"content-type": "application/json"}
     if d is not None:
         payload = json.dumps(d)

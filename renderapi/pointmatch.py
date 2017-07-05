@@ -57,13 +57,14 @@ def get_match_groupIds(matchCollection, owner=None, host=None,
 
 
 @renderaccess
-def get_matches_outside_group(matchCollection, groupId, mergeCollections=None, owner=None, host=None,
+def get_matches_outside_group(matchCollection, groupId, mergeCollections=None,
+                              owner=None, host=None,
                               port=None, session=requests.session(),
                               render=None, **kwargs):
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/group/%s/matchesOutsideGroup" % (
             owner, matchCollection, groupId)
-    request_url=add_merge_collections(request_url,mergeCollections)
+    request_url = add_merge_collections(request_url, mergeCollections)
 
     r = session.get(request_url)
     try:
@@ -75,13 +76,14 @@ def get_matches_outside_group(matchCollection, groupId, mergeCollections=None, o
 
 
 @renderaccess
-def get_matches_within_group(matchCollection, groupId,mergeCollections=None, owner=None,
-                             host=None, port=None, session=requests.session(),
+def get_matches_within_group(matchCollection, groupId, mergeCollections=None,
+                             owner=None, host=None, port=None,
+                             session=requests.session(),
                              render=None, **kwargs):
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/group/%s/matchesWithinGroup" % (
             owner, matchCollection, groupId)
-    request_url=add_merge_collections(request_url,mergeCollections)
+    request_url = add_merge_collections(request_url, mergeCollections)
 
     r = session.get(request_url)
     try:
@@ -93,14 +95,15 @@ def get_matches_within_group(matchCollection, groupId,mergeCollections=None, own
 
 
 @renderaccess
-def get_matches_from_group_to_group(matchCollection, pgroup, qgroup,mergeCollections=None,
+def get_matches_from_group_to_group(matchCollection, pgroup, qgroup,
+                                    mergeCollections=None,
                                     render=None, owner=None, host=None,
                                     port=None,
                                     session=requests.session(), **kwargs):
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/group/%s/matchesWith/%s" % (
             owner, matchCollection, pgroup, qgroup)
-    request_url=add_merge_collections(request_url,mergeCollections)
+    request_url = add_merge_collections(request_url, mergeCollections)
 
     r = session.get(request_url)
     try:
@@ -110,22 +113,26 @@ def get_matches_from_group_to_group(matchCollection, pgroup, qgroup,mergeCollect
         logger.error(r.text)
         raise RenderError(r.text)
 
-def add_merge_collections(request_url,mergeCollections):
+
+def add_merge_collections(request_url, mergeCollections):
     if mergeCollections is not None:
         if type(mergeCollections) is list:
-           request_url+="?"+"&".join(['mergeCollection=%s'%mc for mc in mergeCollections])
+            request_url += "?"+"&".join(
+                ['mergeCollection=%s' % mc for mc in mergeCollections])
     return request_url
+
 
 @renderaccess
 def get_matches_from_tile_to_tile(matchCollection, pgroup, pid,
-                                  qgroup, qid, mergeCollections=None,render=None, owner=None,
+                                  qgroup, qid, mergeCollections=None,
+                                  render=None, owner=None,
                                   host=None, port=None,
                                   session=requests.session(), **kwargs):
     request_url = format_baseurl(host, port) + \
         ("/owner/%s/matchCollection/%s/group/%s/id/%s/"
          "matchesWith/%s/id/%s" % (
              owner, matchCollection, pgroup, pid, qgroup, qid))
-    request_url=add_merge_collections(request_url,mergeCollections)
+    request_url = add_merge_collections(request_url, mergeCollections)
 
     r = session.get(request_url)
     try:
@@ -137,14 +144,14 @@ def get_matches_from_tile_to_tile(matchCollection, pgroup, pid,
 
 
 @renderaccess
-def get_matches_with_group(matchCollection, pgroup,mergeCollections=None, render=None, owner=None,
+def get_matches_with_group(matchCollection, pgroup, mergeCollections=None,
+                           render=None, owner=None,
                            host=None, port=None,
                            session=requests.session(), **kwargs):
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/pGroup/%s/matches/" % (
             owner, matchCollection, pgroup)
-    request_url=add_merge_collections(request_url,mergeCollections)
-
+    request_url = add_merge_collections(request_url, mergeCollections)
 
     r = session.get(request_url)
     try:
@@ -156,12 +163,13 @@ def get_matches_with_group(matchCollection, pgroup,mergeCollections=None, render
 
 
 @renderaccess
-def get_match_groupIds_from_only(matchCollection, mergeCollections=None,render=None, owner=None,
+def get_match_groupIds_from_only(matchCollection, mergeCollections=None,
+                                 render=None, owner=None,
                                  host=None, port=None,
                                  session=requests.session(), **kwargs):
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/pGroupIds" % (owner, matchCollection)
-    request_url=add_merge_collections(request_url,mergeCollections)
+    request_url = add_merge_collections(request_url, mergeCollections)
 
     r = session.get(request_url)
     try:
@@ -173,12 +181,13 @@ def get_match_groupIds_from_only(matchCollection, mergeCollections=None,render=N
 
 
 @renderaccess
-def get_match_groupIds_to_only(matchCollection, mergeCollections=None,render=None, owner=None,
+def get_match_groupIds_to_only(matchCollection, mergeCollections=None,
+                               render=None, owner=None,
                                host=None, port=None,
                                session=requests.session(), **kwargs):
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/qGroupIds" % (owner, matchCollection)
-    request_url=add_merge_collections(request_url,mergeCollections)
+    request_url = add_merge_collections(request_url, mergeCollections)
 
     r = session.get(request_url)
     try:
@@ -197,7 +206,7 @@ def get_matches_involving_tile(matchCollection, pGroupId, pTileId,
     request_url = format_baseurl(host, port) + \
         "/owner/{}/matchCollection/{}/group/{}/id/{}/".format(
             owner, matchCollection, pGroupId, pTileId)
-    request_url=add_merge_collections(request_url,mergeCollections)
+    request_url = add_merge_collections(request_url, mergeCollections)
 
     r = session.get(request_url)
     try:
