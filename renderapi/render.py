@@ -75,11 +75,11 @@ class Render(object):
         run function from object
             technically shorter than adding render=Render to kwargs
 
-        allows this syntax for running renderapi
-
-        render = Render('server',8080)
-        metadata = render.run(renderapi.render.get_stack_metadata_by_owner,'myowner')
-
+        Example:
+            allows this syntax for running renderapi::
+            
+                render = Render('server',8080)
+                metadata = render.run(renderapi.render.get_stack_metadata_by_owner,'myowner')
         Args:
             f (func): renderapi function you want to call
             *args: args passed to that function
