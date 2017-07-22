@@ -358,7 +358,7 @@ def get_tile_spec_renderparameters(stack, tile, host=None, port=None,
     Args:
         stack (str): name of render stack to retrieve
         tile (str): tileId of tile to retrieve    
-        render (renderapi.render.RenderClient): render connect object
+        render (renderapi.render.Render): render connect object
         session (requests.sessions.Session): sessions object to connect with 
     Returns:
         dict: render-parameters json with the tilespec for that tile and dereferenced transforms
@@ -391,7 +391,7 @@ def get_tile_spec(stack, tile, host=None, port=None, owner=None,
     Args:
         stack (str): name of render stack to retrieve
         tile (str): tileId of tile to retrieve    
-        render (renderapi.render.RenderClient): render connect object
+        render (renderapi.render.Render): render connect object
         session (requests.sessions.Session): sessions object to connect with 
     Returns:
         TileSepc: TileSpec with dereferenced transforms
@@ -417,7 +417,7 @@ def get_tile_spec_raw(stack, tile, host=None, port=None, owner=None,
     Args:
         stack (str): name of render stack to retrieve
         tile (str): tileId of tile to retrieve    
-        render (renderapi.render.RenderClient): render connect object
+        render (renderapi.render.Render): render connect object
         session (requests.sessions.Session): sessions object to connect with
     Returns:
         TileSepc: TileSpec with referenced transforms intact
@@ -456,7 +456,7 @@ def get_tile_specs_from_minmax_box(stack, z, xmin, xmax, ymin, ymax,
         xmax (float): maximum x value 
         ymax (float): maximum y value 
         scale (float): scale to use when retrieving render parameters (not important)
-        render: render connect object
+        render (renderapi.render.Render): render connect object
         session (requests.sessions.Session): sessions object to connect with
     Returns:
         list[TileSpec]:TileSpec objects with dereferenced tansforms
@@ -490,7 +490,7 @@ def get_tile_specs_from_box(stack, z, x, y, width, height,
         width (float): width of box (in scale=1.0 units)
         height (float): height of box (in scale=1.0 units)  
         scale (float): scale to use when retrieving render parameters (not important)
-        render: render connect object
+        render (renderapi.render.Render): render connect object
         session (requests.sessions.Session): sessions object to connect with
     Returns:
         list[TileSpec]:TileSpec objects with dereferenced tansforms
@@ -523,7 +523,7 @@ def get_tile_specs_from_z(stack, z, host=None, port=None,
     Args:
         stack (str): render stack
         z (float): render z
-        render: render connect object
+        render (renderapi.render.Render): render connect object
         session (requests.sessions.Session): sessions object to connect with
     Returns:
         list[TileSpec]: list of TileSpec objects from that stack at that z
@@ -557,7 +557,7 @@ def get_tile_specs_from_stack(stack, host=None, port=None,
 
     Args:
         stack (str): render stack
-        render: render connect object
+        render (renderapi.render.Render): render connect object
         session (requests.sessions.Session): sessions object to connect with
     Returns:
         list[TileSpec]: list of TileSpec objects from that stack
