@@ -272,6 +272,11 @@ def renderaccess(f):
 
     As such, the documentation omits describing the parameters which are natural
     to expect will be filled in by the renderaccess decorator.
+    
+    Args:
+        f (func): function to decorate
+    Returns:
+        func: decorated function
     '''
     @wraps(f)
     def wrapper(*args, **kwargs):
