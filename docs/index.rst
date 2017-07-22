@@ -12,12 +12,14 @@ Welcome to render-python's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-api
+API
 ---
-.. toctree::
-   :maxdepth: 2
 
-    api/renderapi
+.. toctree::
+   :maxdepth: 3
+
+   api/renderapi
+
 
 
 Indices and tables
