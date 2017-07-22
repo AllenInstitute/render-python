@@ -5,14 +5,16 @@ from functools import wraps
 import requests
 from .utils import defaultifNone, NullHandler, fitargspec
 from .errors import ClientScriptError, RenderError
-
+from decorator import decorator
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
 
 
 class Render(object):
     '''
-    Render object to store connection settings for render server
+    Render object to store connection settings for render server.
+    Baseclass that doesn't require client_scripts definition for client side java processing.
+    See :func:`connect` for parameter definitions.
     '''
     def __init__(self, host=None, port=None, owner=None, project=None,
                  client_scripts=None):
@@ -35,6 +37,9 @@ class Render(object):
         kwargs to which the render object falls back.  Depends on:
             self.DEFAULT_HOST, self.DEFAULT_OWNER, self.DEFAULT_PORT,
             self.DEFAULT_PROJECT, self.DEFAULT_CLIENT_SCRIPTS
+        
+        Returns:
+            dict: default keyword arguments
         '''
         return self.make_kwargs()
 
@@ -43,6 +48,16 @@ class Render(object):
         '''
         make kwargs using this render object's defaults and any
             designated kwargs passed in
+        Args:
+            host (str or None):
+            port (int or None):
+            owner (str or None):
+            project (str or None):
+            client_scripts (str or None):
+            **kwargs: all other keyword arguments passed through
+        Returns:
+            dict: keyword arguments with missing host,port,owner,project,client_scripts 
+            filled in with defaults
         '''
         processed_kwargs = {
             'host': self.DEFAULT_HOST if host is None else host,
@@ -58,6 +73,18 @@ class Render(object):
         '''
         run function from object
             technically shorter than adding render=Render to kwargs
+        
+        allows this syntax for running renderapi
+
+        render = Render('server',8080)
+        metadata = render.run(renderapi.render.get_stack_metadata_by_owner,'myowner')
+
+        Args:
+            f (func): renderapi function you want to call
+            *args: args passed to that function
+            **kwargs: kwargs passed to that function
+        Returns:
+            func: function with this :class:`Render` instance in keyword arguments as render=
         '''
         # FIXME WARNING I think renderaccess can default to
         # another render if defined in args (test/squash)
@@ -68,7 +95,8 @@ class Render(object):
 class RenderClient(Render):
     '''
     Render object to run java client commands via a wrapped client script.
-        This is a work in progress.
+        This is a work in progress. 
+        Should use :func:`connect` to create and for documentation of parameters.
     '''
     def __init__(self, client_script=None, memGB=None, validate_client=True,
                  *args, **kwargs):
@@ -91,6 +119,14 @@ class RenderClient(Render):
         self.memGB = memGB
 
     def make_kwargs(self, *args, **kwargs):
+        '''method to fill in default properties of RenderClient object
+        
+        Args:
+            *args: args used to initialize RenderClient
+            **kwargs: kwargs used to initialize RenderClient
+        Returns:
+            Render: Render instance with default values filled in
+        '''
         # hack to get dictionary defaults to work
         client_script = defaultifNone(
             kwargs.pop('client_script', None), self.client_script)
@@ -105,36 +141,38 @@ def connect(host=None, port=None, owner=None, project=None,
             client_scripts=None, client_script=None, memGB=None,
             force_http=True, validate_client=True, web_only=False, **kwargs):
     '''
-    helper function to connect to a render instance
-        can default to using environment variables if not specified in call.
-    input:
-        host -- string hostname for target render server -- will prepend
+    helper function to create a :class:`RenderClient` instance.
+    Will default to using environment variables if not specified in call,
+    and prompt user for any parameters that are not given.
+
+    Args:
+        host (str): hostname for target render server -- will prepend
             "http://" if not found and force_http keyword evaluates True.
             Can be set by environment variable RENDER_HOST.
-        port -- string, int, or None port for target render server.
+        port (str, int, or None): port for target render server.
             Optional as in 'http://hostname[:port]'.
             Can be set by environment variable RENDER_PORT.
-        owner -- string owner for render-ws.
+        owner (str): owner for render-ws.
             Can be set by environment variable RENDER_OWNER.
-        project -- string project for render webservice.
+        project (str): project for render webservice.
             Can be set by environment variable RENDER_PROJECT.
-        client_scripts -- string specifying directory path
+        client_scripts (str): directory path
             for render-ws-java-client scripts.
             Can be set by environment variable RENDER_CLIENT_SCRIPTS.
-        client_script -- string path to a wrapper for java client classes.
+        client_script (str): path to a wrapper for java client classes.
             Used only in RenderClient.
             Can be set by environment variable RENDER_CLIENT_SCRIPT.
-        memGB -- string specifying heap size in GB for java client scripts,
+        memGB (str):heap size in GB for java client scripts,
             example for 1 GB: '1G'.  Used only in RenderClient.
             Can be set by environment variable RENDER_CLIENT_HEAP.
-        force_http -- boolean determining whether to prepend
+        force_http (bool): whether to prepend
             'http://' to render host
-        validate_client -- boolean whether to
+        validate_client (bool): whether to
             validate existence of RenderClient run_ws_client.sh script
-        web_only -- boolean whether to check environment variables/prompt user
+        web_only (bool): whether to check environment variables/prompt user
             for client_scripts directory if not in arguments
-    returns:
-        RenderClient or Render object
+    Returns:
+        RenderClient: a connect object to simplify specifying what render server to connect to
     '''
     if host is None:
         if 'RENDER_HOST' not in os.environ:
@@ -213,11 +251,27 @@ def connect(host=None, port=None, owner=None, project=None,
         return Render(host=host, port=port, owner=owner, project=project,
                       client_scripts=client_scripts)
 
-
+@decorator
 def renderaccess(f):
     '''
     decorator allowing functions asking for host, port, owner, project
-        to default to a connection defined by a render object kwarg
+        to default to a connection defined by a :class:`Render` object 
+        using its :func:`RenderClient.make_kwargs` method.
+
+    Example:
+        render = renderapi.render.connect('server',80,'me','my_project',
+                          client_scripts='/usr/local/render/render-ws/src/scripts')
+        owners = renderapi.render.get_stacks_by_owner_project(render=render)
+    
+    this works because renderapi.render.get_stacks_by_owner_project has the 
+    renderaccess decorator to fill in the default values for
+    host, owner, port and project.  
+
+    you can if you wish specify any of the arguments, in which case they will not
+    be filled in by the default values, but you don't have to.
+
+    As such, the documentation omits describing the parameters which are natural
+    to expect will be filled in by the renderaccess decorator.
     '''
     @wraps(f)
     def wrapper(*args, **kwargs):
@@ -236,7 +290,14 @@ def renderaccess(f):
 
 
 def format_baseurl(host, port):
-    '''format host and port to a standard template render-ws url'''
+    '''format host and port to a standard template render-ws url
+    
+    Args:
+        host (str):host of render server
+        port (int or None): port of render server
+    Returns
+        str: a url to the render endpoint at that host/port combination (append render-ws/v1)
+    '''
     # return 'http://%s:%d/render-ws/v1' % (host, port)
     server = '{}{}'.format(host, ('' if port is None else ':{}'.format(port)))
     return '{}/render-ws/v1'.format(server)
@@ -246,6 +307,15 @@ def format_preamble(host, port, owner, project, stack):
     '''
     format host, port, owner, project, and stack parameters
        to the access point to stack-based apis
+
+    Args:
+        host (str): render host
+        port (int): render host port
+        owner (str): render owner
+        project (str): render project
+        stack (str): render stack
+    Returns:
+        str: a url to the endpoint for that host, port, owner, project, stack combination
     '''
     preamble = "%s/owner/%s/project/%s/stack/%s" % (
         format_baseurl(host, port), owner, project, stack)
@@ -257,6 +327,17 @@ def get_owners(host=None, port=None, session=requests.session(),
                render=None, **kwargs):
     '''
     return list of owners across all Projects and Stacks for a render server
+
+    :func:`renderaccess` decorated function
+
+    Args:
+        host (str): render host (defaults to host from render)
+        port (int): render port (default to port from render)
+        session (requests.Session): requests session
+        render (RenderClient): RenderClient connection object
+    Returns:
+        list: list of strings containing all render owners
+
     '''
     request_url = "%s/owners/" % format_baseurl(host, port)
     r = session.get(request_url)
@@ -275,7 +356,17 @@ def get_stack_metadata_by_owner(owner=None, host=None, port=None,
     '''
     return metadata for all stacks belonging to particular
         owner on render server
-    TODO example
+
+    :func:`renderaccess` decorated function
+
+    Args:
+        owner (str): render owner
+        render (RenderClient): render connect object
+        session (requests.sessions.Session): http session to use
+    Returns:
+        dict: stackInfo metadata, TODO example
+    
+
     '''
     request_url = "%s/owner/%s/stacks/" % (
         format_baseurl(host, port), owner)
@@ -292,7 +383,18 @@ def get_stack_metadata_by_owner(owner=None, host=None, port=None,
 @renderaccess
 def get_projects_by_owner(owner=None, host=None, port=None,
                           session=requests.session(), render=None, **kwargs):
-    '''return list of projects belonging to a single owner for render stack'''
+    '''return list of projects belonging to a single owner for render stack
+    
+    :func:`renderaccess` decorated function
+
+    Args:
+        owner (str): render owner
+        render (RenderClient): render connect object
+        session (requests.sessions.Session): http session to use
+    Returns:
+        list[str]: render projects by this owner 
+
+    '''
     metadata = get_stack_metadata_by_owner(owner=owner, host=host,
                                            port=port, session=session)
     projects = list(set([m['stackId']['project'] for m in metadata]))
@@ -305,6 +407,17 @@ def get_stacks_by_owner_project(owner=None, project=None, host=None,
                                 render=None, **kwargs):
     '''
     return list of stacks belonging to an owner's project on render server
+    
+    :func:`renderaccess` decorated function
+
+    Args:
+        owner (str): render owner
+        project (str): render project
+        render (RenderClient): render connect object
+        session (requests.sessions.Session): http session to use
+    Returns:
+        list[str]: render stacks by this owner in this project 
+
     '''
     metadata = get_stack_metadata_by_owner(owner=owner, host=host,
                                            port=port, session=session)
