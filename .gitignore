@@ -8,3 +8,4 @@ dist/
 **/.DS_Store
 .coverage
 test-reports/
+docs/_build/
