@@ -47,6 +47,7 @@ class Layout:
 
     def to_dict(self):
         '''return a dictionary representation of this object
+        
         Returns:
             dict: json compatible dictionary of this object
         '''
@@ -102,8 +103,11 @@ class TileSpec:
             linear colormap (default 65535)
         layout (Layout): a Layout object for this tile
         tforms (list[Transform]): Transform objects
-            (see :class:`AffineModel`, :class:`TransformList`, :class:`Polynomial2DTransform`,
-            :class:`Transform`, :class:`ReferenceTransform`) to apply to this tile
+            (see :class:`.transform.AffineModel`, 
+            :class:`.transform.TransformList`, 
+            :class:`.transform.Polynomial2DTransform`,
+            :class:`.transform.Transform`, 
+            :class:`.transform.ReferenceTransform`) to apply to this tile
         inputfilters (list): a list of filters to apply to
             this tile (not yet implemented)
         mipMapLevels (list[MipMapLevel]): :class:`MipMapLevel` objects for this tile
@@ -261,6 +265,10 @@ class MipMapLevel:
         self.maskUrl = maskUrl
 
     def to_dict(self):
+        '''
+        Returns:
+            dict: json compatible dictionary representaton
+        '''
         return dict(self.__iter__())
 
     def _formatUrls(self):
@@ -322,6 +330,7 @@ class ImagePyramid:
 
         Args:
             to_get (int): mipmaplevel to get
+
         Returns:
             dict: dictionary representation of requested MipMapLevel
         '''
