@@ -263,7 +263,7 @@ def renderaccess(f):
                           client_scripts='/usr/local/render/render-ws/src/scripts')
         owners = renderapi.render.get_stacks_by_owner_project(render=render)
     
-    this works because renderapi.render.get_stacks_by_owner_project has the 
+    this works because :func:`renderapi.render.get_stacks_by_owner_project` has the 
     renderaccess decorator to fill in the default values for
     host, owner, port and project.  
 
