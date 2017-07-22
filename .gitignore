@@ -9,3 +9,5 @@ dist/
 .coverage
 test-reports/
 docs/_build/
+htmlcov/
+.cache
