@@ -16,6 +16,19 @@ logger.addHandler(NullHandler())
 def get_matchcollection_owners(host=None, port=None,
                                session=requests.session(),
                                render=None, **kwargs):
+
+    '''get all the matchCollection owners
+
+    :func:`renderapi.render.renderaccess` decorated function
+
+    Args:   
+        render (RenderClient): RenderClient connection object
+        session (requests.session.Session): requests session
+    Returns:
+        list[str]: matchCollection owners
+    Raises:
+        RenderError: if cannot get a reponse from server
+    '''
     request_url = format_baseurl(host, port) + \
         "/matchCollectionOwners"
     r = session.get(request_url)
@@ -30,6 +43,20 @@ def get_matchcollection_owners(host=None, port=None,
 @renderaccess
 def get_matchcollections(owner=None, host=None, port=None,
                          session=requests.session(), render=None, **kwargs):
+    '''get all the matchCollections owned by owner
+
+    :func:`renderapi.render.renderaccess` decorated function
+
+    Args:  
+        owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+                     (note match owner != stack owner always) 
+        render (RenderClient): RenderClient connection object
+        session (requests.session.Session): requests session
+    Returns:
+        list[str]: matchcollections owned by owner
+    Raises:
+        RenderError: if cannot get a reponse from server
+    '''
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollections" % owner
     r = session.get(request_url)
@@ -45,6 +72,21 @@ def get_matchcollections(owner=None, host=None, port=None,
 def get_match_groupIds(matchCollection, owner=None, host=None,
                        port=None, session=requests.session(),
                        render=None, **kwargs):
+        '''get all the groupIds in a matchCollection
+
+        :func:`renderapi.render.renderaccess` decorated function
+
+        Args:  
+            matchCollection (str): matchCollection name
+            owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+                        (note match owner != stack owner always) 
+            render (RenderClient): RenderClient connection object
+            session (requests.session.Session): requests session
+        Returns:
+            list[str]: groupIds in matchCollection
+        Raises:
+            RenderError: if cannot get a reponse from server
+        '''
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/groupIds" % (owner, matchCollection)
     r = session.get(request_url)
@@ -61,6 +103,24 @@ def get_matches_outside_group(matchCollection, groupId, mergeCollections=None,
                               owner=None, host=None,
                               port=None, session=requests.session(),
                               render=None, **kwargs):
+     '''get all the matches outside a groupId in a matchCollection
+     returns all matches where pGroupId == groupId and qGroupId != groupId
+
+    :func:`renderapi.render.renderaccess` decorated function
+
+    Args:  
+        matchCollection (str): matchCollection name
+        groupId (str): groupId to query
+        mergeCollections (list[str]): other matchCollections to aggregate into answer
+        owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+                     (note match owner != stack owner always) 
+        render (RenderClient): RenderClient connection object
+        session (requests.session.Session): requests session
+    Returns:
+        list[dict]: list of matches (see matches definition)
+    Raises:
+        RenderError: if cannot get a reponse from server
+    '''
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/group/%s/matchesOutsideGroup" % (
             owner, matchCollection, groupId)
@@ -80,6 +140,25 @@ def get_matches_within_group(matchCollection, groupId, mergeCollections=None,
                              owner=None, host=None, port=None,
                              session=requests.session(),
                              render=None, **kwargs):
+     '''get all the matches within a groupId in a matchCollection
+     returns all matches where pGroupId == groupId and qGroupId == groupId
+
+    :func:`renderapi.render.renderaccess` decorated function
+
+    Args:  
+        matchCollection (str): matchCollection name
+        groupId (str): groupId to query
+        mergeCollections (list[str] or None): other matchCollections
+                                              to aggregate into answer
+        owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+                     (note match owner != stack owner always) 
+        render (RenderClient): RenderClient connection object
+        session (requests.session.Session): requests session
+    Returns:
+        list[dict]: list of matches (see matches definition)
+    Raises:
+        RenderError: if cannot get a reponse from server
+    '''
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/group/%s/matchesWithinGroup" % (
             owner, matchCollection, groupId)
@@ -100,6 +179,28 @@ def get_matches_from_group_to_group(matchCollection, pgroup, qgroup,
                                     render=None, owner=None, host=None,
                                     port=None,
                                     session=requests.session(), **kwargs):
+    '''get all the matches between two specific groups
+    returns all matches where pgroup == pGroupId and qgroup == qGroupId
+     
+    OR pgroup == qGroupId and qgroup == pGroupId
+
+    :func:`renderapi.render.renderaccess` decorated function
+
+    Args:  
+        matchCollection (str): matchCollection name
+        pgroup (str): first group
+        qgroup (str): second group
+        mergeCollections (list[str] or None): other matchCollections
+                                            to aggregate into answer
+        owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+                    (note match owner != stack owner always) 
+        render (RenderClient): RenderClient connection object
+        session (requests.session.Session): requests session
+    Returns:
+        list[dict]: list of matches (see matches definition)
+    Raises:
+        RenderError: if cannot get a reponse from server
+    '''
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/group/%s/matchesWith/%s" % (
             owner, matchCollection, pgroup, qgroup)
@@ -128,6 +229,31 @@ def get_matches_from_tile_to_tile(matchCollection, pgroup, pid,
                                   render=None, owner=None,
                                   host=None, port=None,
                                   session=requests.session(), **kwargs):
+     '''get all the matches between two specific tiles
+     returns all matches where 
+     pgroup == pGroupId and pid=pId and qgroup == qGroupId and qid == qId
+     OR
+     qgroup == pGroupId and Qid=pId and Pgroup == qGroupId and pid == qId
+ 
+     :func:`renderapi.render.renderaccess` decorated function
+
+    Args:  
+        matchCollection (str): matchCollection name
+        pgroup (str): first group
+        pid (str): first id 
+        qgroup (str): second group
+        qid (str): second id
+        mergeCollections (list[str] or None): other matchCollections
+                                              to aggregate into answer
+        owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+                     (note match owner != stack owner always) 
+        render (RenderClient): RenderClient connection object
+        session (requests.session.Session): requests session
+    Returns:
+        list[dict]: list of matches (see matches definition)
+    Raises:
+        RenderError: if cannot get a reponse from server
+    '''
     request_url = format_baseurl(host, port) + \
         ("/owner/%s/matchCollection/%s/group/%s/id/%s/"
          "matchesWith/%s/id/%s" % (
@@ -148,6 +274,25 @@ def get_matches_with_group(matchCollection, pgroup, mergeCollections=None,
                            render=None, owner=None,
                            host=None, port=None,
                            session=requests.session(), **kwargs):
+     '''get all the matches from a specific groups
+     returns all matches where pgroup == pGroupId 
+
+    :func:`renderapi.render.renderaccess` decorated function
+
+    Args:  
+        matchCollection (str): matchCollection name
+        pgroup (str): source group to query
+        mergeCollections (list[str] or None): other matchCollections
+                                              to aggregate into answer
+        owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+                     (note match owner != stack owner always) 
+        render (RenderClient): RenderClient connection object
+        session (requests.session.Session): requests session
+    Returns:
+        list[dict]: list of matches (see matches definition)
+    Raises:
+        RenderError: if cannot get a reponse from server
+    '''
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/pGroup/%s/matches/" % (
             owner, matchCollection, pgroup)
@@ -167,6 +312,21 @@ def get_match_groupIds_from_only(matchCollection, mergeCollections=None,
                                  render=None, owner=None,
                                  host=None, port=None,
                                  session=requests.session(), **kwargs):
+    '''get all the source pGroupIds in a matchCollection
+
+    :func:`renderapi.render.renderaccess` decorated function
+
+    Args:  
+        matchCollection (str): matchCollection name
+        owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+                    (note match owner != stack owner always) 
+        render (RenderClient): RenderClient connection object
+        session (requests.session.Session): requests session
+    Returns:
+        list[str]: pGroupIds in matchCollection
+    Raises:
+        RenderError: if cannot get a reponse from server
+    '''                 
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/pGroupIds" % (owner, matchCollection)
     request_url = add_merge_collections(request_url, mergeCollections)
@@ -184,7 +344,22 @@ def get_match_groupIds_from_only(matchCollection, mergeCollections=None,
 def get_match_groupIds_to_only(matchCollection, mergeCollections=None,
                                render=None, owner=None,
                                host=None, port=None,
-                               session=requests.session(), **kwargs):
+                              session=requests.session(), **kwargs):
+    '''get all the destination qGroupIds in a matchCollection
+
+    :func:`renderapi.render.renderaccess` decorated function
+
+    Args:  
+        matchCollection (str): matchCollection name
+        owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+                    (note match owner != stack owner always) 
+        render (RenderClient): RenderClient connection object
+        session (requests.session.Session): requests session
+    Returns:
+        list[str]: qGroupIds in matchCollection
+    Raises:
+        RenderError: if cannot get a reponse from server
+    ''' 
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/qGroupIds" % (owner, matchCollection)
     request_url = add_merge_collections(request_url, mergeCollections)
@@ -199,10 +374,32 @@ def get_match_groupIds_to_only(matchCollection, mergeCollections=None,
 
 
 @renderaccess
-def get_matches_involving_tile(matchCollection, pGroupId, pTileId,
+def get_matches_involving_tile(matchCollection, groupId, id,
                                mergeCollections=None,
                                owner=None, host=None, port=None,
                                session=requests.session(), **kwargs):
+    '''get all the matches involving a specific tile
+     returns all matches where groupId == pGroupId and id == pId
+     OR
+     groupId == qGroupId and id == qId
+
+    :func:`renderapi.render.renderaccess` decorated function
+
+    Args:  
+        matchCollection (str): matchCollection name
+        groupId (str): groupId to query
+        id (str): id to query
+        mergeCollections (list[str] or None): other matchCollections
+                                              to aggregate into answer
+        owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+                     (note match owner != stack owner always) 
+        render (RenderClient): RenderClient connection object
+        session (requests.session.Session): requests session
+    Returns:
+        list[dict]: list of matches (see matches definition)
+    Raises:
+        RenderError: if cannot get a reponse from server
+    '''         
     request_url = format_baseurl(host, port) + \
         "/owner/{}/matchCollection/{}/group/{}/id/{}/".format(
             owner, matchCollection, pGroupId, pTileId)
@@ -222,6 +419,27 @@ def delete_point_matches_between_groups(matchCollection, pGroupId, qGroupId,
                                         render=None, owner=None, host=None,
                                         port=None, session=requests.session(),
                                         **kwargs):
+    '''delete all the matches between two specific groups
+    deletes all matches where (pgroup == pGroupId and qgroup == qGroupId)
+    OR (pgroup == qGroupId and qgroup == pGroupId()
+
+    :func:`renderapi.render.renderaccess` decorated function
+
+    Args:  
+        matchCollection (str): matchCollection name
+        pgroup (str): first group
+        qgroup (str): second group
+        mergeCollections (list[str] or None): other matchCollections
+                                            to aggregate into answer
+        owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+                    (note match owner != stack owner always) 
+        render (RenderClient): RenderClient connection object
+        session (requests.session.Session): requests session
+    Returns:
+        list[dict]: list of matches (see matches definition)
+    Raises:
+        RenderError: if cannot get a reponse from server
+    '''
     request_url = format_baseurl(host, port) + \
         "/owner/{}/matchCollection/{}/group/{}/matchesWith/{}".format(
             owner, matchCollection, pGroupId, qGroupId)
@@ -238,6 +456,20 @@ def delete_point_matches_between_groups(matchCollection, pGroupId, qGroupId,
 @renderaccess
 def import_matches(matchCollection, data, owner=None, host=None, port=None,
                    session=requests.session(), render=None, **kwargs):
+    '''import matches into render database
+
+    :func:`renderapi.render.renderaccess` decorated function
+
+    Args:  
+        matchCollection (str): matchCollection name
+        data (list[dict]): list of matches to import (see matches definition)
+        owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+                    (note match owner != stack owner always) 
+        render (RenderClient): RenderClient connection object
+        session (requests.session.Session): requests session
+    Returns:
+        requests.response.Reponse: server response
+    '''
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/matches" % (owner, matchCollection)
     logger.debug(request_url)
