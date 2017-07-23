@@ -72,21 +72,21 @@ def get_matchcollections(owner=None, host=None, port=None,
 def get_match_groupIds(matchCollection, owner=None, host=None,
                        port=None, session=requests.session(),
                        render=None, **kwargs):
-        '''get all the groupIds in a matchCollection
+    '''get all the groupIds in a matchCollection
 
-        :func:`renderapi.render.renderaccess` decorated function
+    :func:`renderapi.render.renderaccess` decorated function
 
-        Args:  
-            matchCollection (str): matchCollection name
-            owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
-                        (note match owner != stack owner always) 
-            render (RenderClient): RenderClient connection object
-            session (requests.session.Session): requests session
-        Returns:
-            list[str]: groupIds in matchCollection
-        Raises:
-            RenderError: if cannot get a reponse from server
-        '''
+    Args:  
+        matchCollection (str): matchCollection name
+        owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+                    (note match owner != stack owner always) 
+        render (RenderClient): RenderClient connection object
+        session (requests.session.Session): requests session
+    Returns:
+        list[str]: groupIds in matchCollection
+    Raises:
+        RenderError: if cannot get a reponse from server
+    '''
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/groupIds" % (owner, matchCollection)
     r = session.get(request_url)
@@ -103,8 +103,8 @@ def get_matches_outside_group(matchCollection, groupId, mergeCollections=None,
                               owner=None, host=None,
                               port=None, session=requests.session(),
                               render=None, **kwargs):
-     '''get all the matches outside a groupId in a matchCollection
-     returns all matches where pGroupId == groupId and qGroupId != groupId
+    '''get all the matches outside a groupId in a matchCollection
+    returns all matches where pGroupId == groupId and qGroupId != groupId
 
     :func:`renderapi.render.renderaccess` decorated function
 
@@ -140,8 +140,8 @@ def get_matches_within_group(matchCollection, groupId, mergeCollections=None,
                              owner=None, host=None, port=None,
                              session=requests.session(),
                              render=None, **kwargs):
-     '''get all the matches within a groupId in a matchCollection
-     returns all matches where pGroupId == groupId and qGroupId == groupId
+    '''get all the matches within a groupId in a matchCollection
+    returns all matches where pGroupId == groupId and qGroupId == groupId
 
     :func:`renderapi.render.renderaccess` decorated function
 
@@ -215,11 +215,19 @@ def get_matches_from_group_to_group(matchCollection, pgroup, qgroup,
         raise RenderError(r.text)
 
 
-def add_merge_collections(request_url, mergeCollections):
-    if mergeCollections is not None:
-        if type(mergeCollections) is list:
+def add_merge_collections(request_url, mcs):
+    '''utility function to add mergeCollections to request_url
+
+    Args:
+        request_url (str): request url
+        mcs (list[str]): list of mergeCollections to add
+    Returns:
+        str: request_url with ?mergeCollection=mc[0]&mergeCollection=mc[1]... appended
+    '''
+    if mcs is not None:
+        if type(mcs) is list:
             request_url += "?"+"&".join(
-                ['mergeCollection=%s' % mc for mc in mergeCollections])
+                ['mergeCollection=%s' % mc for mc in mcs])
     return request_url
 
 
@@ -229,13 +237,13 @@ def get_matches_from_tile_to_tile(matchCollection, pgroup, pid,
                                   render=None, owner=None,
                                   host=None, port=None,
                                   session=requests.session(), **kwargs):
-     '''get all the matches between two specific tiles
-     returns all matches where 
-     pgroup == pGroupId and pid=pId and qgroup == qGroupId and qid == qId
-     OR
-     qgroup == pGroupId and Qid=pId and Pgroup == qGroupId and pid == qId
+    '''get all the matches between two specific tiles
+    returns all matches where 
+    pgroup == pGroupId and pid=pId and qgroup == qGroupId and qid == qId
+    OR
+    qgroup == pGroupId and Qid=pId and Pgroup == qGroupId and pid == qId
  
-     :func:`renderapi.render.renderaccess` decorated function
+    :func:`renderapi.render.renderaccess` decorated function
 
     Args:  
         matchCollection (str): matchCollection name
@@ -274,8 +282,8 @@ def get_matches_with_group(matchCollection, pgroup, mergeCollections=None,
                            render=None, owner=None,
                            host=None, port=None,
                            session=requests.session(), **kwargs):
-     '''get all the matches from a specific groups
-     returns all matches where pgroup == pGroupId 
+    '''get all the matches from a specific groups
+    returns all matches where pgroup == pGroupId 
 
     :func:`renderapi.render.renderaccess` decorated function
 
