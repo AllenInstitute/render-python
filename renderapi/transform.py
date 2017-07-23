@@ -26,6 +26,13 @@ except ImportError as e:
 
 
 class TransformList:
+    ''' A list of Transforms
+
+    Args:
+        tforms (Transform): transforms to apply
+        transformId (str): uniqueId for this TransformList
+        json (dict): json compatible dictionary to create TransformList via :method:`from_dict`
+    '''
     def __init__(self, tforms=None, transformId=None, json=None):
         if json is not None:
             self.from_dict(json)
@@ -41,6 +48,10 @@ class TransformList:
             self.transformId = transformId
 
     def to_dict(self):
+        ''' serialization function
+        Returns:
+            dict: json & render compatible representation of this TransformList
+        '''
         d = {}
         d['type'] = 'list'
         d['specList'] = [tform.to_dict() for tform in self.tforms]
@@ -49,9 +60,17 @@ class TransformList:
         return d
 
     def to_json(self):
+        ''' serialization function
+        Returns:
+            str: string representation of the json & render representation of this TransformList
+        '''
         return json.dumps(self.to_dict())
 
     def from_dict(self, d):
+        ''' deserialization function
+        Args:
+            d (dict): json compatible dictionary representation of this TransformList
+        '''
         self.tforms = []
         if d is not None:
             self.transformId = d.get('id')
@@ -61,6 +80,17 @@ class TransformList:
 
 
 def load_transform_json(d, default_type='leaf'):
+    '''function to get the proper deserialization function
+
+    Args:
+        d (dict): json compatible representation of Transform
+        default_type (str): what kind of transform should we assume this
+        if it is not specified in 'type' ('leaf','list','ref','interpolated')
+    Returns:
+        func: proper function to deserialize this transformation
+    Raises:
+        KeyError: if d['type'] isn't one of ('leaf','list','ref','interpolated')
+    '''
     handle_load_tform = {'leaf': load_leaf_json,
                          'list': lambda x: TransformList(json=x),
                          'ref': lambda x: ReferenceTransform(json=x),
@@ -73,6 +103,17 @@ def load_transform_json(d, default_type='leaf'):
 
 
 def load_leaf_json(d):
+    '''function to get the proper deserialization function for leaf transforms
+
+    Args:
+        d (dict): json compatible representation of leaf transform to deserialize
+    Returns:
+        func: proper function to deserialize this transformation
+    Raises:
+        RenderError: if d['type']!= leaf or is omitted
+        KeyError: if d['type'] does not indicate one of AffineModel, Polynomial2DTransform
+        TranslationModel, RigidModel, or SimilarityModel
+    '''
     handle_load_leaf = {
         AffineModel.className: lambda x: AffineModel(json=x),
         Polynomial2DTransform.className:
@@ -97,11 +138,12 @@ def load_leaf_json(d):
 class InterpolatedTransform:
     '''
     Transform spec defined by linear interpolation of two other transform specs
-    inputs:
-        a -- transform spec at minimum weight
-        b -- transform spec at maximum weight
-        lambda_ -- float value (0.-1.) which defines evaluation of the
+    Args:
+        a (Transform):transform at minimum weight
+        b (Transform):transform at maximum weight
+        lambda_ (float): value (0.-1.) which defines evaluation of the
             linear interpolation between a (at 0) and b (at 1)
+        json (dict): json compatible representation of this transform to initialize via :method:`self.from_dict`
     '''
     def __init__(self, a=None, b=None, lambda_=None, json=None):
         if json is not None:
@@ -112,9 +154,17 @@ class InterpolatedTransform:
             self.lambda_ = lambda_
 
     def to_dict(self):
+        '''serialization routine
+        Returns:
+            dict: json compatible representation
+        '''
         return dict(self)
 
     def from_dict(self, d):
+        ''' deserialization routine
+        Args:
+            d (dict): json compatible representation
+        '''
         self.a = load_transform_json(d['a'])
         self.b = load_transform_json(d['b'])
         self.lambda_ = d['lambda']
@@ -127,6 +177,12 @@ class InterpolatedTransform:
 
 
 class ReferenceTransform:
+    '''Transform which is simply a reference to a transform stored elsewhere
+
+    Args:
+        refId (str): transformId of the referenced transform
+        json (dict): json compatible representation of this transform
+    '''
     def __init__(self, refId=None, json=None):
         if json is not None:
             self.from_dict(json)
@@ -134,12 +190,20 @@ class ReferenceTransform:
             self.refId = refId
 
     def to_dict(self):
+        '''serialization routine
+        Returns:
+            dict: json compatible representation of this transform
+        '''
         d = {}
         d['type'] = 'ref'
         d['refId'] = self.refId
         return d
 
     def from_dict(self, d):
+        ''' deserialization routine
+        Args:
+            d (dict): json compatible representation of this transform
+        '''
         self.refId = d['refId']
 
     def __str__(self):
@@ -153,6 +217,14 @@ class ReferenceTransform:
 
 
 class Transform(object):
+    '''Base transformation class
+
+    Args:
+        className (str): mpicbg java classname of this transform
+        dataString (str): string reprsentation of this transform as speced by mpicbg java class library
+        transformId (str or None): unique Id for this transform (optional)
+        json (dict): json compatible representation of this transform
+    '''
     def __init__(self, className=None, dataString=None,
                  transformId=None, json=None):
         if json is not None:
@@ -163,6 +235,10 @@ class Transform(object):
             self.transformId = transformId
 
     def to_dict(self):
+        '''serialization routine
+        Returns:
+            dict: json compatible representation of this transform
+        '''
         d = {}
         d['type'] = 'leaf'
         d['className'] = self.className
@@ -172,11 +248,18 @@ class Transform(object):
         return d
 
     def from_dict(self, d):
+        ''' deserialization routine
+        Args:
+            d (dict): json compatible representation of this transform
+        '''
         self.className = d['className']
         self.transformId = d.get('transformId', None)
         self._process_dataString(d['dataString'])
 
     def _process_dataString(self, datastring):
+        ''' method meant to set state of transform from datastring
+        generic implementation only saves datastring at self.dataString.
+        should rewrite for all transform classes that want to implement tform,fit,etc'''
         self.dataString = datastring
 
     def __str__(self):
@@ -194,6 +277,22 @@ class Transform(object):
 
 
 class AffineModel(Transform):
+    '''Linear 2d Transformation
+    mpicbg classname: mpicbg.trakem2.transform.AffineModel2D
+    implements this simple math
+    x'=M00*x + M01*x + B0
+    y'=M10*x + M11*y + B1
+
+    Args:
+        M00 (float): x'+=M00*x 
+        M01 (float): x'+=M01*y
+        M10 (float): y'+=M10*x
+        M11 (float): y'+=M11*y
+        B0 (float): x'+=B0
+        B1 (float): y'+=B1
+        transformId (str): unique transformId for this transform (optional)
+        json (dict): json compatible representation of this transform
+    '''
     className = 'mpicbg.trakem2.transform.AffineModel2D'
 
     def __init__(self, M00=1.0, M01=0.0, M10=0.0, M11=1.0, B0=0.0, B1=0.0,
@@ -213,6 +312,7 @@ class AffineModel(Transform):
 
     @property
     def dataString(self):
+        '''dataString string for this transform'''
         return "%.10f %.10f %.10f %.10f %.10f %.10f" % (
             self.M[0, 0], self.M[1, 0], self.M[0, 1],
             self.M[1, 1], self.M[0, 2], self.M[1, 2])
@@ -231,6 +331,7 @@ class AffineModel(Transform):
         self.load_M()
 
     def load_M(self):
+        '''method to take the attribute of self and fill in self.M'''
         self.M = np.identity(3, np.double)
         self.M[0, 0] = self.M00
         self.M[0, 1] = self.M01
@@ -241,6 +342,14 @@ class AffineModel(Transform):
 
     @staticmethod
     def fit(A, B):
+        '''function to fit this transform given the corresponding sets of points A & B
+        
+        Args:
+            A (numpy.array): a Nx2 matrix of source points
+            B (numpy.array): a Nx2 matrix of destination points
+        Returns:
+            numpy.array: a 6x1 matrix with the best fit parameters ordered M00,M01,M10,M11,B0,B1
+        '''
         if not all([A.shape[0] == B.shape[0], A.shape[1] == B.shape[1] == 2]):
             raise EstimationError(
                 'shape mismatch! A shape: {}, B shape {}'.format(
@@ -260,6 +369,17 @@ class AffineModel(Transform):
         return Tvec
 
     def estimate(self, A, B, return_params=True, **kwargs):
+        '''method for setting this transformation with the best fit given the corresponding points A,B
+
+        Args:
+            A (numpy.array): a Nx2 matrix of source points
+            B (numpy.array): a Nx2 matrix of destination points
+            return_params (boolean): whether to return the parameter matrix
+            **kwargs (dict): keyword arguments to pass to self.fit
+        Returns:
+            numpy.array: a 2x3 matrix of parameters for this matrix, laid out (x,y) x (x,y,offset) 
+            (or None if return_params=False)
+        '''
         Tvec = self.fit(A, B, **kwargs)
         self.M00 = Tvec[0, 0]
         self.M10 = Tvec[2, 0]
@@ -273,7 +393,8 @@ class AffineModel(Transform):
 
     def concatenate(self, model):
         '''
-        concatenate a model to this model -- ported from trakEM2 below:
+        concatenate a model to this model -- ported from trakEM2 below::
+
             final double a00 = m00 * model.m00 + m01 * model.m10;
             final double a01 = m00 * model.m01 + m01 * model.m11;
             final double a02 = m00 * model.m02 + m01 * model.m12 + m02;
@@ -281,6 +402,11 @@ class AffineModel(Transform):
             final double a10 = m10 * model.m00 + m11 * model.m10;
             final double a11 = m10 * model.m01 + m11 * model.m11;
             final double a12 = m10 * model.m02 + m11 * model.m12 + m12;
+
+        Args:
+            model (AffineModel): model to concatenate to this one
+        Returns:
+            AffineModel: model after concatenating model with this model
         '''
         a00 = self.M[0, 0] * model.M[0, 0] + self.M[0, 1] * model.M[1, 0]
         a01 = self.M[0, 0] * model.M[0, 1] + self.M[0, 1] * model.M[1, 1]
@@ -296,6 +422,11 @@ class AffineModel(Transform):
         return newmodel
 
     def invert(self):
+        '''return an inverted version of this transformation
+
+        Returns:
+            AffineModel: an inverted version of this transformation
+        '''
         inv_M = np.linalg.inv(self.M)
         Ai = AffineModel(inv_M[0, 0], inv_M[0, 1], inv_M[1, 0],
                          inv_M[1, 1], inv_M[0, 2], inv_M[1, 2])
@@ -303,6 +434,13 @@ class AffineModel(Transform):
 
     @staticmethod
     def convert_to_point_vector(points):
+        '''method to help reshape x,y points to x,y,1 vectors
+
+        Args:
+            points (numpy.array): a Nx2 array of x,y points
+        Returns:
+            numpy.arary: a Nx3 array of x,y,1 points used for transformations
+        '''
         Np = points.shape[0]
         onevec = np.ones((Np, 1), np.double)
 
@@ -314,16 +452,38 @@ class AffineModel(Transform):
         return points, Nd
 
     @staticmethod
-    def convert_points_vector_to_array(points, Nd):
+    def convert_points_vector_to_array(points, Nd=2):
+        '''method for convertion x,y,K points to x,y vectors
+
+        Args:
+            points (numpy.array): a Nx3 vector of points after transformation
+            Nd (int): the number of dimensions to cutoff (should be 2)
+        Returns:
+            numpy.array: a Nx2 array of x,y points
+        '''
         points = points[:, 0:Nd] / np.tile(points[:, 2], (Nd, 1)).T
         return points
 
     def tform(self, points):
+        '''transform a set of points through this transformation
+
+        Args:
+            points (numpy.array): a Nx2 array of x,y points
+        Returns:
+            numpy.array: a Nx2 array of x,y points after transformation
+        '''
         points, Nd = self.convert_to_point_vector(points)
         pt = np.dot(self.M, points.T).T
         return self.convert_points_vector_to_array(pt, Nd)
 
     def inverse_tform(self, points):
+        '''transform a set of points through the inverse of this transformation
+
+        Args:
+            points (numpy.array): a Nx2 array of x,y points
+        Returns:
+            numpy.array: a Nx2 array of x,y points after inverse transformation
+        '''
         points, Nd = self.convert_to_point_vector(points)
         pt = np.dot(np.linalg.inv(self.M), points.T).T
         return self.convert_points_vector_to_array(pt, Nd)
@@ -372,20 +532,48 @@ class TranslationModel(AffineModel):
 
     @staticmethod
     def fit(src, dst):
+        '''function to fit this transform given the corresponding sets of points src & dst
+        
+        Args:
+            src (numpy.array): a Nx2 matrix of source points
+            dst (numpy.array): a Nx2 matrix of destination points
+        Returns:
+            numpy.array: a 6x1 matrix with the best fit parameters ordered M00,M01,M10,M11,B0,B1
+        '''
         t = dst.mean(axis=0) - src.mean(axis=0)
         T = np.eye(3)
         T[:2, 2] = t
         return T
 
     def estimate(self, src, dst, return_params=True):
+        '''method for setting this transformation with the best fit given the corresponding points src,dst
+
+        Args:
+            src (numpy.array): a Nx2 matrix of source points
+            dst (numpy.array): a Nx2 matrix of destination points
+            return_params (boolean): whether to return the parameter matrix
+        Returns:
+            numpy.array: a 2x3 matrix of parameters for this matrix, laid out (x,y) x (x,y,offset) 
+            (or None if return_params=False)
+        '''
         self.M = self.fit(src, dst)
         if return_params:
             return self.M
 
 
 class RigidModel(AffineModel):
-    className = 'mpicbg.trakem2.transform.RigidModel2D'
+    '''model for storing Rigid only transformations 
+    (rotation+translation)
+    or
+    (determinate=1, orthonormal eigenvectors)
+    
+    For now only default (identity) or json based initialization is supported
 
+    Args:
+        json (dict): json compatible representation of this transform        
+    '''
+    className = 'mpicbg.trakem2.transform.RigidModel2D'
+    
     def __init__(self, *args, **kwargs):
         super(RigidModel, self).__init__(*args, **kwargs)
         # raise NotImplementedError(
@@ -404,8 +592,15 @@ class RigidModel(AffineModel):
 
     @staticmethod
     def fit(src, dst, rigid=True, **kwargs):
-        '''
+        '''function to fit this transform given the corresponding sets of points src & dst
         Umeyama estimation of similarity transformation
+        
+        Args:
+            src (numpy.array): a Nx2 matrix of source points
+            dst (numpy.array): a Nx2 matrix of destination points
+            rigid (boolean): whether to constrain this transform to be rigid
+        Returns:
+            numpy.array: a 6x1 matrix with the best fit parameters ordered M00,M01,M10,M11,B0,B1
         '''
         # TODO shape assertion
         num, dim = src.shape
@@ -444,12 +639,29 @@ class RigidModel(AffineModel):
         return T
 
     def estimate(self, A, B, return_params=True, **kwargs):
+        '''method for setting this transformation with the best fit given the corresponding points src,dst
+
+        Args:
+            A (numpy.array): a Nx2 matrix of source points
+            B (numpy.array): a Nx2 matrix of destination points
+            return_params (boolean): whether to return the parameter matrix
+        Returns:
+            numpy.array: a 2x3 matrix of parameters for this matrix, laid out (x,y) x (x,y,offset) 
+            (or None if return_params=False)
+        '''
         self.M = self.fit(A, B, **kwargs)
         if return_params:
             return self.M
 
 
 class SimilarityModel(RigidModel):
+    '''class for reprsenting Similarity transformations 
+    (translation+rotation+scaling)
+    or 
+    (orthogonal eigen vectors with equal eigenvalues)
+
+
+    '''
     className = 'mpicbg.trakem2.transform.SimilarityModel2D'
 
     def __init__(self, *args, **kwargs):
@@ -470,6 +682,16 @@ class SimilarityModel(RigidModel):
 
     @staticmethod
     def fit(src, dst, rigid=False, **kwargs):
+        '''function to fit this transform given the corresponding sets of points src & dst
+        Umeyama estimation of similarity transformation
+        
+        Args:
+            src (numpy.array): a Nx2 matrix of source points
+            dst (numpy.array): a Nx2 matrix of destination points
+            rigid (boolean): whether to constrain this transform to be rigid
+        Returns:
+            numpy.array: a 6x1 matrix with the best fit parameters ordered M00,M01,M10,M11,B0,B1
+        '''
         return RigidModel.fit(src, dst, rigid=rigid)
 
     # def estimate(self, src, dst, **kwargs):
@@ -483,27 +705,19 @@ class Polynomial2DTransform(Transform):
                  force_polynomial=True, params=None, identity=False,
                  json=None)
     This provides 5 different ways to initialize the transform which are
-    mutually exclusive and applied in the following order.
+    mutually exclusive and applied in the order specified here.
+    
+    1)json2)dataString,3)identity,4)params,5)(src,dst)
 
-    1st
-    json = a json dictonary representation of the Polynomial2DTransform
-    generally used by TransformList
-
-    2nd
-    dataString = dataString representation of transform from mpicpg
-
-    3rd
-    identity = make this transform the identity
-
-    4th
-    params = 2xK np.array of polynomial coefficents up to order K
-
-    5th
-    src,dst = Nx2 np.array of source and dst points to use to estimate
-    transformation
-    order = integer degree of polynomial to fit when using src,dst
-
-
+    Args:
+        json (dict): dictonary representation of the Polynomial2DTransform generally used by TransformList
+        dataString (dict): dataString representation of transform from mpicpg
+        identity (boolean): whether to make this transform the identity
+        params (numpy.array): 2xK matrix of polynomial coefficents up to order K
+        src (numpy.array): Nx2 array of source points to use for fitting (used with dst)
+        dst (numpy.array): Nx2 array of destination points to use for fitting (used with src)
+        order (int): degree of polynomial to store
+        force_polynomial (boolean): whether to force this representation to be stored with degree order
     TODO:
         fall back to Affine Model in special cases
     '''
