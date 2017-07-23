@@ -33,6 +33,7 @@ class TransformList:
         transformId (str): uniqueId for this TransformList
         json (dict): json compatible dictionary to create TransformList via :method:`from_dict`
     '''
+
     def __init__(self, tforms=None, transformId=None, json=None):
         if json is not None:
             self.from_dict(json)
@@ -111,8 +112,8 @@ def load_leaf_json(d):
         func: proper function to deserialize this transformation
     Raises:
         RenderError: if d['type']!= leaf or is omitted
-        KeyError: if d['type'] does not indicate one of AffineModel, Polynomial2DTransform
-        TranslationModel, RigidModel, or SimilarityModel
+        KeyError: if d['type'] does not indicate one of AffineModel,
+            Polynomial2DTransform, TranslationModel, RigidModel, or SimilarityModel
     '''
     handle_load_leaf = {
         AffineModel.className: lambda x: AffineModel(json=x),
@@ -145,6 +146,7 @@ class InterpolatedTransform:
             linear interpolation between a (at 0) and b (at 1)
         json (dict): json compatible representation of this transform to initialize via :method:`self.from_dict`
     '''
+
     def __init__(self, a=None, b=None, lambda_=None, json=None):
         if json is not None:
             self.from_dict(json)
@@ -183,6 +185,7 @@ class ReferenceTransform:
         refId (str): transformId of the referenced transform
         json (dict): json compatible representation of this transform
     '''
+
     def __init__(self, refId=None, json=None):
         if json is not None:
             self.from_dict(json)
@@ -225,6 +228,7 @@ class Transform(object):
         transformId (str or None): unique Id for this transform (optional)
         json (dict): json compatible representation of this transform
     '''
+
     def __init__(self, className=None, dataString=None,
                  transformId=None, json=None):
         if json is not None:
@@ -343,7 +347,7 @@ class AffineModel(Transform):
     @staticmethod
     def fit(A, B):
         '''function to fit this transform given the corresponding sets of points A & B
-        
+
         Args:
             A (numpy.array): a Nx2 matrix of source points
             B (numpy.array): a Nx2 matrix of destination points
@@ -533,7 +537,7 @@ class TranslationModel(AffineModel):
     @staticmethod
     def fit(src, dst):
         '''function to fit this transform given the corresponding sets of points src & dst
-        
+
         Args:
             src (numpy.array): a Nx2 matrix of source points
             dst (numpy.array): a Nx2 matrix of destination points
@@ -566,14 +570,14 @@ class RigidModel(AffineModel):
     (rotation+translation)
     or
     (determinate=1, orthonormal eigenvectors)
-    
+
     For now only default (identity) or json based initialization is supported
 
     Args:
         json (dict): json compatible representation of this transform        
     '''
     className = 'mpicbg.trakem2.transform.RigidModel2D'
-    
+
     def __init__(self, *args, **kwargs):
         super(RigidModel, self).__init__(*args, **kwargs)
         # raise NotImplementedError(
@@ -594,7 +598,7 @@ class RigidModel(AffineModel):
     def fit(src, dst, rigid=True, **kwargs):
         '''function to fit this transform given the corresponding sets of points src & dst
         Umeyama estimation of similarity transformation
-        
+
         Args:
             src (numpy.array): a Nx2 matrix of source points
             dst (numpy.array): a Nx2 matrix of destination points
@@ -684,7 +688,7 @@ class SimilarityModel(RigidModel):
     def fit(src, dst, rigid=False, **kwargs):
         '''function to fit this transform given the corresponding sets of points src & dst
         Umeyama estimation of similarity transformation
-        
+
         Args:
             src (numpy.array): a Nx2 matrix of source points
             dst (numpy.array): a Nx2 matrix of destination points
@@ -706,7 +710,7 @@ class Polynomial2DTransform(Transform):
                  json=None)
     This provides 5 different ways to initialize the transform which are
     mutually exclusive and applied in the order specified here.
-    
+
     1)json2)dataString,3)identity,4)params,5)(src,dst)
 
     Args:
@@ -765,7 +769,7 @@ class Polynomial2DTransform(Transform):
     def fit(src, dst, order=2):
         '''function to fit this transform given the corresponding sets of points src & dst
         polynomial fit
-        
+
         Args:
             src (numpy.array): a Nx2 matrix of source points
             dst (numpy.array): a Nx2 matrix of destination points
@@ -820,7 +824,7 @@ class Polynomial2DTransform(Transform):
         Returns:
             numpy.array: a (2,(order+1)*(order+2)/2) matrix of parameters for this matrix
             (or None if return_params=False)
-        '''      
+        '''
         def fitgood(src, dst, params, atol=1e-3, rtol=0, **kwargs):
             '''check if model produces a 'good' result
                 True if all but rtol src points
@@ -878,7 +882,7 @@ class Polynomial2DTransform(Transform):
     @staticmethod
     def _format_raveled_params(raveled_params):
         '''method to reshape linear parameters into parameter matrix
-        
+
         Args:
             ravled_params (numpy.array): an K long vector of parameters
         Returns:
@@ -886,8 +890,8 @@ class Polynomial2DTransform(Transform):
         '''
 
         return np.array(
-            [[float(d) for d in raveled_params[:len(raveled_params)/2]],
-             [float(d) for d in raveled_params[len(raveled_params)/2:]]])
+            [[float(d) for d in raveled_params[:len(raveled_params) / 2]],
+             [float(d) for d in raveled_params[len(raveled_params) / 2:]]])
 
     def tform(self, points):
         '''transform a set of points through this transformation
@@ -913,7 +917,7 @@ class Polynomial2DTransform(Transform):
     def coefficients(self, order=None):
         '''
         determine number of coefficient terms in transform for a given order
-        
+
         Args:
             order (int or None): order of polynomial,  defaults to self.order
         Returns:
@@ -925,7 +929,7 @@ class Polynomial2DTransform(Transform):
 
     def asorder(self, order):
         '''return polynomial transform appoximation of this transformation with a lower order
-        
+
         Args:
             order (int): desired order (must have order> current order)
         Returns:
@@ -978,10 +982,9 @@ def estimate_dstpts(transformlist, src=None):
 def estimate_transformsum(transformlist, src=None, order=2):
     '''
     pseudo-composition of transforms in list of transforms using source point
-        transformation and a single estimation.
-        Will produce an Affine Model if all input transforms are Affine,
-           otherwise will produce a Polynomial of specified order
-    
+    transformation and a single estimation. Will produce an Affine Model if all 
+    input transforms are Affine, otherwise will produce a Polynomial of specified order
+
     Args:
         transformlist (list[Transform]): list of transform objects that implement tform
         src (numpy.array): Nx2 array of source points for estimation
@@ -1003,7 +1006,7 @@ def estimate_transformsum(transformlist, src=None, order=2):
     tforms = flatten(transformlist)
     if all([tform.className == AffineModel.className
             for tform in tforms]):
-                am = AffineModel()
-                am.estimate(A=src, B=dstpts, return_params=False)
-                return am
+        am = AffineModel()
+        am.estimate(A=src, B=dstpts, return_params=False)
+        return am
     return Polynomial2DTransform(src=src, dst=dstpts, order=order)
