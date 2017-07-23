@@ -746,21 +746,33 @@ class Polynomial2DTransform(Transform):
 
     @property
     def is_affine(self):
-        '''TODO allow default to Affine'''
+        '''(boolean) TODO allow default to Affine'''
         return False
         # return self.order
 
     @property
     def order(self):
+        '''(int) order of polynomial'''
         no_coeffs = len(self.params.ravel())
         return int((abs(np.sqrt(4 * no_coeffs + 1)) - 3) / 2)
 
     @property
     def dataString(self):
+        '''dataString of polynomial'''
         return Polynomial2DTransform._dataStringfromParams(self.params)
 
     @staticmethod
     def fit(src, dst, order=2):
+        '''function to fit this transform given the corresponding sets of points src & dst
+        polynomial fit
+        
+        Args:
+            src (numpy.array): a Nx2 matrix of source points
+            dst (numpy.array): a Nx2 matrix of destination points
+            order (boolean): order of polynomial to fit
+        Returns:
+            numpy.array: a (2,(order+1)*(order+2)/2) matrix with the best fit parameters 
+        '''
         xs = src[:, 0]
         ys = src[:, 1]
         xd = dst[:, 0]
@@ -796,7 +808,34 @@ class Polynomial2DTransform(Transform):
     def estimate(self, src, dst, order=2,
                  test_coords=True, max_tries=100, return_params=True,
                  **kwargs):
+        '''method for setting this transformation with the best fit given the corresponding points src,dst
+
+        Args:
+            src (numpy.array): a Nx2 matrix of source points
+            dst (numpy.array): a Nx2 matrix of destination points
+            order (int): order of polynomial to fit
+            test_coords (bool): whether to test model after fitting to make sure it is good (see fitgood) 
+            max_tries (int): how many times to attempt to fit the model (see fitgood)
+            return_params (bool): whether to return the parameter matrix
+        Returns:
+            numpy.array: a (2,(order+1)*(order+2)/2) matrix of parameters for this matrix
+            (or None if return_params=False)
+        '''      
         def fitgood(src, dst, params, atol=1e-3, rtol=0, **kwargs):
+            '''check if model produces a 'good' result
+                True if all but rtol src points
+                are transformed to within atol of dst points
+                by model described by params, otherwise False
+
+            Args:
+                src (numpy.array): a Nx2 matrix of source points
+                dst (numpy.array): a Nx2 matrix of destination points
+                params (numpy.array): a Kx2 matrix of parameters
+                atol (float): tolerance of how close is close enough
+                rtol (int): tolerance of how many outliers is acceptable
+            Result:
+                bool: whether the goodness condition is met
+            '''
             result = Polynomial2DTransform(params=params).tform(src)
             t = np.allclose(
                 result, dst,
@@ -825,6 +864,7 @@ class Polynomial2DTransform(Transform):
 
     @staticmethod
     def _dataStringfromParams(params=None):
+        '''method for producing a dataString from the parameters'''
         return ' '.join([str(i).replace('e-0', 'e-').replace('e+0', 'e+')
                          for i in params.flatten()]).replace('e', 'E')
 
@@ -837,11 +877,26 @@ class Polynomial2DTransform(Transform):
 
     @staticmethod
     def _format_raveled_params(raveled_params):
+        '''method to reshape linear parameters into parameter matrix
+        
+        Args:
+            ravled_params (numpy.array): an K long vector of parameters
+        Returns:
+            numpy.array: a (2,K/2) matrix of parameters, with first row for x and 2nd row for y
+        '''
+
         return np.array(
             [[float(d) for d in raveled_params[:len(raveled_params)/2]],
              [float(d) for d in raveled_params[len(raveled_params)/2:]]])
 
     def tform(self, points):
+        '''transform a set of points through this transformation
+
+        Args:
+            points (numpy.array): a Nx2 array of x,y points
+        Returns:
+            numpy.array: a Nx2 array of x,y points after transformation
+        '''
         dst = np.zeros(points.shape)
         x = points[:, 0]
         y = points[:, 1]
@@ -858,18 +913,23 @@ class Polynomial2DTransform(Transform):
     def coefficients(self, order=None):
         '''
         determine number of coefficient terms in transform for a given order
-        input: order of polynomial -- defaults to self.order
-        output: integer number of coefficient terms expected in transform
+        
+        Args:
+            order (int or None): order of polynomial,  defaults to self.order
+        Returns:
+            int: number of coefficient terms expected in transform
         '''
         if order is None:
             order = self.order
         return (order + 1) * (order + 2)
 
     def asorder(self, order):
-        '''
-        input: order > current order
-        output: new Transform object of selected order with coefficients
-            from self
+        '''return polynomial transform appoximation of this transformation with a lower order
+        
+        Args:
+            order (int): desired order (must have order> current order)
+        Returns:
+             Transform: transform of lower order
         '''
         if self.order > order:
             raise ConversionError(
@@ -882,9 +942,12 @@ class Polynomial2DTransform(Transform):
 
     @staticmethod
     def fromAffine(aff):
-        '''
-        input: AffineModel
-        output: Polynomial2DTransform defined by Affine model
+        ''' return a polynomial transformation equavalent to a given Affine
+
+        Args:
+            aff (AffineModel): transform to become equivalent to
+        Returns:
+            Polynomial2DTransform: transform equal in effect to aff
         '''
         if not isinstance(aff, AffineModel):
             raise ConversionError('attempting to convert a nonaffine model!')
@@ -896,10 +959,12 @@ class Polynomial2DTransform(Transform):
 def estimate_dstpts(transformlist, src=None):
     '''
     estimate destination points for list of transforms
-    input:
-        transformlist -- list of transform classes with tform method
-        src -- Nx2 numpy array of source points
-    output: Nx2 numpt array of destination points
+
+    Args:
+        transformlist (list[Transform]):transforms that have a tform method implemented
+        src (numpy.array): a Nx2  array of source points
+    Returns: 
+        numpy.array:Nx2 array of destination points
     '''
     dstpts = src
     for tform in transformlist:
@@ -916,11 +981,14 @@ def estimate_transformsum(transformlist, src=None, order=2):
         transformation and a single estimation.
         Will produce an Affine Model if all input transforms are Affine,
            otherwise will produce a Polynomial of specified order
-    inputs:
-        transformlist: recursive list of transform objects
-        src: Nx2 numpy array of source points for estimation
-        order: optional, order of Polynomial output if transformlist
+    
+    Args:
+        transformlist (list[Transform]): list of transform objects that implement tform
+        src (numpy.array): Nx2 array of source points for estimation
+        order (int): order of Polynomial output if transformlist
             inputs are non-Affine
+    Returns:
+        Polynomial2DTransform: best estimate of transformlist in a single transform of this order
     '''
     def flatten(l):
         for i in l:
