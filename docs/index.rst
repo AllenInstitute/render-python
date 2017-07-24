@@ -18,9 +18,10 @@ API
 .. toctree::
    :maxdepth: 3
 
+   guide/index
+   guide/pointmatchassumptions
    api/renderapi
-
-
+ 
 
 Indices and tables
 ==================
