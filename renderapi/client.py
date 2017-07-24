@@ -38,11 +38,14 @@ def import_single_json_file(stack, jsonfile, transformFile=None,
                             client_scripts=None, host=None, port=None,
                             owner=None, project=None, render=None, **kwargs):
     '''
-    calls client script to import given jsonfile:
-        stack: stack to import into
-        jsonfile: path to jsonfile to import
-        transformFile: path to a file that contains shared
+    calls client script to import given jsonfile
+
+    Args:
+        stack (str): stack to import into
+        jsonfile (str): path to jsonfile to import
+        transformFile (str): path to a file that contains shared
             transform references if necessary
+        render (renderapi.render.RenderClient): render connect object
     '''
     if transformFile is None:
         transform_params = []
@@ -67,16 +70,20 @@ def import_jsonfiles_and_transforms_parallel_by_z(
         client_scripts=None, host=None, port=None, owner=None,
         project=None, close_stack=True, render=None, **kwargs):
     '''
-    imports json files and transform files in parallel:
-        stack: the stack to import within
-        jsonfiles: "list of tilespec" jsons to import
-        transformfiles: "list of transform files" which matches
+    imports json files and transform files in parallel
+
+    Args:
+        stack (str): the stack to import within
+        jsonfiles (list[str]): "list of tilespec" json paths to import
+        transformfiles (list[str]): "list of transform files" paths which matches
             in a 1-1 way with jsonfiles, so referenced transforms
             are shared only within a single element of these matched lists.
             Useful cases where there is as single z transforms shared
             by all tiles within a single z, but not across z's
-        poolsize: number of processes for multiprocessing pool
-        close_stack: mark render stack as COMPLETE after successful import
+        poolsize (int): number of processes for multiprocessing pool
+        close_stack (bool): whether to mark render stack as COMPLETE after successful import
+        render (renderapi.render.RenderClient): render connect object
+
     '''
     set_stack_state(stack, 'LOADING', host, port, owner, project)
     partial_import = partial(import_single_json_file, stack, render=render,
@@ -96,12 +103,15 @@ def import_jsonfiles_parallel(
         project=None, close_stack=True, render=None, **kwargs):
     '''
     import jsons using client script in parallel
-        stack: the stack to upload into
-        jsonfiles: list of jsonfiles to upload
-        poolsize: number of upload processes spawned by multiprocessing pool
-        transformFile: a single json file containing transforms referenced
+
+    Args:
+        stack (str): the stack to upload into
+        jsonfiles (list[str]): list of jsonfile paths to upload
+        poolsize (int): number of upload processes spawned by multiprocessing pool
+        transformFile (str): a single json file path containing transforms referenced
             in the jsonfiles
-        close_stack: mark render stack as COMPLETE after successful import
+        close_stack (boolean): whether to mark render stack as COMPLETE after successful import
+        render (renderapi.render.RenderClient): render connect object
     '''
     set_stack_state(stack, 'LOADING', host, port, owner, project)
 
@@ -124,11 +134,15 @@ def import_jsonfiles(stack, jsonfiles, transformFile=None,
                      render=None, **kwargs):
     '''
     import jsons using client script serially
-        jsonfiles: iterator of filenames to be uploaded
-        transformFile: path to a jsonfile that contains shared
+
+    Args:
+        jsonfiles (list): iterator of filenames to be uploaded
+        transformFile (str): path to a jsonfile that contains shared
             transform references (if necessary)
-        close_stack: mark render stack as COMPLETE after successful import
+        close_stack (boolean): mark render stack as COMPLETE after successful import
+        render (renderapi.render.RenderClient): render connect object
     '''
+
     set_stack_state(stack, 'LOADING', host, port, owner, project)
     if transformFile is None:
         transform_params = []
@@ -158,6 +172,8 @@ def import_jsonfiles_validate_client(stack, jsonfiles,
                                      render=None, **kwargs):
     '''
     Uses java client for parallelization and validation
+
+
     '''
     transform_params = (['--transformFile', transformFile]
                         if transformFile is not None else [])
@@ -201,11 +217,14 @@ def import_tilespecs(stack, tilespecs, sharedTransforms=None,
                      owner=None, project=None, client_script=None,
                      memGB=None, render=None, **kwargs):
     '''
-    input:
-         stack -- stack to which tilespecs will be added
-         tilespecs -- list of tilespecs
-         sharedTransforms -- list of shared
+    method to import tilesepcs directly from :class:`renderapi.tilespec.TileSpec` objects
+
+    Args:
+         stack (str): stack to which tilespecs will be added
+         tilespecs (list[renderapi.tilespec.TileSpec]): list of tilespecs to import
+         sharedTransforms (list[renderapi.transform.Transform]): list of shared
              referenced transforms to be ingested
+         render (renderapi.render.RenderClient): render connect object
     '''
     tsjson = renderdump_temp(tilespecs)
 
@@ -231,14 +250,18 @@ def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
                               client_script=None, memGB=None, render=None,
                               **kwargs):
     '''
-    input:
-         stack -- stack to which tilespecs will be added
-         tilespecs -- list of tilespecs
-         sharedTransforms -- list of shared
+    method to import tilesepcs directly from :class:`renderapi.tilespec.TileSpec` objects
+    using pathos.multiprocessing to parallelize
+
+    Args:
+         stack (str): stack to which tilespecs will be added
+         tilespecs (list[renderapi.tilespec.TileSpec]): list of tilespecs to import
+         sharedTransforms (list[renderapi.transform.Transform]): list of shared
              referenced transforms to be ingested
-         poolsize -- degree of parallelism to use
-         subprocess_mode -- subprocess mode used when calling client side java
-         close_stack: mark render stack as COMPLETE after successful import
+         poolsize (int): degree of parallelism to use
+         subprocess_mode (str): subprocess mode used when calling client side java
+         close_stack (boolean): mark render stack as COMPLETE after successful import
+         render (renderapi.render.RenderClient): render connect object
     '''
     set_stack_state(stack, 'LOADING', host, port, owner, project)
     partial_import = partial(
@@ -264,11 +287,11 @@ def local_to_world_array(stack, points, tileId, subprocess_mode=None,
     '''
     placeholder function for coordinateClient localtoworld
 
-    inputs:
-        stack -- stack to which world coordinates are mapped
-        points -- local points to map to world
-        tileId -- tileId to which points correspond
-        subprocess_mode -- subprocess mode used when calling
+    Args:
+        stack (str): stack to which world coordinates are mapped
+        points (dict): local points to map to world
+        tileId (str): tileId to which points correspond
+        subprocess_mode (str): subprocess mode used when calling
             clientside java client
     outputs:
         list of points in world coordinates corresponding to local points
@@ -284,11 +307,14 @@ def world_to_local_array(stack, points, subprocess_mode=None,
     '''
     placeholder function for coordinateClient worldtolocal
 
-    inputs:
-        stack -- stack to which world coordinates are mapped
-        points -- world points in stack to map to local
-    outputs:
-        list of list of dictionaries defining local coordinates
+    Args:
+        stack (str): stack to which world coordinates are mapped
+        points (dict): local points to map to world
+        subprocess_mode (str): subprocess mode used when calling client side java
+        render (renderapi.render.RenderClient): render connect object
+
+    Returns:
+        list[list]: dictionaries defining local coordinates
             and tileIds corresponding to world point
     '''
     raise NotImplementedError('Whoops.')
