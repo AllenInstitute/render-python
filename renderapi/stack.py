@@ -436,7 +436,7 @@ def get_bounds_from_z(stack, z, host=None, port=None, owner=None,
         render (renderapi.render.Render): render connect object
         session (requests.sessions.Session): session object (default start a new one)
     Returns:
-        dict: bounds with keys minY,minY,maxX,maxY
+        dict: bounds with keys minY,minY,maxX,maxY,minZ,maxZ
     Raises:
         .errorr.RenderError
     '''
