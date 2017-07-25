@@ -143,7 +143,8 @@ def connect(host=None, port=None, owner=None, project=None,
             client_scripts=None, client_script=None, memGB=None,
             force_http=True, validate_client=True, web_only=False, **kwargs):
     '''
-    helper function to create a :class:`RenderClient` instance.
+    helper function to create a :class:`Render` instance, or :class:`RenderClient` 
+    if sufficent parameters are provided.
     Will default to using environment variables if not specified in call,
     and prompt user for any parameters that are not given.
 
