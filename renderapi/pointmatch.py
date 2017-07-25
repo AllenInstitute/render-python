@@ -25,7 +25,7 @@ def get_matchcollection_owners(host=None, port=None,
         render (RenderClient): RenderClient connection object
         session (requests.session.Session): requests session
     Returns:
-        list[str]: matchCollection owners
+        list[unicode]: matchCollection owners
     Raises:
         RenderError: if cannot get a reponse from server
     '''
@@ -48,12 +48,12 @@ def get_matchcollections(owner=None, host=None, port=None,
     :func:`renderapi.render.renderaccess` decorated function
 
     Args:  
-        owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+        owner (unicode): matchCollection owner (fallback to render.DEFAULT_OWNER)
                      (note match owner != stack owner always) 
         render (RenderClient): RenderClient connection object
         session (requests.session.Session): requests session
     Returns:
-        list[str]: matchcollections owned by owner
+        list[unicode]: matchcollections owned by owner
     Raises:
         RenderError: if cannot get a reponse from server
     '''
@@ -112,7 +112,7 @@ def get_matches_outside_group(matchCollection, groupId, mergeCollections=None,
         matchCollection (str): matchCollection name
         groupId (str): groupId to query
         mergeCollections (list[str]): other matchCollections to aggregate into answer
-        owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+        owner (unicode): matchCollection owner (fallback to render.DEFAULT_OWNER)
                      (note match owner != stack owner always) 
         render (RenderClient): RenderClient connection object
         session (requests.session.Session): requests session
@@ -150,7 +150,7 @@ def get_matches_within_group(matchCollection, groupId, mergeCollections=None,
         groupId (str): groupId to query
         mergeCollections (list[str] or None): other matchCollections
                                               to aggregate into answer
-        owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+        owner (unicode): matchCollection owner (fallback to render.DEFAULT_OWNER)
                      (note match owner != stack owner always) 
         render (RenderClient): RenderClient connection object
         session (requests.session.Session): requests session
@@ -192,7 +192,7 @@ def get_matches_from_group_to_group(matchCollection, pgroup, qgroup,
         qgroup (str): second group
         mergeCollections (list[str] or None): other matchCollections
                                             to aggregate into answer
-        owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+        owner (unicode): matchCollection owner (fallback to render.DEFAULT_OWNER)
                     (note match owner != stack owner always) 
         render (RenderClient): RenderClient connection object
         session (requests.session.Session): requests session
@@ -253,7 +253,7 @@ def get_matches_from_tile_to_tile(matchCollection, pgroup, pid,
         qid (str): second id
         mergeCollections (list[str] or None): other matchCollections
                                               to aggregate into answer
-        owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+        owner (unicode): matchCollection owner (fallback to render.DEFAULT_OWNER)
                      (note match owner != stack owner always) 
         render (RenderClient): RenderClient connection object
         session (requests.session.Session): requests session
@@ -292,7 +292,7 @@ def get_matches_with_group(matchCollection, pgroup, mergeCollections=None,
         pgroup (str): source group to query
         mergeCollections (list[str] or None): other matchCollections
                                               to aggregate into answer
-        owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+        owner (unicode): matchCollection owner (fallback to render.DEFAULT_OWNER)
                      (note match owner != stack owner always) 
         render (RenderClient): RenderClient connection object
         session (requests.session.Session): requests session
@@ -326,7 +326,7 @@ def get_match_groupIds_from_only(matchCollection, mergeCollections=None,
 
     Args:  
         matchCollection (str): matchCollection name
-        owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+        owner (unicode): matchCollection owner (fallback to render.DEFAULT_OWNER)
                     (note match owner != stack owner always) 
         render (RenderClient): RenderClient connection object
         session (requests.session.Session): requests session
@@ -359,7 +359,7 @@ def get_match_groupIds_to_only(matchCollection, mergeCollections=None,
 
     Args:  
         matchCollection (str): matchCollection name
-        owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+        owner (unicode): matchCollection owner (fallback to render.DEFAULT_OWNER)
                     (note match owner != stack owner always) 
         render (RenderClient): RenderClient connection object
         session (requests.session.Session): requests session
@@ -399,7 +399,7 @@ def get_matches_involving_tile(matchCollection, groupId, id,
         id (str): id to query
         mergeCollections (list[str] or None): other matchCollections
                                               to aggregate into answer
-        owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+        owner (unicode): matchCollection owner (fallback to render.DEFAULT_OWNER)
                      (note match owner != stack owner always) 
         render (RenderClient): RenderClient connection object
         session (requests.session.Session): requests session
@@ -439,7 +439,7 @@ def delete_point_matches_between_groups(matchCollection, pGroupId, qGroupId,
         qgroup (str): second group
         mergeCollections (list[str] or None): other matchCollections
                                             to aggregate into answer
-        owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+        owner (unicode): matchCollection owner (fallback to render.DEFAULT_OWNER)
                     (note match owner != stack owner always) 
         render (RenderClient): RenderClient connection object
         session (requests.session.Session): requests session
@@ -471,7 +471,7 @@ def import_matches(matchCollection, data, owner=None, host=None, port=None,
     Args:  
         matchCollection (str): matchCollection name
         data (list[dict]): list of matches to import (see matches definition)
-        owner (str): matchCollection owner (fallback to render.DEFAULT_OWNER)
+        owner (unicode): matchCollection owner (fallback to render.DEFAULT_OWNER)
                     (note match owner != stack owner always) 
         render (RenderClient): RenderClient connection object
         session (requests.session.Session): requests session
