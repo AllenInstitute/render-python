@@ -50,7 +50,7 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
         render (renderapi.render.Render): render connect object
         session (requests.sessions.Session): sessions object to connect with
     Returns:
-        numpy.array: [N,M,3] array of image data from render
+        numpy.array: [N,M,:] array of image data from render
     Raises:
         .errors.RenderError
     '''
@@ -109,7 +109,7 @@ def get_tile_image_data(stack, tileId, normalizeForMatching=True,
         render (renderapi.render.Render): render connect object
         session (requests.sessions.Session): sessions object to connect with
     Returns:
-        numpy.array: [N,M,3] array of image data from render
+        numpy.array: [N,M,:] array of image data from render
     Raises:
         .errors.RenderError
     '''
@@ -171,7 +171,7 @@ def get_section_image(stack, z, scale=1.0, filter=False,
         render (renderapi.render.Render): render connect object
         session (requests.sessions.Session): sessions object to connect with
     Returns:
-        numpy.array: [N,M,3] array of image data of section from render
+        numpy.array: [N,M,:] array of image data of section from render
     '''
     try:
         image_ext = IMAGE_FORMATS[img_format]
