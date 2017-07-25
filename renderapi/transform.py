@@ -142,7 +142,7 @@ class InterpolatedTransform:
     Args:
         a (Transform):transform at minimum weight
         b (Transform):transform at maximum weight
-        lambda_ (float): value (0.-1.) which defines evaluation of the
+        lambda_ (float): value in interval [0.,1.] which defines evaluation of the
             linear interpolation between a (at 0) and b (at 1)
         json (dict): json compatible representation of this transform to initialize via :method:`self.from_dict`
     '''
