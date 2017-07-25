@@ -174,7 +174,8 @@ def connect(host=None, port=None, owner=None, project=None,
         web_only (bool): whether to check environment variables/prompt user
             for client_scripts directory if not in arguments
     Returns:
-        RenderClient: a connect object to simplify specifying what render server to connect to
+        Render: a connect object to simplify specifying what render server to connect to
+            (returns :class:`RenderClient` if sufficent parameters are passed)
     '''
     if host is None:
         if 'RENDER_HOST' not in os.environ:
