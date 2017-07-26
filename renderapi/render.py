@@ -257,7 +257,7 @@ def connect(host=None, port=None, owner=None, project=None,
 
 
 @decorator
-def renderaccess(f):
+def renderaccess(f,*args,**kwargs):
     '''
     Decorator allowing functions asking for host, port, owner, project
         to default to a connection defined by a :class:`Render` object 
@@ -282,20 +282,18 @@ def renderaccess(f):
     Returns:
         func: decorated function
     '''
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        args, kwargs = fitargspec(f, args, kwargs)
-        render = kwargs.get('render')
-        if render is not None:
-            if isinstance(render, Render):
-                return f(*args, **render.make_kwargs(**kwargs))
-            else:
-                raise ValueError(
-                    'invalid Render object type {} specified!'.format(
-                        type(render)))
+    args, kwargs = fitargspec(f, args, kwargs)
+    render = kwargs.get('render')
+    if render is not None:
+        if isinstance(render, Render):
+            return f(*args, **render.make_kwargs(**kwargs))
         else:
-            return f(*args, **kwargs)
-    return wrapper
+            raise ValueError(
+                'invalid Render object type {} specified!'.format(
+                    type(render)))
+    else:
+        return f(*args, **kwargs)
+ 
 
 
 def format_baseurl(host, port):
