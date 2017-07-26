@@ -410,7 +410,7 @@ def get_matches_involving_tile(matchCollection, groupId, id,
     '''         
     request_url = format_baseurl(host, port) + \
         "/owner/{}/matchCollection/{}/group/{}/id/{}/".format(
-            owner, matchCollection, pGroupId, pTileId)
+            owner, matchCollection, groupId, id)
     request_url = add_merge_collections(request_url, mergeCollections)
 
     r = session.get(request_url)
