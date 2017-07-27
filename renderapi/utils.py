@@ -11,7 +11,7 @@ from .errors import RenderError
 
 
 class NullHandler(logging.Handler):
-    '''handler to avoid logging errors for, e.g., missing logger setup'''
+    """handler to avoid logging errors for, e.g., missing logger setup"""
     def emit(self, record):
         pass
 
@@ -21,23 +21,26 @@ logger.addHandler(NullHandler())
 
 
 class RenderEncoder(json.JSONEncoder):
-    '''
-    json Encoder in the following hierarchy for serialization:
+    """json Encoder in the following hierarchy for serialization:
         obj.to_dict()
         dict(obj)
         JsonEncoder.default(obj)
         obj.__dict__
-    '''
+    """
     def default(self, obj):
-        '''default encoder for that handles Render objects
+        """default encoder for that handles Render objects
 
-        Args:
-            obj (obj): any object that implements to_dict, dict(obj),
-                       JsonEncoder.default(obj), or __dict__ (in order)
-        Returns:
-            (dict): json encodable dictionary
- 
-        '''
+        Parameters
+        ----------
+        obj : obj
+            any object that implements to_dict, dict(obj),
+            JsonEncoder.default(obj), or __dict__ (in order)
+        Returns
+        -------
+        dict or list
+            json encodable datatype
+
+        """
         to_dict = getattr(obj, "to_dict", None)
         if callable(to_dict):
             return obj.to_dict()
@@ -58,19 +61,29 @@ class RenderEncoder(json.JSONEncoder):
 
 
 def post_json(session, request_url, d, params=None):
-    '''
-    POST requests with RenderError handling
+    """POST requests with RenderError handling
 
-    Args:
-        session (requests.session.Session): requests session
-        request_url (str): url
-        d (dict): data payload (will be json dumps-ed)
-        params (dict): requests parameters
-    Returns:
-        requests.response: server response
-    Raises:
-        RenderError: if cannot post
-    '''
+    Parameters
+    ----------
+    session : requests.session.Session
+        requests session
+    request_url : str
+        url
+    d : dict
+        data payload (will be json dumps-ed)
+    params : dict
+        requests parameters
+
+    Returns
+    -------
+    requests.response: server response
+
+    Raises
+    ------
+    RenderError
+        if cannot post
+    """
+
     headers = {"content-type": "application/json"}
     if d is not None:
         payload = json.dumps(d)
@@ -90,19 +103,29 @@ def post_json(session, request_url, d, params=None):
 
 
 def put_json(session, request_url, d, params=None):
-    '''
-    PUT requests with RenderError handling
+    """PUT requests with RenderError handling
 
-    Args:
-        session (requests.session.Session): requests session
-        request_url (str): url
-        d (dict): data payload (will be json dumps-ed)
-        params (dict): requests parameters
-    Returns:
-        requests.response: server response
-    Raises:
-        RenderError: if cannot post
-    '''
+    Parameters
+    ----------
+    session : requests.session.Session
+        requests session
+    request_url : str
+        url
+    d : dict
+        data payload (will be json dumps-ed)
+    params : dict
+        requests parameters
+
+    Returns
+    -------
+    requests.response
+        server response
+
+    Raises
+    ------
+    RenderError
+        if cannot post
+    """
 
     headers = {"content-type": "application/json"}
     if d is not None:
@@ -123,43 +146,61 @@ def put_json(session, request_url, d, params=None):
 
 
 def renderdumps(obj, *args, **kwargs):
-    '''json.dumps using the RenderEncode
-    
-    Args:
-        obj (obj): object to dumps
-        *args: json.dumps args
-        **kwargs: json.dumps kwargs
-    Returns:
-        str: serialized object
-    '''
+    """json.dumps using the RenderEncode
+
+    Parameters
+    ----------
+    obj : obj
+        object to dumps
+    *args
+        json.dumps args
+    **kwargs
+        json.dumps kwargs
+
+    Returns
+    -------
+    str
+        serialized object
+    """
     cls_ = kwargs.pop('cls', RenderEncoder)
     return json.dumps(obj, *args, cls=cls_, **kwargs)
 
 
 def renderdump(obj, *args, **kwargs):
-    '''json.dump using the RenderEncoder
-    
-    Args:
-        obj (obj): object to dumps
-        *args: json.dump args
-        **kwargs: json.dump kwargs
-    '''
+    """json.dump using the RenderEncoder
+
+    Parameters
+    ----------
+    obj : obj
+        object to dumps
+    *args
+        json.dump args
+    **kwargs
+        json.dump kwargs
+    """
     cls_ = kwargs.pop('cls', RenderEncoder)
     return json.dump(obj, *args, cls=cls_, **kwargs)
 
 
 def renderdump_temp(obj, *args, **kwargs):
-    '''json.dump into a temporary file
+    """json.dump into a temporary file
     renderdump_temp(obj), obj will be dumped through renderdump
     into a temporary file
 
-    Args:
-        obj (obj): object to dump
-        *args: json.dump args
-        **kwargs: json.dump kwargs
-    Returns:
-        str: path to location where temporary file was dumped
-    '''
+    Parameters
+    ----------
+    obj : obj
+        object to dump
+    *args
+        json.dump args
+    **kwargs
+        json.dump kwargs
+
+    Returns
+    -------
+    str
+        path to location where temporary file was dumped
+    """
 
     with tempfile.NamedTemporaryFile(
             suffix=".json", mode='w', delete=False) as tf:
@@ -169,14 +210,19 @@ def renderdump_temp(obj, *args, **kwargs):
 
 
 def jbool(val):
-    '''return string representing java string values of py booleans
-    
-    Args:
-        val (bool): boolean to encode
-    Returns: 
-        str: 'true' or 'false'
+    """return string representing java string values of py booleans
 
-    '''
+    Parameters
+    ----------
+    val : bool
+        boolean to encode
+
+    Returns
+    -------
+    str
+        'true' or 'false'
+
+    """
     if not isinstance(val, bool):
         logger.warning('Evaluating javastring of non-boolean {} {}'.format(
             type(val), val))
@@ -184,39 +230,55 @@ def jbool(val):
 
 
 def stripLogger(logger_tostrip):  # pragma: no cover
-    '''
-    remove all handlers from a logger -- useful for redefining
-    Args:
-        logger_tostrip (logging.Logger): logging logger to strip
-    '''
+    """remove all handlers from a logger -- useful for redefining
+
+    Parameters
+    ----------
+    logger_tostrip : :class:`logging.Logger`
+        logging logger to strip
+    """
     if logger_tostrip.handlers:
         for handler in logger_tostrip.handlers:
             logger_tostrip.removeHandler(handler)
 
 
 def defaultifNone(val, default=None):
-    '''simple default handler
+    """simple default handler
 
-    Args:
-        val (obj): value to fill in default
-        default (obj): default value
-    Returns:
-        obj: val if val is not None, else default
-    '''
+    Parameters
+    ----------
+    val : obj
+        value to fill in default
+    default : obj
+        default value
+
+    Returns
+    -------
+    obj
+        val if val is not None, else default
+    """
     return val if val is not None else default
 
 
 def fitargspec(f, oldargs, oldkwargs):
-    ''' fit function argspec given input args tuple and kwargs dict
-    
-    Args:
-        f (func): function to inspect
-        oldargs (tuple): arguments passed to func
-        oldkwards (dict): keyword args passed to func
+    """fit function argspec given input args tuple and kwargs dict
+
+    Parameters
+    ----------
+    f : func
+        function to inspect
+    oldargs : tuple
+        arguments passed to func
+    oldkwards : dict
+        keyword args passed to func
+
     Returns
-        new_args: args with values filled in according to f spec
-        new_kwargs: kwargs with values filled in according to f spec
-    '''
+    -------
+    new_args
+        args with values filled in according to f spec
+    new_kwargs
+        kwargs with values filled in according to f spec
+    """
     try:
         args, varargs, keywords, defaults = inspect.getargspec(f)
         num_expected_args = len(args) - len(defaults)
