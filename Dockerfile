@@ -69,6 +69,7 @@ RUN pip install multiprocess==0.70.5
 RUN pip install pathos==0.2.0
 RUN pip install pillow
 RUN conda install scipy
+RUN pip install setuptools --upgrade
 #install render python using pip from github
 #RUN pip install -e git+https://github.com/fcollman/render-python.git@master#egg=render-python
 
