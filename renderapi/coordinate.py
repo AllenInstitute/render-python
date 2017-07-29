@@ -22,8 +22,7 @@ def world_to_local_coordinates(stack, z, x, y, host=None,
                                port=None, owner=None, project=None,
                                session=requests.session(),
                                render=None, **kwargs):
-    """
-    maps an world x,y,z coordinate in stack to a local coordinate
+    """maps an world x,y,z coordinate in stack to a local coordinate
     Parameters
     ----------
     stack : str
@@ -34,8 +33,8 @@ def world_to_local_coordinates(stack, z, x, y, host=None,
         x coordinate to map
     y : float
         y coordinate to map
-    session :
-         (Default value = requests.session()
+    session : requests.session.Session
+        session  object used in request
     render : renderapi.render.Render
         render connect object
     Returns
@@ -43,7 +42,7 @@ def world_to_local_coordinates(stack, z, x, y, host=None,
     json
         list of dictionaries of local coordinates following this pattern
         ::
-        
+
             [
                 {
                     "tileId": "string",
@@ -72,7 +71,7 @@ def local_to_world_coordinates(stack, tileId, x, y,
                                host=None, port=None, owner=None, project=None,
                                session=requests.session(),
                                render=None, **kwargs):
-    """
+    """convert coordinate from local to world with webservice request
 
     Parameters
     ----------
@@ -84,16 +83,17 @@ def local_to_world_coordinates(stack, tileId, x, y,
         x coordinate to map
     y : float
         y coordinate to map
-    session :
-         (Default value = requests.session()
+    session : requests.session.Session
+         session object used in request
     render : renderapi.render.Render
         render connect object
+
     Returns
     -------
     dict
         dictionary of world coordinates following this pattern
         ::
-        
+
             {
                 "tileId": "string",
                 "visible": false,
@@ -103,7 +103,7 @@ def local_to_world_coordinates(stack, tileId, x, y,
                 ],
                 "error": "string"
             }
-        
+
     """
     request_url = format_preamble(
         host, port, owner, project, stack) + \
@@ -123,7 +123,7 @@ def world_to_local_coordinates_batch(stack, d, z, host=None,
                                      session=requests.session(),
                                      render=None, **kwargs):
 
-    """
+    """convert coordinate parameters from world to local
 
     Parameters
     ----------
@@ -132,7 +132,7 @@ def world_to_local_coordinates_batch(stack, d, z, host=None,
     d : list[dict]
         list of  dictionary of world coordinates to map following this schema
           ::
-          
+
            [ {
             "tileId": "string",
             "world": [
@@ -146,17 +146,19 @@ def world_to_local_coordinates_batch(stack, d, z, host=None,
     execute_local : boolean
          (Default value = False)
     session : requests.session.Session
-         (Default value = requests.session()
+        session object used in request
     render : renderapi.render.Render
         render connect object
+
     Returns
     -------
     list[list[dict]]
         list of lists of dictionaries containing local positions
-        that overlap with this point, following..
+        that overlap with this point, (one world point may map
+        to multiple local points) following..
         ::
 
-             
+
            [[ {
             "tileId": "string",
             "visible": True,False,
@@ -185,12 +187,12 @@ def local_to_world_coordinates_batch(stack, d, z, host=None,
                                      port=None, owner=None, project=None,
                                      session=requests.session(),
                                      render=None, **kwargs):
-    """
+    """convert coordinate parameters from local to world
 
     Parameters
     ----------
     stack : str
-        
+
     d : list[dict]
         list of dictionary of local coordinates to map
         ::
@@ -202,7 +204,7 @@ def local_to_world_coordinates_batch(stack, d, z, host=None,
             ],
             "error": "string"
             }]
-         
+
     z : float
         z coordinate to map from
     session :
@@ -241,14 +243,13 @@ def local_to_world_coordinates_batch(stack, d, z, host=None,
 
 def package_point_match_data_into_json(dataarray, tileId,
                                        local_or_world='local'):
-    """
-    Convert a set of points defined by a numpy array and a tileId to a json
+    """Convert a set of points defined by a numpy array and a tileId to a json
     for use in the renderapi
 
     Parameters
     ----------
     dataarray : numpy.array
-        a Nx2 array of points 
+        a Nx2 array of points
 
     tileId : str
         a tileId to package them into
@@ -282,18 +283,17 @@ def package_point_match_data_into_json(dataarray, tileId,
 
 
 def unpackage_world_to_local_point_match_from_json(json_answer, tileId):
-    """
-    Converts a dictionary answer from a world>local coordinates call from a dictionary
-    to numpy array format
+    """Converts a dictionary answer from a world>local
+    coordinates call from a dictionary to numpy array format
 
     Parameters
     ----------
     json_answer : list[dict]
         json reponse from a world>local call (N long)
-        
+
     tileId : str
         tileId to extract, usually the world tileId passed in
-        
+
     Returns
     -------
     numpy.array
@@ -342,9 +342,8 @@ def unpackage_world_to_local_point_match_from_json(json_answer, tileId):
 
 
 def unpackage_local_to_world_point_match_from_json(json_answer):
-    """
-    converts a local>world call json response into a numpy array
-    
+    """converts a local>world call json response into a numpy array
+
     Parameters
     ----------
     json_answer : list[dict]
@@ -371,27 +370,26 @@ def world_to_local_coordinates_array(stack, dataarray, tileId, z,
                                      client_script=None,
                                      doClientSide=False, number_of_threads=20,
                                      session=requests.session(), **kwargs):
-    """
-    map world to local coordinates using numpy array
+    """map world to local coordinates using numpy array
 
     Parameters
     ----------
     stack : str
-        render stack to map   
+        render stack to map
     dataarray : numpy.array
         Nx2 numpy array of points to world points to map
     tileId : str
         tileId to map from and to
     z : float
         z coordinate to map
-    render : renderapi.render.RenderClient
+    render : renderapi.render.Render
         render connect object
     doClientSide : boolean
          (Default value = False)
     number_of_threads : int
          (Default value = 20)
-    session :
-         (Default value = requests.session()
+    session : requests.session.Session
+         session object used in request
 
     Returns
     -------
@@ -452,7 +450,7 @@ def local_to_world_coordinates_array(stack, dataarray, tileId, z,
                                      client_script=None,
                                      doClientSide=False, number_of_threads=20,
                                      session=requests.session(), **kwargs):
-    """
+    """map local to world coordinates using numpy array
 
     Parameters
     ----------
@@ -471,8 +469,9 @@ def local_to_world_coordinates_array(stack, dataarray, tileId, z,
     number_of_threads : int
          (Default value = 20)
     session : requests.session.Session
-         (Default value = requests.session()
-    render : renderapi.render.RenderClient
+         session object used in request
+    render : renderapi.render.Render
+        render connect object
 
     Returns
     -------
@@ -497,7 +496,7 @@ def map_coordinates_clientside(stack, jsondata, z, host, port, owner,
                                project, client_script, isLocalToWorld=False,
                                store_injson=False, store_outjson=False,
                                number_of_threads=20, memGB='1G'):
-    """
+    """map coordinates using the java client library
 
     Parameters
     ----------
@@ -508,19 +507,21 @@ def map_coordinates_clientside(stack, jsondata, z, host, port, owner,
     z : float
          z position to map
     isLocalToWorld : boolean
-         (Default value = False)
+         whether transform is local to world (False implies world to local)
     store_injson : boolean
-         (Default value = False)
+         whether to store input json file (created with tempfile)
     store_outjson : boolean
-         (Default value = False)
+         whether to store  output json file (created with tempfile)
     number_of_threads : int
-         (Default value = 20)
-    render : renderapi.render.RenderClient
+         threads to execute clientside computation
+    render : renderapi.render.Render
         render connect object
+
     Returns
     -------
     json
-        json data as would be returned by client calls of local>world or world>local
+        json data as would be returned by client calls
+        of local>world or world>local
     """
     # write point match json to temp file on disk
     with tempfile.NamedTemporaryFile(
@@ -558,9 +559,8 @@ def world_to_local_coordinates_clientside(stack, jsondata, z,
                                           host=None, port=None, owner=None,
                                           project=None, client_script=None,
                                           number_of_threads=20,
-                                          session=requests.session(),
                                           render=None, **kwargs):
-    """
+    """map_coordinates_clientside for mapping world to local
 
     Parameters
     ----------
@@ -572,11 +572,9 @@ def world_to_local_coordinates_clientside(stack, jsondata, z,
         z coordinate to map
     number_of_threads : int
         number of threads to use when doing parallelization
-        (Default value = 20)
-    session : requests.session.Session
-        (Default value = requests.session()
-    render : renderapi.render.RenderClient
+    render : renderapi.render.Render
         render connect object
+
     Returns
     -------
     json
@@ -596,9 +594,8 @@ def local_to_world_coordinates_clientside(stack, jsondata, z,
                                           host=None, port=None, owner=None,
                                           project=None, client_script=None,
                                           number_of_threads=20,
-                                          session=requests.session(),
                                           render=None, **kwargs):
-    """
+    """map_coordinates_clientside for mapping local to world
 
     Parameters
     ----------
@@ -609,9 +606,7 @@ def local_to_world_coordinates_clientside(stack, jsondata, z,
     z : float
         z position to map
     number_of_threads : int
-        (Default value = 20)
-    session : request.session.Session
-        (Default value = requests.session()
+        threads for java client script to use during mapping
 
     Returns
     -------
