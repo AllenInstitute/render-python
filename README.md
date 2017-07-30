@@ -18,3 +18,7 @@ Render connection objects created with `renderapi.connect()` can default to envi
 ```
 
 [Usage examples for a development Array Tomography workflow](https://github.com/fcollman/render-python-apps) are available.
+
+# Documentation 
+
+http://render-python.readthedocs.io/en/latest/
