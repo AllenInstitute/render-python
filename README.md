@@ -1,3 +1,5 @@
+[![Documentation Status](https://readthedocs.org/projects/render-python/badge/)](http://render-python.readthedocs.io/en/latest/)
+
 # render-python
 
 This is a python API client to interact with [render-webservices](https://github.com/saalfeldlab/render) and facilitate python scripting of [tilespec](https://github.com/saalfeldlab/render/blob/master/docs/src/site/markdown/data-model.md) creation

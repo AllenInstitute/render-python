@@ -12,15 +12,6 @@ Welcome to render-python's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-<<<<<<< HEAD
-api
----
-.. toctree::
-   :maxdepth: 2
-
-    api/renderapi
-
-=======
 API
 ---
 
@@ -31,7 +22,6 @@ API
    guide/pointmatchassumptions
    api/renderapi
  
->>>>>>> 438b824ea8a857a55d9632f4e7705e12c2fda3f5
 
 Indices and tables
 ==================
