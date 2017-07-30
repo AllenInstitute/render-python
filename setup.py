@@ -37,6 +37,5 @@ setup(name='render-python',
       url='https://github.com/fcollman/render-python',
       packages=['renderapi'],
       install_requires=required,
-      setup_requires=['flake8'],
       tests_require=test_required,
       cmdclass={'test': PyTest},)
