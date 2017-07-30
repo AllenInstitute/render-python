@@ -13,26 +13,60 @@ logger.addHandler(NullHandler())
 
 
 class Layout:
-    '''Layout class to describe acquisition settings
-    inputs:
+    """Layout class to describe acquisition settings
 
-    Args:
-        sectionId (str): sectionId this tile was taken from
-        scopeId (str): what microscope this came from
-        cameraId (str): camera this was taken with
-        imageRow (int): what row from a row,col layout this was taken
-        imageCol (int): column from a row,col layout this was taken
-        stageX (float): X stage coordinates for where this was taken
-        stageY (float): Y stage coordinates for where this taken 
-        rotation (float): angle of camera when this was taken
-        pixelsize (float): effective size of pixels (in units of choice) 
-        force_pixelsize (bool): whether to default pixelsize to 0.1 
-  
-    '''
+    Attributes
+    ----------
+    sectionId : str
+        sectionId this tile was taken from
+    scopeId : str
+        what microscope this came from
+    cameraId : str
+        camera this was taken with
+    imageRow : int
+        what row from a row,col layout this was taken
+    imageCol : int
+        column from a row,col layout this was taken
+    stageX : float
+        X stage coordinates for where this was taken
+    stageY : float
+        Y stage coordinates for where this taken
+    rotation : float
+        angle of camera when this was taken
+    pixelsize : float
+        effective size of pixels (in units of choice)
+
+    """
     def __init__(self, sectionId=None, scopeId=None, cameraId=None,
                  imageRow=None, imageCol=None, stageX=None, stageY=None,
                  rotation=None, pixelsize=None,
                  force_pixelsize=True, **kwargs):
+        """Initialize Layout
+
+        Parameters
+        ----------
+        sectionId : str
+            sectionId this tile was taken from
+        scopeId : str
+            what microscope this came from
+        cameraId : str
+            camera this was taken with
+        imageRow : int
+            what row from a row,col layout this was taken
+        imageCol : int
+            column from a row,col layout this was taken
+        stageX : float
+            X stage coordinates for where this was taken
+        stageY : float
+            Y stage coordinates for where this taken
+        rotation : float
+            angle of camera when this was taken
+        pixelsize : float
+            effective size of pixels (in units of choice)
+        force_pixelsize : bool
+            whether to default pixelsize to 0.1
+
+        """
         self.sectionId = sectionId
         self.scopeId = scopeId
         self.cameraId = cameraId
@@ -46,10 +80,13 @@ class Layout:
         self.pixelsize = pixelsize
 
     def to_dict(self):
-        '''return a dictionary representation of this object
-        Returns:
-            dict: json compatible dictionary of this object
-        '''
+        """return a dictionary representation of this object
+
+        Returns
+        -------
+        dict
+            json compatible dictionary of this object
+        """
         d = {}
         d['sectionId'] = self.sectionId
         d['temca'] = self.scopeId
@@ -64,11 +101,13 @@ class Layout:
         return d
 
     def from_dict(self, d):
-        '''set this object equal to the fields found in dictionary
+        """set this object equal to the fields found in dictionary
 
-        Args:
-            d (dict): dictionary to use to update
-        '''
+        Parameters
+        ----------
+        d : dict
+            dictionary to use to update
+        """
         if d is not None:
             self.sectionId = d.get('sectionId')
             self.cameraId = d.get('camera')
@@ -82,39 +121,60 @@ class Layout:
 
 
 class TileSpec:
-    '''Fundamental class of render that store image tiles and their transformations
-    init:
+    '''Fundamental class of render that store image tiles
+    and their transformations
 
-    Args:
-        tileId (str): unique string specifying a tile's identity
-        z (float): z values this tile exists within 
-        width (int): width in pixels of the raw tile
-        height (int): height in pixels of the raw tile
-        imageUrl (str): an image path that can be accessed by the render server,
-            with an ImageJ.open command or as an s3 url.
-            Files on disk should be specified with file:
-        maskUrl (str): an image path that can be accessed by the render server
-            which can be interpreted as an
-            alpha mask for the image (same as spec imageUrl)
-        minint (int): pixel intensity value to display as black in a
-            linear colormap (default 0)
-        maxint (int): pixel intensity value to display as white in a
-            linear colormap (default 65535)
-        layout (Layout): a Layout object for this tile
-        tforms (list[Transform]): Transform objects
-            (see :class:`AffineModel`, :class:`TransformList`, :class:`Polynomial2DTransform`,
-            :class:`Transform`, :class:`ReferenceTransform`) to apply to this tile
-        inputfilters (list): a list of filters to apply to
-            this tile (not yet implemented)
-        mipMapLevels (list[MipMapLevel]): :class:`MipMapLevel` objects for this tile
-        json (dict or None): dictionary to initialize this object with
-            (if not None overrides and ignores all keyword arguments)
-        scale3Url (str): url of a mipmap level 3 image of this tile
-            (DEPRECATED, use mipMapLevels, but will override)
-        scale2Url (str): url of a mipmap level 2 image of this tile
-            (DEPRECATED, use mipMapLevels, but will override)
-        scale1Url (str): url of a mipmap level 1 image of this tile
-            (DEPRECATED, use mipMapLevels, but will override)
+    Attributes
+    ----------
+    tileId : str
+        unique string specifying a tile's identity
+    z : float
+        z values this tile exists within
+    width : int
+        width in pixels of the raw tile
+    height : int
+        height in pixels of the raw tile
+    imageUrl : str
+        an image path URI that can be accessed by the render server,
+        with an ImageJ.open command.  Preceded by , e.g. 'file://' for files
+        or s3:// for s3
+    maskUrl : str
+        an image path that can be accessed by the render server
+        which can be interpreted as an
+        alpha mask for the image (same as spec imageUrl)
+    minint : int
+        pixel intensity value to display as black in a
+        linear colormap (default 0)
+    maxint : int
+        pixel intensity value to display as white in a
+        linear colormap (default 65535)
+    layout : :class:`Layout`
+        a :class:`Layout` object for this tile
+    tforms : :obj:`list` of :obj:`Transform`
+    or :obj:`list` of :obj:`TransformList`
+    or :obj:`list` of :obj:`InterpolatedTransform`
+        Transform objects
+        (see :class:`.transform.AffineModel`,
+        :class:`.transform.TransformList`,
+        :class:`.transform.Polynomial2DTransform`,
+        :class:`.transform.Transform`,
+        :class:`.transform.ReferenceTransform`) to apply to this tile
+    inputfilters : list
+        a list of filters to apply to this tile (not yet implemented)
+    mipMapLevels :obj:`list` of :obj:`MipMapLevel`
+        :class:`MipMapLevel` objects for this tile
+    json : dict or None
+        dictionary to initialize this object with
+        (if not None overrides and ignores all keyword arguments)
+    scale3Url : str
+        uri of a mipmap level 3 image of this tile
+        (DEPRECATED, use mipMapLevels, but will override)
+    scale2Url : str
+        uri of a mipmap level 2 image of this tile
+        (DEPRECATED, use mipMapLevels, but will override)
+    scale1Url : str
+        uri of a mipmap level 1 image of this tile
+        (DEPRECATED, use mipMapLevels, but will override)
 
     '''
     def __init__(self, tileId=None, z=None, width=None, height=None,
@@ -156,7 +216,7 @@ class TileSpec:
 
     @property
     def bbox(self):
-        '''bbox defined to fit shapely call'''
+        """bbox defined to fit shapely call"""
         box = (self.minX, self.minY, self.maxX, self.maxY)
         if any([v is None for v in box]):
             logger.error(
@@ -164,12 +224,14 @@ class TileSpec:
         return box
 
     def to_dict(self):
-        '''method to produce a json tilespec for this tile
+        """method to produce a json tilespec for this tile
         returns a json compatible dictionary
 
-        Returns:
-            dict: json compatible dictionary representation of this object
-        '''
+        Returns
+        -------
+        dict
+            json compatible dictionary representation of this object
+        """
         thedict = {}
         thedict['tileId'] = self.tileId
         thedict['z'] = self.z
@@ -208,11 +270,13 @@ class TileSpec:
         return thedict
 
     def from_dict(self, d):
-        '''Method to load tilespec from json dictionary
-        
-        Args:
-            d (dict): dictionary to use to set properties of this object
-        '''
+        """Method to load tilespec from json dictionary
+
+        Paramters
+        ---------
+        d : dict
+            dictionary to use to set properties of this object
+        """
         self.tileId = d['tileId']
         self.z = d['z']
         self.width = d['width']
@@ -246,21 +310,31 @@ class TileSpec:
 
 
 class MipMapLevel:
-    '''
-    MipMapLevel class to represent a level of an image pyramid.
+    """MipMapLevel class to represent a level of an image pyramid.
     Can be put in dictionary formatting using dict(mML)
 
-    Args:
-        level (int): level of 2x downsampling represented by mipmaplevel
-        imageUrl (str or None): url corresponding to image
-        maskUrl (str or None): url corresponding to mask
-    '''
+    Attributes
+    ----------
+    level : int
+        level of 2x downsampling represented by mipmaplevel
+    imageUrl : str or None
+        uri corresponding to image
+    maskUrl : str or None
+        uri corresponding to mask
+
+    """
     def __init__(self, level, imageUrl=None, maskUrl=None):
         self.level = level
         self.imageUrl = imageUrl
         self.maskUrl = maskUrl
 
     def to_dict(self):
+        """
+        Returns
+        -------
+        dict
+            json compatible dictionary representaton
+        """
         return dict(self.__iter__())
 
     def _formatUrls(self):
@@ -276,60 +350,83 @@ class MipMapLevel:
 
 
 class ImagePyramid:
-    '''
-    Image Pyramid class representing a set of MipMapLevels which correspond
-        to mipmapped (continuously downsmapled by 2x) representations
-        of an image at level 0
+    '''Image Pyramid class representing a set of MipMapLevels which correspond
+    to mipmapped (continuously downsmapled by 2x) representations
+    of an image at level 0
     Can be put into dictionary formatting using dict(ip) or OrderedDict(ip)
 
-    Args:
-        mipMapLevels (list[MipMapLevel]): list of :class:`MipMapLevel` objects
-    
+    Attributes
+    ----------
+    mipMapLevels : :obj:`list` of :class:`MipMapLevel`
+        list of :class:`MipMapLevel` objects defining image pyramid
+
     '''
     def __init__(self, mipMapLevels=[]):
         self.mipMapLevels = mipMapLevels
 
     def to_dict(self):
-        '''return dictionary representation of this object'''
+        """return dictionary representation of this object"""
         return dict(self.__iter__())
 
     def to_ordered_dict(self, key=None):
-        '''returns :class:`OrderedDict` represention of this object, ordered by mipmapLevel'''
+        """returns :class:`OrderedDict` represention of this object,
+        ordered by mipmapLevel
+
+        Parameters
+        ----------
+        key : func
+            function to sort ordered dict of
+            :class:`mipMapLevel` dicts (default is by level)
+
+        Returns
+        -------
+        OrderedDict
+            sorted dictionary of :class:`mipMapLevels` in ImagePyramid
+
+        """
         return OrderedDict(sorted(
             self.__iter__(), key=((lambda x: x[0]) if key
                                   is None else key)))
 
     def append(self, mmL):
-        '''appends a MipMapLevel to this ImagePyramid
+        """appends a MipMapLevel to this ImagePyramid
 
-        Args:
-            mml (MipMapLevel): MipMapLevel to append
-        '''
+        Parameters
+        ----------
+        mml : :class:`MipMapLevel`
+            :class:`MipMapLevel` to append
+        """
         self.mipMapLevels.append(mmL)
 
     def update(self, mmL):
-        '''updates the ImagePyramid with this MipMapLevel
+        """updates the ImagePyramid with this MipMapLevel.
+        will overwrite existing mipMapLevels with same level
 
         Args:
             mml (MipMapLevel): mipmap level to update in pyramid
-        '''
+        """
         self.mipMapLevels = [
             l for l in self.mipMapLevels if l.level != mmL.level]
         self.append(mmL)
 
     def get(self, to_get):
-        '''gets a specific mipmap level in dictionary form
+        """gets a specific mipmap level in dictionary form
 
-        Args:
-            to_get (int): mipmaplevel to get
-        Returns:
-            dict: dictionary representation of requested MipMapLevel
-        '''
+        Parameters
+        ----------
+        to_get : int
+            level to get
+
+        Returns
+        -------
+        dict
+            representation of requested MipMapLevel
+        """
         return self.to_dict()[to_get]  # TODO should this default
 
     @property
     def levels(self):
-        '''list of MipMapLevels in this ImagePyramid'''
+        """list of MipMapLevels in this ImagePyramid"""
         return [int(i.level) for i in self.mipMapLevels]
 
     def __iter__(self):
@@ -342,19 +439,29 @@ def get_tile_spec_renderparameters(stack, tile, host=None, port=None,
                                    owner=None, project=None,
                                    session=requests.session(),
                                    render=None, **kwargs):
-    '''renderapi call to get the render parameters of a specific tileId
+    """renderapi call to get the render parameters of a specific tileId
 
     :func:`renderapi.render.renderaccess` decorated function
+    TODO provide example of return
 
-    Args:
-        stack (str): name of render stack to retrieve
-        tile (str): tileId of tile to retrieve    
-        render (renderapi.render.RenderClient): render connect object
-        session (requests.sessions.Session): sessions object to connect with 
-    Returns:
-        dict: render-parameters json with the tilespec for that tile and dereferenced transforms
-        TODO provide example
-    '''
+    Parameters
+    ----------
+    stack : str
+        name of render stack to retrieve
+    tile : str
+        tileId of tile to retrieve
+    render : renderapi.render.Render
+        render connect object
+    session : requests.sessions.Session
+        sessions object to connect with
+
+    Returns
+    -------
+    dict
+        render-parameters json with the tilespec for that
+        tile and dereferenced transforms
+
+    """
 
     request_url = format_preamble(
         host, port, owner, project, stack) + \
@@ -373,20 +480,28 @@ def get_tile_spec_renderparameters(stack, tile, host=None, port=None,
 def get_tile_spec(stack, tile, host=None, port=None, owner=None,
                   project=None, session=requests.session(),
                   render=None, **kwargs):
-    '''renderapi call to get a specific tilespec by tileId
+    """renderapi call to get a specific tilespec by tileId
     note that this will return a tilespec with resolved transform references
     by accessing the render-parameters version of this tile
 
     :func:`renderapi.render.renderaccess` decorated function
 
-    Args:
-        stack (str): name of render stack to retrieve
-        tile (str): tileId of tile to retrieve    
-        render (renderapi.render.RenderClient): render connect object
-        session (requests.sessions.Session): sessions object to connect with 
-    Returns:
-        TileSepc: TileSpec with dereferenced transforms
-    '''
+    Parameters
+    ----------
+    stack : str
+        name of render stack to retrieve
+    tile : str
+        tileId of tile to retrieve
+    render : renderapi.render.Render
+        render connect object
+    session : requests.sessions.Session
+        sessions object to connect with
+
+    Returns
+    -------
+    TileSpec
+        TileSpec with dereferenced transforms
+    """
 
     try:
         tilespec_json = get_tile_spec_renderparameters(
@@ -400,19 +515,27 @@ def get_tile_spec(stack, tile, host=None, port=None, owner=None,
 def get_tile_spec_raw(stack, tile, host=None, port=None, owner=None,
                       project=None, session=requests.session(),
                       render=None, **kwargs):
-    '''renderapi call to get a specific tilespec by tileId
+    """renderapi call to get a specific tilespec by tileId
     note that this will return a tilespec without resolved transform references
 
     :func:`renderapi.render.renderaccess` decorated function
 
-    Args:
-        stack (str): name of render stack to retrieve
-        tile (str): tileId of tile to retrieve    
-        render (renderapi.render.RenderClient): render connect object
-        session (requests.sessions.Session): sessions object to connect with
-    Returns:
-        TileSepc: TileSpec with referenced transforms intact
-    '''
+    Parameters
+    ----------
+    stack : str
+        name of render stack to retrieve
+    tile : str
+        tileId of tile to retrieve
+    render : renderapi.render.Render
+        render connect object
+    session : requests.sessions.Session
+        sessions object to connect with
+
+    Returns
+    -------
+    TileSpec
+        TileSpec with referenced transforms intact
+    """
 
     request_url = format_preamble(
         host, port, owner, project, stack) + \
@@ -433,25 +556,38 @@ def get_tile_specs_from_minmax_box(stack, z, xmin, xmax, ymin, ymax,
                                    port=None, owner=None, project=None,
                                    session=requests.session(),
                                    render=None, **kwargs):
-    '''renderapi call to get all tilespec that exist within a 2d bounding box
+    """renderapi call to get all tilespec that exist within a 2d bounding box
     specified with min and max x,y values
     note that this will return a tilespec with resolved transform references
 
     :func:`renderapi.render.renderaccess` decorated function
 
-    Args:
-        stack (str): name of render stack to retrieve
-        z (float): z value of bounding box
-        xmin (float): minimum x value
-        ymin (float): minimum y value 
-        xmax (float): maximum x value 
-        ymax (float): maximum y value 
-        scale (float): scale to use when retrieving render parameters (not important)
-        render: render connect object
-        session (requests.sessions.Session): sessions object to connect with
-    Returns:
-        list[TileSpec]:TileSpec objects with dereferenced tansforms
-    '''
+    Parameters
+    ----------
+    stack : str
+        name of render stack to retrieve
+    z : float
+        z value of bounding box
+    xmin : float
+        minimum x value
+    ymin : float
+        minimum y value
+    xmax : float
+        maximum x value
+    ymax : float
+        maximum y value
+    scale : float
+        scale to use when retrieving render parameters (not important)
+    render : renderapi.render.Render
+        render connect object
+    session : requests.sessions.Session
+        sessions object to connect with
+
+    Returns
+    -------
+    :obj:`list` of :class:`TileSpec`
+        :class:`TileSpec` objects with dereferenced tansforms
+    """
     x = xmin
     y = ymin
     width = xmax - xmin
@@ -467,25 +603,38 @@ def get_tile_specs_from_box(stack, z, x, y, width, height,
                             scale=1.0, host=None, port=None, owner=None,
                             project=None, session=requests.session(),
                             render=None, **kwargs):
-    '''renderapi call to get all tilespec that exist within a 2d bounding box
+    """renderapi call to get all tilespec that exist within a 2d bounding box
     specified with min x,y values and width, height
     note that this will return a tilespec with resolved transform references
 
     :func:`renderapi.render.renderaccess` decorated function
 
-     Args:
-        stack (str): name of render stack to retrieve
-        z (float): z value of bounding box
-        x (float): minimum x value
-        y (float): minimum y value 
-        width (float): width of box (in scale=1.0 units)
-        height (float): height of box (in scale=1.0 units)  
-        scale (float): scale to use when retrieving render parameters (not important)
-        render: render connect object
-        session (requests.sessions.Session): sessions object to connect with
-    Returns:
-        list[TileSpec]:TileSpec objects with dereferenced tansforms
-    '''
+    Parameters
+    ----------
+    stack : str
+        name of render stack to retrieve
+    z : float
+        z value of bounding box
+    x : float
+        minimum x value
+    y : float
+        minimum y value
+    width : float
+        width of box (in scale=1.0 units)
+    height : float
+        height of box (in scale=1.0 units)
+    scale : float
+        scale to use when retrieving render parameters (not important)
+    render : renderapi.render.Render
+        render connect object
+    session : requests.sessions.Session
+        sessions object to connect with
+
+    Returns
+    -------
+    :obj:`list` of :class:`TileSpec`
+        TileSpec objects with dereferenced tansforms
+    """
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%d/box/%d,%d,%d,%d,%3.2f/render-parameters" % (
@@ -506,19 +655,26 @@ def get_tile_specs_from_box(stack, z, x, y, width, height,
 def get_tile_specs_from_z(stack, z, host=None, port=None,
                           owner=None, project=None, session=requests.session(),
                           render=None, **kwargs):
-    '''
-    Get all TileSpecs in a specific z values. Returns referenced transforms.
+    """Get all TileSpecs in a specific z values. Returns referenced transforms.
 
     :func:`renderapi.render.renderaccess` decorated function
 
-    Args:
-        stack (str): render stack
-        z (float): render z
-        render: render connect object
-        session (requests.sessions.Session): sessions object to connect with
-    Returns:
-        list[TileSpec]: list of TileSpec objects from that stack at that z
-    '''
+    Parameters
+    ----------
+    stack : str
+        render stack
+    z : float
+        render z
+    render : renderapi.render.Render
+        render connect object
+    session : requests.sessions.Session
+        sessions object to connect with
+
+    Returns
+    -------
+    :obj:`list` of :class:`TileSpec`
+        list of TileSpec objects from that stack at that z
+    """
     request_url = format_preamble(
         host, port, owner, project, stack) + '/z/%f/tile-specs' % (z)
     logger.debug(request_url)
@@ -542,17 +698,24 @@ def get_tile_specs_from_stack(stack, host=None, port=None,
                               owner=None, project=None,
                               session=requests.session(),
                               render=None, **kwargs):
-    '''get flat list of tilespecs for stack using i for sl in l for i in sl
-    
+    """get flat list of tilespecs for stack using i for sl in l for i in sl
+
     :func:`renderapi.render.renderaccess` decorated function
 
-    Args:
-        stack (str): render stack
-        render: render connect object
-        session (requests.sessions.Session): sessions object to connect with
-    Returns:
-        list[TileSpec]: list of TileSpec objects from that stack
-    '''
+    Parameters
+    ----------
+    stack : str
+        render stack
+    render : renderapi.render.Render
+        render connect object
+    session : requests.sessions.Session
+        sessions object to connect with
+
+    Returns
+    -------
+    :obj:`list` of :class:`TileSpec`
+        list of TileSpec objects from that stack
+    """
     return [i for sl in [
         get_tile_specs_from_z(stack, z, host=host, port=port,
                               owner=owner, project=project, session=session)

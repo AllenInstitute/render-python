@@ -31,17 +31,46 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
                  host=None, port=None, owner=None, project=None,
                  img_format=None, session=requests.session(),
                  render=None, **kwargs):
-    '''
-    render image from a bounding box defined in xy and return numpy array:
-        z: layer
-        x: leftmost point of bounding rectangle
-        y: topmost pont of bounding rectangle
-        width: extent to right in x
-        height: extent down in y
-        binaryMask: optional, boolean whether to treat maskimage as binary
-        maxTileSpecsToRender: optional, int number of tilespecs to render
-        filter: optional, boolean whether to use Khaled's preferred filter
-    '''
+    """render image from a bounding box defined in xy and return numpy array:
+
+    :func:`renderapi.render.renderaccess` decorated function
+
+    Parameters
+    ----------
+    stack : str
+        name of render stack to get image from
+    z : float
+        z value to render
+    x : int
+        leftmost point of bounding rectangle
+    y : int
+        topmost pont of bounding rectangle
+    width : int
+        number of units @scale=1.0 to right (+x() of bounding box to render
+    height : int
+        number of units @scale=1.0 down (+y) of bounding box to render
+    scale : float
+        scale to render image at (default 1.0)
+    binaryMask : bool
+        whether to treat maskimage as binary
+    maxTileSpecsToRender : int
+        max number of tilespecs to render
+    filter : bool
+        whether to use server side filtering
+    render : :class:`renderapi.render.Render`
+        render connect object
+    session : :class:`requests.sessions.Session`
+        sessions object to connect with
+
+    Returns
+    -------
+    numpy.array
+        [N,M,:] array of image data from render
+
+    Raises
+    ------
+    RenderError
+    """
     try:
         image_ext = IMAGE_FORMATS[img_format]
     except KeyError as e:  # pragma: no cover
@@ -50,7 +79,7 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%d/box/%d,%d,%d,%d,%f/%s" % (
-                      z, x, y, width, height, scale, image_ext)
+        z, x, y, width, height, scale, image_ext)
     qparams = {}
     if minIntensity is not None:
         qparams['minIntensity'] = minIntensity
@@ -79,9 +108,46 @@ def get_tile_image_data(stack, tileId, normalizeForMatching=True,
                         filter=None, host=None, port=None, owner=None,
                         project=None, img_format=None,
                         session=requests.session(), render=None, **kwargs):
-    '''
-    render image from a tile with all transforms and return numpy array
-    '''
+    """render image from a tile with all transforms and return numpy array
+
+    :func:`renderapi.render.renderaccess` decorated function
+
+    Parameters
+    ----------
+    stack : str
+        name of render stack to get tile from
+    tileId : str
+        tileId of tile to render
+    normalizeForMatching : bool
+        whether to render the tile with transformations
+        removed ('local' coordinates)
+    removeAllOption : bool
+        whether to remove all transforms from image when
+        doing normalizeForMatching some versions of render
+        only remove the last transform from list.
+        (or remove till there are max 3 transforms)
+    scale : float
+        force scale of image
+    filter : bool
+        whether to apply server side filtering to image
+    img_format : str
+        image format: one of IMAGE_FORMATS = 'png','.png','jpg',
+        'jpeg','.jpg','tif','.tif','tiff'
+    render : :obj:`renderapi.render.Render`
+        render connect object
+    session : :obj:`requests.sessions.Session`
+        sessions object to connect with
+
+    Returns
+    -------
+    numpy.array
+        [N,M,:] array of image data from render
+
+    Raises
+    ------
+    RenderError
+
+    """
     try:
         image_ext = IMAGE_FORMATS[img_format]
     except KeyError as e:  # pragma: no cover
@@ -119,13 +185,43 @@ def get_section_image(stack, z, scale=1.0, filter=False,
                       host=None, port=None, owner=None, project=None,
                       session=requests.session(),
                       render=None, **kwargs):
-    '''
-    z: layer Z
-    scale: float -- linear scale at which to render image (e.g. 0.5)
-    filter: boolean -- whether or not to apply Khaled's preferred filter
-    maxTileSpecsToRender: int -- maximum number of tile specs in rendering
-    img_format: string -- format defined by IMAGE_FORMATS
-    '''
+    """render an section of image
+
+    :func:`renderapi.render.renderaccess` decorated function
+
+
+    Parameters
+    ----------
+    stack : str
+        name of render stack to render image from
+    z : float
+        layer Z
+    scale : float
+        linear scale at which to render image (e.g. 0.5)
+    filter : bool
+        whether or not to apply server side filtering
+    maxTileSpecsToRender : int
+        maximum number of tile specs in rendering
+    img_format : str
+        one of IMAGE_FORMATS 'png','.png','jpg','jpeg',
+        '.jpg','tif','.tif','tiff'
+    render : :obj:`renderapi.render.Render`
+        render connect object
+    session : requests.sessions.Session
+        sessions object to connect with
+
+    Returns
+    -------
+    numpy.array
+        [N,M,:] array of image data of section from render
+
+    Examples
+    --------
+    >>>import renderapi
+    >>>render = renderapi.render.connect('server',8080,'me','myproject')
+    >>>img = render.run(renderapi.stack.get_section_image,'mystack',3.0)
+
+    """
     try:
         image_ext = IMAGE_FORMATS[img_format]
     except KeyError as e:  # pragma: no cover

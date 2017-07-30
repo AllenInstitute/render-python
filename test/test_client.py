@@ -2,15 +2,14 @@ import os
 import renderapi
 import rendersettings
 
-
+args = {
+    'host': 'renderhost',
+    'port': 8080,
+    'owner': 'renderowner',
+    'project': 'renderproject',
+    'client_scripts': '/path/to/client_scripts'
+    }
 def test_render_client():
-    args = {
-        'host': 'renderhost',
-        'port': 8080,
-        'owner': 'renderowner',
-        'project': 'renderproject',
-        'client_scripts': '/path/to/client_scripts'
-        }
     r = renderapi.render.connect(**args)
 
 
@@ -51,3 +50,15 @@ def test_environment_variables_client():
         rkwargs=rendersettings.DEFAULT_RENDER_CLIENT,
         renvkwargs=rendersettings.DEFAULT_RENDER_CLIENT_ENVIRONMENT_VARIABLES,
         validate_client=False)
+
+@renderapi.render.renderaccess
+def my_decorated(myparameter, owner=None, host=None, port=None,
+              project=None,client_scripts=None, **kwargs):
+    return (owner,host,port,project,client_scripts)
+
+def test_decorator():
+    r = renderapi.render.connect(**args)
+    (owner,host,port,project,client_scripts)=my_decorated(5,render=r)
+    assert(owner == args['owner'])
+    (owner,host,port,project,client_scripts)=my_decorated(5,owner='newowner',render=r)
+    assert(owner == 'newowner')  
