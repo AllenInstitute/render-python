@@ -567,14 +567,15 @@ class AffineModel(Transform):
 
     def concatenate(self, model):
         """concatenate a model to this model -- ported from trakEM2 below:
+            ::
+                
+                final double a00 = m00 * model.m00 + m01 * model.m10;
+                final double a01 = m00 * model.m01 + m01 * model.m11;
+                final double a02 = m00 * model.m02 + m01 * model.m12 + m02;
 
-            final double a00 = m00 * model.m00 + m01 * model.m10;
-            final double a01 = m00 * model.m01 + m01 * model.m11;
-            final double a02 = m00 * model.m02 + m01 * model.m12 + m02;
-
-            final double a10 = m10 * model.m00 + m11 * model.m10;
-            final double a11 = m10 * model.m01 + m11 * model.m11;
-            final double a12 = m10 * model.m02 + m11 * model.m12 + m12;
+                final double a10 = m10 * model.m00 + m11 * model.m10;
+                final double a11 = m10 * model.m01 + m11 * model.m11;
+                final double a12 = m10 * model.m02 + m11 * model.m12 + m12;
 
         Parameters
         ----------
