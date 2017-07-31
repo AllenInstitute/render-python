@@ -133,14 +133,14 @@ def world_to_local_coordinates_batch(stack, d, z, host=None,
         list of  dictionary of world coordinates to map following this schema
           ::
 
-           [ {
-            "tileId": "string",
-            "world": [
-                [0,0],
-                [1,0]...
-            ],
-            "error": "string"
-            }]
+            [ {
+                "tileId": "string",
+                "world": [
+                    [0,0],
+                    [1,0]...
+                ],
+                "error": "string"
+                }]
     z : float
         z coordinate to map
     execute_local : boolean
@@ -157,7 +157,6 @@ def world_to_local_coordinates_batch(stack, d, z, host=None,
         that overlap with this point, (one world point may map
         to multiple local points) following..
         ::
-
 
            [[ {
             "tileId": "string",
@@ -262,8 +261,9 @@ def package_point_match_data_into_json(dataarray, tileId,
     dict
         dictionary representation of those points and tileId
         following
-
+        
         ::
+
             {
                 "tileId": "string",
                 "world": [
