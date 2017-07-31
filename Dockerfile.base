@@ -52,25 +52,18 @@ ENV PATH /opt/conda/bin:$PATH
 RUN apt-get update 
 RUN apt-get install gcc build-essential libgeos-dev imagemagick -y
 RUN apt-get install python-setuptools python-dev -y
+RUN apt-get install libspatialindex-dev -y
+RUN apt-get install nano -y
+
 #RUN apt-get install libblas-dev liblapack-dev -y
 RUN apt-get clean
 
-
-#install components for common render-python apps
-#jupyter notebook, shapely with geos
-# RUN /opt/conda/bin/conda install jupyter -y
-
-
-#RUN easy_install pip
-#RUN pip install -U pip setuptools
-RUN pip install shapely==1.6b2
-RUN pip install opencv-python
-RUN pip install dill==0.2.6
-RUN pip install multiprocess==0.70.5
-RUN pip install pathos==0.2.0
-RUN pip install pillow
+RUN pip install dill==0.2.6, multiprocess==0.70.5, pathos==0.2.0
 RUN conda install scipy
+RUN conda install jupyter
+RUN pip install tifffile, opencv-python, pandas, matplotlib, networkx, shapely==1.6b2, rtree, pillow
 RUN pip install setuptools --upgrade --disable-pip-version-check
+
 RUN mkdir -p /usr/local/render-python
 COPY . /usr/local/render-python
 WORKDIR /usr/local/render-python
