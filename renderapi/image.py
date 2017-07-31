@@ -217,9 +217,11 @@ def get_section_image(stack, z, scale=1.0, filter=False,
 
     Examples
     --------
-    >>>import renderapi
-    >>>render = renderapi.render.connect('server',8080,'me','myproject')
-    >>>img = render.run(renderapi.stack.get_section_image,'mystack',3.0)
+    ::
+        
+        >>> import renderapi
+        >>> render = renderapi.render.connect('server',8080,'me','myproject')
+        >>> img = render.run(renderapi.stack.get_section_image,'mystack',3.0)
 
     """
     try:
