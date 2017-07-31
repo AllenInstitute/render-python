@@ -302,7 +302,7 @@ def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
      stack to which tilespecs will be added
     tilespecs : :obj:`list` of :class:`renderapi.tilespec.TileSpec`
         list of tilespecs to import
-    sharedTransforms :obj:`list` of :obj:`renderapi.transform.Transform` or :class:`renderapi.transform.TransformList` or :class:`renderapi.transform.InterpolatedTransform`, optional
+    sharedTransforms : obj:`list` of :obj:`renderapi.transform.Transform` or :class:`renderapi.transform.TransformList` or :class:`renderapi.transform.InterpolatedTransform`, optional
         list of shared referenced transforms to be ingested
     poolsize : int
         degree of parallelism to use
