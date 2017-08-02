@@ -63,12 +63,7 @@ RUN apt-get clean
 
 #RUN easy_install pip
 #RUN pip install -U pip setuptools
-RUN pip install shapely==1.6b2
-RUN pip install opencv-python
-RUN pip install dill==0.2.6
-RUN pip install multiprocess==0.70.5
-RUN pip install pathos==0.2.0
-RUN pip install pillow
+RUN pip install pillow xmltodict pathos==0.2.0 multiprocess==0.70.5 dill==0.2.6 opencv-python shapely==1.6b2
 RUN conda install scipy
 RUN pip install setuptools --upgrade --disable-pip-version-check
 RUN mkdir -p /usr/local/render-python
