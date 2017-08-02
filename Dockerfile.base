@@ -58,10 +58,10 @@ RUN apt-get install nano -y
 #RUN apt-get install libblas-dev liblapack-dev -y
 RUN apt-get clean
 
-RUN pip install dill==0.2.6, multiprocess==0.70.5, pathos==0.2.0
+RUN pip install dill==0.2.6 multiprocess==0.70.5 pathos==0.2.0
 RUN conda install scipy
 RUN conda install jupyter
-RUN pip install tifffile, opencv-python, pandas, matplotlib, networkx, shapely==1.6b2, rtree, pillow
+RUN pip install tifffile opencv-python pandas matplotlib networkx shapely==1.6b2 rtree pillow
 RUN pip install setuptools --upgrade --disable-pip-version-check
 
 RUN mkdir -p /usr/local/render-python
