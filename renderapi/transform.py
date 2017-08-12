@@ -1370,6 +1370,101 @@ def estimate_dstpts(transformlist, src=None):
     return dstpts
 
 
+class NonLinearTransform(renderapi.transform.Transform):
+    """
+    render-python class that implements the mpicbg.trakem2.transform.nonLinearTransform class
+    
+    Parameters
+    ----------
+    dataString:str or None
+        data string of transformation
+    json:dict or NOne
+        json compatible dictionary representation of the transformation
+
+    Returns
+    -------
+    :class:`NonLinearTransform`
+        a transform instance
+
+
+    """
+
+    className = 'mpicbg.trakem2.transform.nonLinearTransform'
+
+    def __init__(self, dataString=None, json=None):
+        if json is not None:
+            self.from_dict(json)
+        else:
+            if dataString is not None:
+                self._process_dataString(dataString)
+
+    def _process_dataString(self, dataString):
+        # trailing whitespace in string.... for some reason
+        fields = dataString.split(" ")[:-1]
+        self.dimension = int(fields[0])
+        self.length = int(fields[1])
+
+        # last 2 fields are width and height
+        self.width = int(fields[-2])
+        self.height = int(fields[-1])
+        
+        # beta is defined in alternating column order
+        self.beta = numpy.column_stack([
+                numpy.array(fields[2:2+self.length*2][::2], dtype='float32'),
+                numpy.array(fields[3:2+self.length*2][::2], dtype='float32')])
+
+        # normMean and normVar follow
+        self.normMean = numpy.array(fields[2+self.length*2:2+self.length*3], dtype='float32')
+        self.normVar = numpy.array(fields[2+self.length*3:2+self.length*4], dtype='float32')
+
+    def tform(self, src):
+        """transform a set of points through this transformation
+
+        Parameters
+        ----------
+        points : numpy.array
+            a Nx2 array of x,y points
+
+        Returns
+        -------
+        numpy.array
+            a Nx2 array of x,y points after transformation
+        """
+        x = src[:, 0]
+        y = src[:, 1]
+        
+        expanded = numpy.zeros([len(x), self.length])
+        pidx = 0
+        for i in range(1, self.dimension + 1):
+            for j in range(i, -1, -1):
+                expanded[:, pidx] = (
+                    numpy.power(x, j) * numpy.power(y, i - j))
+                pidx += 1
+
+
+        expanded[:, :-1] = (expanded[:, :-1] - self.normMean[:-1]) / self.normVar[:-1]
+        expanded[:, -1] = 100
+
+        dst = numpy.zeros(src.shape)
+        for i in range(0, expanded.shape[1]):
+            dst[:, 0] =  dst[:, 0] + expanded[:, i] * self.beta[i][0]
+            dst[:, 1] = dst[:, 1] + expanded[:, i] * self.beta[i][1]
+        return dst
+    
+    @property
+    def dataString(self):
+        shapestring = '{} {}'.format(self.dimension, self.length)
+        betastring = ' '.join([str(i).replace('e-0', 'e-').replace('e+0', 'e+')
+                                for i in self.beta.ravel()]).replace('e', 'E')
+        meanstring = ' '.join([str(i).replace('e-0', 'e-').replace('e+0', 'e+')
+                                for i in self.normMean]).replace('e', 'E')
+        varstring = ' '.join([str(i).replace('e-0', 'e-').replace('e+0', 'e+')
+                              for i in self.normVar]).replace('e', 'E')
+        dimstring = '{} {}'.format(self.height, self.width)
+        return '{} {} {} {} {} '.format(
+            shapestring, betastring, meanstring, varstring, dimstring)
+
+
 def estimate_transformsum(transformlist, src=None, order=2):
     """pseudo-composition of transforms in list of transforms
     using source point transformation and a single estimation.
