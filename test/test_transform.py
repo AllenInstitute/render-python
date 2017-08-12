@@ -12,9 +12,9 @@ def test_affine_rot_90():
     points_out = np.array([[0, 0], [1, 0], [0, -1], [1, -1]], np.float)
     am.estimate(points_in, points_out)
 
-    assert(np.abs(am.scale[0]-1.0) < .00001)
-    assert(np.abs(am.scale[1]-1.0) < .00001)
-    assert(np.abs(am.rotation + np.pi/2) < .000001)
+    assert(np.abs(am.scale[0] - 1.0) < .00001)
+    assert(np.abs(am.scale[1] - 1.0) < .00001)
+    assert(np.abs(am.rotation + np.pi / 2) < .000001)
     assert(np.abs(am.translation[0]) < .000001)
     assert(np.abs(am.translation[1]) < .000001)
     assert(np.abs(am.shear) < .000001)
@@ -23,14 +23,14 @@ def test_affine_rot_90():
     new_points = am.tform(points)
 
     old_points = am.inverse_tform(new_points)
-    assert(np.sum(np.abs(points-old_points)) < (.0001*len(points.ravel())))
+    assert(np.sum(np.abs(points - old_points)) < (.0001 * len(points.ravel())))
 
     am_inverse = renderapi.transform.AffineModel()
     am_inverse.estimate(points_out, points_in)
 
     identity = am.concatenate(am_inverse)
-    assert(np.abs(identity.scale[0]-1.0) < .00001)
-    assert(np.abs(identity.scale[1]-1.0) < .00001)
+    assert(np.abs(identity.scale[0] - 1.0) < .00001)
+    assert(np.abs(identity.scale[1] - 1.0) < .00001)
     assert(np.abs(identity.rotation) < .000001)
     assert(np.abs(identity.translation[0]) < .000001)
     assert(np.abs(identity.translation[1]) < .000001)
@@ -39,20 +39,20 @@ def test_affine_rot_90():
 
 
 def test_affine_random():
-        am = renderapi.transform.AffineModel(M00=.9,
-                                             M10=-0.2,
-                                             M01=0.3,
-                                             M11=.85,
-                                             B0=245.3,
-                                             B1=-234.1)
+    am = renderapi.transform.AffineModel(M00=.9,
+                                         M10=-0.2,
+                                         M01=0.3,
+                                         M11=.85,
+                                         B0=245.3,
+                                         B1=-234.1)
 
-        points_in = np.random.rand(10, 2)
-        points_out = am.tform(points_in)
+    points_in = np.random.rand(10, 2)
+    points_out = am.tform(points_in)
 
-        am_fit = renderapi.transform.AffineModel()
-        am_fit.estimate(points_in, points_out)
+    am_fit = renderapi.transform.AffineModel()
+    am_fit.estimate(points_in, points_out)
 
-        assert(np.sum(np.abs(am.M.ravel()-am_fit.M.ravel())) < (.001*6))
+    assert(np.sum(np.abs(am.M.ravel() - am_fit.M.ravel())) < (.001 * 6))
 
 
 def test_invert_Affine():
@@ -231,7 +231,7 @@ def test_reference_transform():
     ts = renderapi.tilespec.TileSpec(json=j)
     ref_ts = [tform for tform in ts.tforms
               if isinstance(
-                 tform, renderapi.transform.ReferenceTransform)][0]
+                  tform, renderapi.transform.ReferenceTransform)][0]
     ref_args = renderapi.transform.ReferenceTransform(ref_ts.refId)
     ref_dd = renderapi.transform.ReferenceTransform(json=ref_ts.to_dict())
 
@@ -308,17 +308,17 @@ def estimate_homography_transform(
     scale = np.random.rand()
     random_scale = (renderapi.transform.AffineModel(
         M00=scale, M11=scale)
-                    if do_scale else renderapi.transform.AffineModel())
+        if do_scale else renderapi.transform.AffineModel())
 
     random_translate = (renderapi.transform.AffineModel(
         B0=np.random.rand(), B1=np.random.rand())
-                        if do_translate else renderapi.transform.AffineModel())
+        if do_translate else renderapi.transform.AffineModel())
 
     theta = np.random.rand() * 2 * np.pi
     random_rotate = (renderapi.transform.AffineModel(
         M00=np.cos(theta), M01=-np.sin(theta),
         M10=np.sin(theta), M11=np.cos(theta))
-                     if do_rotate else renderapi.transform.AffineModel())
+        if do_rotate else renderapi.transform.AffineModel())
 
     target_tform = random_translate.concatenate(
         random_rotate.concatenate(random_scale))
@@ -354,3 +354,47 @@ def test_estimate_translation_transform():
     estimate_homography_transform(
         do_scale=False, do_rotate=False,
         transformclass=renderapi.transform.TranslationModel)
+
+
+def test_non_linear_transform():
+    lens_tform = renderapi.transform.NonLinearTransform(dataString=\
+                                               ("6 28 535.9261337198133 -0.07156495284083819 "
+                                               "1.5429761616475304 482.5391851962856 -1.3964665434772456 "
+                                               "-6.442573400985017 -2.9852709783360574 4.123111145658342 "
+                                               "-11.540309826482599 5.014980246618293 13.616409494909078 "
+                                               "6.8938038217739255 -2.580163142352532 -5.848702515778433 "
+                                               "11.520166623181623 -0.26414636893418164 17.725654626324285 "
+                                               "-3.6910106603259862 -5.747999298096374 6.850067634843171 "
+                                               "16.792611164648633 7.81339608279572 -1.6748576247746882 "
+                                               "7.294185157592906 -8.213479728551924 -5.181177837004834 "
+                                               "-2.363460931085683 2.9307897710181123 -19.60977878575318 "
+                                               "-5.626357722731385 -3.8857454141075323 -15.21120604177655 "
+                                               "-21.23967741658828 -7.433492911261084 5.986054967656173 "
+                                               "-0.2472470831304605 -4.252500955671167 6.285397956497022 "
+                                               "-10.087631670227893 -2.936382384586807 13.850132289055523 "
+                                               "-1.6230114467674603 -6.137660325940608 12.358797331540874 "
+                                               "15.361852639613971 -7.395509537102164 -3.4680250777444144 "
+                                               "11.543534617091353 2.1153010560743724 -6.1108581863128535 "
+                                               "2.4532196427825284 -1.6047644982741716 5.190795110418094 "
+                                               "0.40139303958456196 11.96302944378589 12.660577579061767 "
+                                               "1196.3041637890071 1266.0596612286872 1719846.5445062846 "
+                                               "1485783.6202875 1838252.7229766874 2.714668570418218E9 "
+                                               "2.106666890772152E9 2.1421214796751451E9 2.8349699962925887E9 "
+                                               "4.528468416208078E12 3.2949497103892886E12 3.0161488655484473E12 "
+                                               "3.2930355498080786E12 4.550261299826646E12 7.824367950003595E15 "
+                                               "5.464560367850104E15 4.686502506566912E15 4.616510470870998E15 "
+                                               "5.276444951800235E15 7.530553575860649E15 1.3844135530148071E19 "
+                                               "9.408014352057864E18 7.7275759384866017E18 7.1369460697416591E18 "
+                                               "7.373674200122966E18 8.7221483757320745E18 1.277368891891578E19 "
+                                               "100.0 537.4423453941299 485.2431449404924 1253541.1543424227 "
+                                               "899439.7598253534 1082433.2436210443 2.5451681382231455E9 "
+                                               "1.814150348079708E9 1.6692374367919033E9 2.1769137889095693E9 "
+                                               "4.992425732284977E12 3.5258872445513765E12 3.074020072484778E12 "
+                                               "3.1163128442286265E12 4.266956980967905E12 9.700243843041522E15 "
+                                               "6.781968704541316E15 5.745611297869626E15 5.443791159762913E15 "
+                                               "5.856309886603154E15 8.280136088463922E15 1.8821205899653665E19 "
+                                               "1.3042150458228838E19 1.0829624014456685E19 9.899910593314652E18 "
+                                               "9.885988268659214E18 1.1051253229808925E19 1.6002173610912907E19 "
+                                               "0.0 2048 2048 "),
+                                               transformId="testing")
+

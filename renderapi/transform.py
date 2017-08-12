@@ -1370,7 +1370,7 @@ def estimate_dstpts(transformlist, src=None):
     return dstpts
 
 
-class NonLinearTransform(renderapi.transform.Transform):
+class NonLinearTransform(Transform):
     """
     render-python class that implements the mpicbg.trakem2.transform.nonLinearTransform class
     
@@ -1391,12 +1391,13 @@ class NonLinearTransform(renderapi.transform.Transform):
 
     className = 'mpicbg.trakem2.transform.nonLinearTransform'
 
-    def __init__(self, dataString=None, json=None):
+    def __init__(self, dataString=None, json=None,transformId=None):
         if json is not None:
             self.from_dict(json)
         else:
             if dataString is not None:
                 self._process_dataString(dataString)
+        self.transformId = transformId
 
     def _process_dataString(self, dataString):
         # trailing whitespace in string.... for some reason
@@ -1409,13 +1410,13 @@ class NonLinearTransform(renderapi.transform.Transform):
         self.height = int(fields[-1])
         
         # beta is defined in alternating column order
-        self.beta = numpy.column_stack([
-                numpy.array(fields[2:2+self.length*2][::2], dtype='float32'),
-                numpy.array(fields[3:2+self.length*2][::2], dtype='float32')])
+        self.beta = np.column_stack([
+                np.array(fields[2:2+self.length*2][::2], dtype='float32'),
+                np.array(fields[3:2+self.length*2][::2], dtype='float32')])
 
         # normMean and normVar follow
-        self.normMean = numpy.array(fields[2+self.length*2:2+self.length*3], dtype='float32')
-        self.normVar = numpy.array(fields[2+self.length*3:2+self.length*4], dtype='float32')
+        self.normMean = np.array(fields[2+self.length*2:2+self.length*3], dtype='float32')
+        self.normVar = np.array(fields[2+self.length*3:2+self.length*4], dtype='float32')
 
     def tform(self, src):
         """transform a set of points through this transformation
@@ -1433,19 +1434,19 @@ class NonLinearTransform(renderapi.transform.Transform):
         x = src[:, 0]
         y = src[:, 1]
         
-        expanded = numpy.zeros([len(x), self.length])
+        expanded = np.zeros([len(x), self.length])
         pidx = 0
         for i in range(1, self.dimension + 1):
             for j in range(i, -1, -1):
                 expanded[:, pidx] = (
-                    numpy.power(x, j) * numpy.power(y, i - j))
+                    np.power(x, j) * np.power(y, i - j))
                 pidx += 1
 
 
         expanded[:, :-1] = (expanded[:, :-1] - self.normMean[:-1]) / self.normVar[:-1]
         expanded[:, -1] = 100
 
-        dst = numpy.zeros(src.shape)
+        dst = np.zeros(src.shape)
         for i in range(0, expanded.shape[1]):
             dst[:, 0] =  dst[:, 0] + expanded[:, i] * self.beta[i][0]
             dst[:, 1] = dst[:, 1] + expanded[:, i] * self.beta[i][1]
