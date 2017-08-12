@@ -1,4 +1,4 @@
-FROM fcollman/render-python-base
+FROM fcollman/render-python-base:latest
 MAINTAINER Forrest Collman (forrest.collman@gmail.com)
 
 RUN mkdir -p /usr/local/render-python
