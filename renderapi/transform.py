@@ -1424,7 +1424,18 @@ class NonLinearTransform(Transform):
         assert(self.normVar.shape[0]==self.length)
 
     def kernelExpand(self,src):
+        """creates an expanded representation of the x,y src points in a polynomial form
 
+        Parameters
+        ----------
+        points : numpy.array
+            a Nx2 array of x,y points
+
+        Returns
+        -------
+        numpy.array
+            a (N x self.length) array of coefficents
+        """
         x = src[:, 0]
         y = src[:, 1]
         
