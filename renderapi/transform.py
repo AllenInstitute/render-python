@@ -1391,6 +1391,9 @@ class NonLinearTransform(Transform):
 
     className = 'mpicbg.trakem2.transform.nonLinearTransform'
 
+
+
+
     def __init__(self, dataString=None, json=None,transformId=None):
         if json is not None:
             self.from_dict(json)
@@ -1402,6 +1405,7 @@ class NonLinearTransform(Transform):
     def _process_dataString(self, dataString):
         # trailing whitespace in string.... for some reason
         fields = dataString.split(" ")[:-1]
+        
         self.dimension = int(fields[0])
         self.length = int(fields[1])
 
@@ -1409,14 +1413,33 @@ class NonLinearTransform(Transform):
         self.width = int(fields[-2])
         self.height = int(fields[-1])
         
-        # beta is defined in alternating column order
-        self.beta = np.column_stack([
-                np.array(fields[2:2+self.length*2][::2], dtype='float32'),
-                np.array(fields[3:2+self.length*2][::2], dtype='float32')])
+        data = np.array(fields[2:-2],dtype='float32')
+        self.beta=data[0:2*self.length].reshape(self.length,2)
+        assert(self.beta.shape[0]==self.length)
 
         # normMean and normVar follow
-        self.normMean = np.array(fields[2+self.length*2:2+self.length*3], dtype='float32')
-        self.normVar = np.array(fields[2+self.length*3:2+self.length*4], dtype='float32')
+        self.normMean = data[self.length*2:self.length*3]
+        self.normVar = data[self.length*3:self.length*4]
+        assert(self.normMean.shape[0]==self.length)
+        assert(self.normVar.shape[0]==self.length)
+
+    def kernelExpand(self,src):
+
+        x = src[:, 0]
+        y = src[:, 1]
+        
+        expanded = np.zeros([len(x), self.length])
+        pidx = 0
+        for i in range(1, self.dimension + 1):
+            for j in range(i, -1, -1):
+                expanded[:, pidx] = (
+                    np.power(x, j) * np.power(y, i - j))
+                pidx += 1
+
+
+        expanded[:, :-1] = (expanded[:, :-1] - self.normMean[:-1]) / self.normVar[:-1]
+        expanded[:, -1] = 100.0
+        return expanded
 
     def tform(self, src):
         """transform a set of points through this transformation
@@ -1431,26 +1454,17 @@ class NonLinearTransform(Transform):
         numpy.array
             a Nx2 array of x,y points after transformation
         """
-        x = src[:, 0]
-        y = src[:, 1]
-        
-        expanded = np.zeros([len(x), self.length])
-        pidx = 0
-        for i in range(1, self.dimension + 1):
-            for j in range(i, -1, -1):
-                expanded[:, pidx] = (
-                    np.power(x, j) * np.power(y, i - j))
-                pidx += 1
 
-
-        expanded[:, :-1] = (expanded[:, :-1] - self.normMean[:-1]) / self.normVar[:-1]
-        expanded[:, -1] = 100
+        # final double[] featureVector = kernelExpand(position);
+        # return multiply(beta, featureVector);
+        nsrc = np.array(src,dtype=np.float64)
+        featureVector = self.kernelExpand(nsrc)
 
         dst = np.zeros(src.shape)
-        for i in range(0, expanded.shape[1]):
-            dst[:, 0] =  dst[:, 0] + expanded[:, i] * self.beta[i][0]
-            dst[:, 1] = dst[:, 1] + expanded[:, i] * self.beta[i][1]
-        return dst
+        for i in range(0, featureVector.shape[1]):
+            dst[:, 0] =  dst[:, 0] + (featureVector[:, i] * self.beta[i,0])
+            dst[:, 1] = dst[:, 1] + (featureVector[:, i] * self.beta[i,1])
+        return np.array(dst,dtype=src.dtype)
     
     @property
     def dataString(self):

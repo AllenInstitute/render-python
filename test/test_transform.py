@@ -398,3 +398,13 @@ def test_non_linear_transform():
                                                "0.0 2048 2048 "),
                                                transformId="testing")
 
+    ticks = np.arange(0,2048,64,np.float)
+    xx,yy = np.meshgrid(ticks,ticks)
+    x = np.ravel(xx).T
+    y = np.ravel(yy).T
+    xy = np.vstack((x,y)).T
+
+    xyp=lens_tform.tform(xy)
+    dv = xyp-xy
+    mean_disp= np.mean(np.sqrt(np.sum(dv**2,axis=1)))
+    assert((mean_disp-0.7570507)<.01)
