@@ -1496,7 +1496,7 @@ class NonLinearTransform(Transform):
             shapestring, betastring, meanstring, varstring, dimstring)
 
 
-class LensCorrection(Transform):
+class LensCorrection(NonLinearTransform):
     """
     a placeholder for the lenscorrection transform, same as NonLinearTransform
     for now
