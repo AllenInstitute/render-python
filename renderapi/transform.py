@@ -161,7 +161,8 @@ def load_leaf_json(d):
             lambda x: Polynomial2DTransform(json=x),
         TranslationModel.className: lambda x: TranslationModel(json=x),
         RigidModel.className: lambda x: RigidModel(json=x),
-        SimilarityModel.className: lambda x: SimilarityModel(json=x)}
+        SimilarityModel.className: lambda x: SimilarityModel(json=x),
+        NonLinearTransform.className lambda x: NonLinearTransform(json=x)}
 
     tform_type = d.get('type', 'leaf')
     if tform_type != 'leaf':
