@@ -1403,6 +1403,7 @@ class NonLinearCoordinateTransform(Transform):
             if dataString is not None:
                 self._process_dataString(dataString)
         self.transformId = transformId
+        self.className = 'mpicbg.trakem2.transform.NonLinearCoordinateTransform'
 
     def _process_dataString(self, dataString):
 
@@ -1412,7 +1413,7 @@ class NonLinearCoordinateTransform(Transform):
         self.length = int(fields[1])
 
         #cutoff whitespace if there
-        fields=fields[0:2+4*length+2]
+        fields=fields[0:2+4*self.length+2]
         # last 2 fields are width and height
         self.width = int(fields[-2])
         self.height = int(fields[-1])
