@@ -359,7 +359,7 @@ class Transform(object):
         d['className'] = self.className
         d['dataString'] = self.dataString
         if self.transformId is not None:
-            d['transformId'] = self.transformId
+            d['id'] = self.transformId
         return d
 
     def from_dict(self, d):
@@ -371,7 +371,7 @@ class Transform(object):
             json compatible representation of this transform
         """
         self.className = d['className']
-        self.transformId = d.get('transformId', None)
+        self.transformId = d.get('id', None)
         self._process_dataString(d['dataString'])
 
     def _process_dataString(self, datastring):
