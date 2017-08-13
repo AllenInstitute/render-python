@@ -1405,12 +1405,14 @@ class NonLinearCoordinateTransform(Transform):
         self.transformId = transformId
 
     def _process_dataString(self, dataString):
-        # trailing whitespace in string.... for some reason
-        fields = dataString.split(" ")[:-1]
+
+        fields = dataString.split(" ")
         
         self.dimension = int(fields[0])
         self.length = int(fields[1])
 
+        #cutoff whitespace if there
+        fields=fields[0:2+4*length+2]
         # last 2 fields are width and height
         self.width = int(fields[-2])
         self.height = int(fields[-1])
