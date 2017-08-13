@@ -1416,13 +1416,16 @@ class NonLinearTransform(Transform):
         
         data = np.array(fields[2:-2],dtype='float32')
         self.beta=data[0:2*self.length].reshape(self.length,2)
-        assert(self.beta.shape[0]==self.length)
+        if not (self.beta.shape[0]==self.length):
+            raise RenderError("not correct number of coefficents")
 
         # normMean and normVar follow
         self.normMean = data[self.length*2:self.length*3]
         self.normVar = data[self.length*3:self.length*4]
-        assert(self.normMean.shape[0]==self.length)
-        assert(self.normVar.shape[0]==self.length)
+        if not (self.normMean.shape[0]==self.length):
+            raise RenderError("incorrect number of normMean coefficents")
+        if not (self.normVar.shape[0]==self.length):
+            raise RenderError("incorrect number of normVar coefficents")
 
     def kernelExpand(self,src):
         """creates an expanded representation of the x,y src points in a polynomial form
