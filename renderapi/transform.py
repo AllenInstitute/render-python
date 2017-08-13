@@ -1496,7 +1496,7 @@ class NonLinearCoordinateTransform(Transform):
             shapestring, betastring, meanstring, varstring, dimstring)
 
 class NonLinearTransform(NonLinearTransform):
-    classname = 'mpicbg.trakem2.transform.nonLinearTransform'
+    className = 'mpicbg.trakem2.transform.nonLinearTransform'
 
 class LensCorrection(NonLinearCoordinateTransform):
     """
