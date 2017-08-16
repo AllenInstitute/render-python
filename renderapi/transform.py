@@ -164,7 +164,8 @@ def load_leaf_json(d):
         SimilarityModel.className: lambda x: SimilarityModel(json=x),
         NonLinearTransform.className: lambda x: NonLinearTransform(json=x),
         LensCorrection.className: lambda x: LensCorrection(json=x),
-        NonLinearCoordinateTransform.className: lambda x: NonLinearCoordinateTransform(json=x)}
+        NonLinearCoordinateTransform.className:
+            lambda x: NonLinearCoordinateTransform(json=x)}
 
     tform_type = d.get('type', 'leaf')
     if tform_type != 'leaf':
@@ -571,7 +572,7 @@ class AffineModel(Transform):
     def concatenate(self, model):
         """concatenate a model to this model -- ported from trakEM2 below:
             ::
-                
+
                 final double a00 = m00 * model.m00 + m01 * model.m10;
                 final double a01 = m00 * model.m01 + m01 * model.m11;
                 final double a02 = m00 * model.m02 + m01 * model.m12 + m02;
@@ -752,8 +753,6 @@ class TranslationModel(AffineModel):
 
     def __init__(self, *args, **kwargs):
         super(TranslationModel, self).__init__(*args, **kwargs)
-        # raise NotImplementedError(
-        #     'TranslationModel not implemented. please use Affine')
 
     def _process_dataString(self, dataString):
         """expected dataString is 'tx ty'"""
@@ -843,8 +842,6 @@ class RigidModel(AffineModel):
 
     def __init__(self, *args, **kwargs):
         super(RigidModel, self).__init__(*args, **kwargs)
-        # raise NotImplementedError(
-        #     'RigidModel not implemented. please use Affine')
 
     def _process_dataString(self, dataString):
         """expected datastring is 'theta tx ty'"""
@@ -972,8 +969,6 @@ class SimilarityModel(RigidModel):
 
     def __init__(self, *args, **kwargs):
         super(SimilarityModel, self).__init__(*args, **kwargs)
-        # raise NotImplementedError(
-        #     'SimilarityModel not implemented. please use Affine')
 
     def _process_dataString(self, dataString):
         """expected datastring is 's theta tx ty'"""
@@ -1373,17 +1368,16 @@ def estimate_dstpts(transformlist, src=None):
     return dstpts
 
 
-    
-
 class NonLinearCoordinateTransform(Transform):
     """
-    render-python class that implements the mpicbg.trakem2.transform.NonLinearCoordinateTransform class
-    
+    render-python class that implements the
+    mpicbg.trakem2.transform.NonLinearCoordinateTransform class
+
     Parameters
     ----------
-    dataString:str or None
+    dataString: str or None
         data string of transformation
-    json:dict or NOne
+    json: dict or None
         json compatible dictionary representation of the transformation
 
     Returns
@@ -1396,7 +1390,7 @@ class NonLinearCoordinateTransform(Transform):
 
     className = 'mpicbg.trakem2.transform.NonLinearCoordinateTransform'
 
-    def __init__(self, dataString=None, json=None,transformId=None):
+    def __init__(self, dataString=None, json=None, transformId=None):
         if json is not None:
             self.from_dict(json)
         else:
@@ -1408,31 +1402,41 @@ class NonLinearCoordinateTransform(Transform):
     def _process_dataString(self, dataString):
 
         fields = dataString.split(" ")
-        
+
         self.dimension = int(fields[0])
         self.length = int(fields[1])
 
-        #cutoff whitespace if there
-        fields=fields[0:2+4*self.length+2]
+        # cutoff whitespace if there
+        fields = fields[0:2+4*self.length+2]
         # last 2 fields are width and height
         self.width = int(fields[-2])
         self.height = int(fields[-1])
-        
-        data = np.array(fields[2:-2],dtype='float32')
-        self.beta=data[0:2*self.length].reshape(self.length,2)
-        if not (self.beta.shape[0]==self.length):
+
+        data = np.array(fields[2:-2], dtype='float32')
+        try:
+            self.beta = data[0:2*self.length].reshape(self.length, 2)
+        except ValueError as e:
+            raise RenderError(
+                'Incorrect number of coefficients in '
+                'NonLinearCoordinateTransform. msg: {}'.format(e))
+        if not (self.beta.shape[0] == self.length):
             raise RenderError("not correct number of coefficents")
 
         # normMean and normVar follow
         self.normMean = data[self.length*2:self.length*3]
         self.normVar = data[self.length*3:self.length*4]
-        if not (self.normMean.shape[0]==self.length):
-            raise RenderError("incorrect number of normMean coefficents")
-        if not (self.normVar.shape[0]==self.length):
-            raise RenderError("incorrect number of normVar coefficents")
+        if not (self.normMean.shape[0] == self.length):
+            raise RenderError(
+                "incorrect number of normMean coefficents "
+                "{} != length {}".format(self.normMean.shape[0], self.length))
+        if not (self.normVar.shape[0] == self.length):
+            raise RenderError(
+                "incorrect number of normVar coefficents "
+                "{} != {}".format(self.normVar.shape[0], self.length))
 
-    def kernelExpand(self,src):
-        """creates an expanded representation of the x,y src points in a polynomial form
+    def kernelExpand(self, src):
+        """creates an expanded representation of the x,y
+        src points in a polynomial form
 
         Parameters
         ----------
@@ -1446,7 +1450,7 @@ class NonLinearCoordinateTransform(Transform):
         """
         x = src[:, 0]
         y = src[:, 1]
-        
+
         expanded = np.zeros([len(x), self.length])
         pidx = 0
         for i in range(1, self.dimension + 1):
@@ -1455,8 +1459,8 @@ class NonLinearCoordinateTransform(Transform):
                     np.power(x, j) * np.power(y, i - j))
                 pidx += 1
 
-
-        expanded[:, :-1] = (expanded[:, :-1] - self.normMean[:-1]) / self.normVar[:-1]
+        expanded[:, :-1] = ((expanded[:, :-1] - self.normMean[:-1]) /
+                            self.normVar[:-1])
         expanded[:, -1] = 100.0
         return expanded
 
@@ -1476,30 +1480,32 @@ class NonLinearCoordinateTransform(Transform):
 
         # final double[] featureVector = kernelExpand(position);
         # return multiply(beta, featureVector);
-        nsrc = np.array(src,dtype=np.float64)
+        nsrc = np.array(src, dtype=np.float64)
         featureVector = self.kernelExpand(nsrc)
 
         dst = np.zeros(src.shape)
         for i in range(0, featureVector.shape[1]):
-            dst[:, 0] =  dst[:, 0] + (featureVector[:, i] * self.beta[i,0])
-            dst[:, 1] = dst[:, 1] + (featureVector[:, i] * self.beta[i,1])
-        return np.array(dst,dtype=src.dtype)
-    
+            dst[:, 0] = dst[:, 0] + (featureVector[:, i] * self.beta[i, 0])
+            dst[:, 1] = dst[:, 1] + (featureVector[:, i] * self.beta[i, 1])
+        return np.array(dst, dtype=src.dtype)
+
     @property
     def dataString(self):
         shapestring = '{} {}'.format(self.dimension, self.length)
         betastring = ' '.join([str(i).replace('e-0', 'e-').replace('e+0', 'e+')
-                                for i in self.beta.ravel()]).replace('e', 'E')
+                               for i in self.beta.ravel()]).replace('e', 'E')
         meanstring = ' '.join([str(i).replace('e-0', 'e-').replace('e+0', 'e+')
-                                for i in self.normMean]).replace('e', 'E')
+                               for i in self.normMean]).replace('e', 'E')
         varstring = ' '.join([str(i).replace('e-0', 'e-').replace('e+0', 'e+')
                               for i in self.normVar]).replace('e', 'E')
         dimstring = '{} {}'.format(self.height, self.width)
         return '{} {} {} {} {} '.format(
             shapestring, betastring, meanstring, varstring, dimstring)
 
+
 class NonLinearTransform(NonLinearCoordinateTransform):
     className = 'mpicbg.trakem2.transform.nonLinearTransform'
+
 
 class LensCorrection(NonLinearCoordinateTransform):
     """

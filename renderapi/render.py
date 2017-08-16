@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 import logging
 import os
-from functools import wraps
 import requests
 from .utils import defaultifNone, NullHandler, fitargspec
 from .errors import ClientScriptError, RenderError
 from decorator import decorator
+
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
 
