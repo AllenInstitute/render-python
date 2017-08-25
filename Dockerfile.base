@@ -70,13 +70,8 @@ RUN mkdir -p /usr/local/render-python
 COPY . /usr/local/render-python
 WORKDIR /usr/local/render-python
 RUN pip install -r requirements.txt
-<<<<<<< HEAD
 RUN pip install -r test_requirements.txt
-RUN pip install matplotlib
-=======
-RUN pip install -r ./test/requirements.txt
 RUN pip install matplotlib pandas jupyter
->>>>>>> develop
 #install render python using pip from github
 #RUN pip install -e git+https://github.com/fcollman/render-python.git@master#egg=render-python
 
