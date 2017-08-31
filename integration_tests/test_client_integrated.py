@@ -191,7 +191,7 @@ def test_transformSectionClient(render, teststack,
     deststack = 'test_stack_TSC'
     transformId = 'TSC_testtransform'
     zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
-    tform = renderapi.transform.AffineModel()
+    tform = renderapi.transform.AffineModel(transformId=transformId)
 
     renderapi.client.transformSectionClient(
         teststack, transformId, tform.className,
@@ -201,7 +201,7 @@ def test_transformSectionClient(render, teststack,
 
     output_ts = renderapi.tilespec.get_tile_specs_from_stack(
                     deststack, render=render)
-    root.debug(output_ts[0].tforms[0].to_dict())
+    root.debug(output_ts[0].tforms[-1].to_dict())
     root.debug(output_ts[-1].tforms[-1].to_dict())
     root.debug(tform.to_dict())
     assert all([ts.tforms[-1].to_dict() == tform.to_dict()
