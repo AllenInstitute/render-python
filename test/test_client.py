@@ -62,3 +62,6 @@ def test_decorator():
     assert(owner == args['owner'])
     (owner,host,port,project,client_scripts)=my_decorated(5,owner='newowner',render=r)
     assert(owner == 'newowner')  
+
+def test_bad():
+    assert False
