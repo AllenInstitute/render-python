@@ -177,9 +177,13 @@ def test_importTransformChangesClient(render, teststack):
         teststack, deststack, TCCjson, changeMode='APPEND', render=render)
     renderapi.stack.set_stack_state(deststack, 'COMPLETE', render=render)
     os.remove(TCCjson)
+    
+    output_ts = renderapi.tilespec.get_tile_specs_from_stack(
+                    deststack, render=render)
+    print output_ts[0].tforms[-1]
+    print output_ts[-1].tforms[-1]
     assert all([ts.tforms[-1].to_dict() == tform_to_append.to_dict()
-                for ts in renderapi.tilespec.get_tile_specs_from_stack(
-                    deststack, render=render)])
+                for ts in output_ts])
     renderapi.stack.delete_stack(deststack, render=render)
 
 
