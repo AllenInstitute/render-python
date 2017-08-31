@@ -199,7 +199,7 @@ def test_transformSectionClient(render, teststack,
         render=render)
     renderapi.stack.set_stack_state(deststack, 'COMPLETE', render=render)
 
-     = renderapi.tilespec.get_tile_specs_from_stack(
+    output_ts = renderapi.tilespec.get_tile_specs_from_stack(
                     deststack, render=render)
     print output_ts[0].tforms[-1]
     print output_ts[-1].tforms[-1]
