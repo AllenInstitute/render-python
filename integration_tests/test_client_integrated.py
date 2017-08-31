@@ -177,9 +177,12 @@ def test_importTransformChangesClient(render, teststack):
         teststack, deststack, TCCjson, changeMode='APPEND', render=render)
     renderapi.stack.set_stack_state(deststack, 'COMPLETE', render=render)
     os.remove(TCCjson)
+    
+    output_ts = renderapi.tilespec.get_tile_specs_from_stack(
+                    deststack, render=render)
+
     assert all([ts.tforms[-1].to_dict() == tform_to_append.to_dict()
-                for ts in renderapi.tilespec.get_tile_specs_from_stack(
-                    deststack, render=render)])
+                for ts in output_ts])
     renderapi.stack.delete_stack(deststack, render=render)
 
 
@@ -188,14 +191,19 @@ def test_transformSectionClient(render, teststack,
     deststack = 'test_stack_TSC'
     transformId = 'TSC_testtransform'
     zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
-    tform = renderapi.transform.AffineModel()
+    tform = renderapi.transform.AffineModel(transformId=transformId)
 
     renderapi.client.transformSectionClient(
         teststack, transformId, tform.className,
         tform.dataString.replace(" ", ","), zvalues, targetStack=deststack,
         render=render)
     renderapi.stack.set_stack_state(deststack, 'COMPLETE', render=render)
+
+    output_ts = renderapi.tilespec.get_tile_specs_from_stack(
+                    deststack, render=render)
+    root.debug(output_ts[0].tforms[-1].to_dict())
+    root.debug(output_ts[-1].tforms[-1].to_dict())
+    root.debug(tform.to_dict())
     assert all([ts.tforms[-1].to_dict() == tform.to_dict()
-                for ts in renderapi.tilespec.get_tile_specs_from_stack(
-                    deststack, render=render)])
+                for ts in output_ts])
     renderapi.stack.delete_stack(deststack, render=render)
