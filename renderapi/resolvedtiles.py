@@ -24,17 +24,19 @@ class ResolvedTiles():
 
     def to_dict(self):
         d ={
-            'transformIdToSpecMap':[tf.to_dict() for tf in self.transforms],
-            'tileIdToSpecMap':[ts.to_dict() for ts in self.tilespecs]
+            'transformIdToSpecMap':{tf.transformId: tf.to_dict() for tf in self.transforms},
+            'tileIdToSpecMap':{ts.tileId: ts.to_dict() for ts in self.tilespecs}
         }
         return d
 
     def from_dict(self,d):
         self.tilespecs = []
         self.transforms = []
-        for ts in d['tileIdToSpecMap']:
+        for ts in d['tileIdToSpecMap'].values():
             self.tilespecs.append(TileSpec(json=ts))
-        self.transforms = [load_transform_json(tf) for tf in d['transformIdToSpecMap']]
+        for transformId,tform_json in d['transformIdToSpecMap'].iteritems():
+            tform_json['transformId']=transformId
+            self.transforms.append(load_transform_json(tform_json))
 
 
 @renderaccess
