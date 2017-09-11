@@ -37,9 +37,9 @@ INTERPOLATED_TRANSFORM_TILESPEC = os.path.join(TEST_FILES_DIR, 'tilespec_interpo
 
 REFERENCE_TRANSFORM_TILESPEC = os.path.join(TEST_FILES_DIR, 'tilespec_ref.json')
 
-REFERENCE_TRANSFORM_TILESPECS = os.path.join(TEST_FILES_DIR, 'transform_references.json')
+REFERENCE_TRANSFORM_TILESPECS = os.path.join(TEST_FILES_DIR, 'tilespec_references.json')
 
-TRANSFORM_SPECS = os.path.join(TEST_FILES_DIR,'transform_references.json')
+REFERENCE_TRANSFORM_SPECS = os.path.join(TEST_FILES_DIR,'transform_references.json')
 
 NONLINEAR_TRANSFORM_KWARGS = {
     'className': "mpicbg.trakem2.transform.NonLinearCoordinateTransform",
