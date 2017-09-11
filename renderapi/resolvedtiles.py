@@ -24,21 +24,18 @@ class ResolvedTiles():
 
     def to_dict(self):
         d ={
-            'transformSpecs':[tf.to_dict() for tf in self.transforms],
-            'tileSpecs':[ts.to_dict() for ts in self.tilespecs],
-            'tileCount':len(self.tilespecs),
-            'transformCount':len(self.transforms)
+            'transformIdToSpecMap':[tf.to_dict() for tf in self.transforms],
+            'tileIdToSpecMap':[ts.to_dict() for ts in self.tilespecs]
         }
         return d
 
     def from_dict(self,d):
         self.tilespecs = []
         self.transforms = []
-        for ts in d['tileSpecs']:
+        for ts in d['tileIdToSpecMap']:
             self.tilespecs.append(TileSpec(json=ts))
-        self.transforms = [load_transform_json(tf) for tf in d['transformSpecs']]
-        assert(len(self.tilespecs)==d['tileCount'])
-        assert(len(self.transforms)==d['transformCount'])
+        self.transforms = [load_transform_json(tf) for tf in d['transformIdToSpecMap']]
+
 
 @renderaccess
 def get_resolved_tiles_from_z(stack, z, host=None, port=None,
