@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from .tilespec import TileSpec
-from .transform import TransformList
+from .transform import load_transform_json
 import numpy as np
 import json
 import logging
@@ -8,6 +8,7 @@ import numpy as np
 from .utils import NullHandler
 from .render import format_preamble, renderaccess
 from .errors import RenderError
+
 import requests
 
 logger = logging.getLogger(__name__)
@@ -35,7 +36,7 @@ class ResolvedTiles():
         self.transforms = []
         for ts in d['tileSpecs']:
             self.tilespecs.append(TileSpec(json=ts))
-        self.transforms = TransformList(json=d['transformSpecs'])
+        self.transforms = [load_transform_json(tf) for tf in d['transformSpecs']]
         assert(len(self.tilespecs)==d['tileCount'])
         assert(len(self.transforms)==d['transformCount'])
 
