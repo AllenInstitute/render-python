@@ -28,14 +28,18 @@ DEFAULT_RENDER_CLIENT_ENVIRONMENT_VARIABLES = dict(
         'RENDER_CLIENT_SCRIPT': DEFAULT_RENDER_CLIENT['client_script'],
         'RENDER_CLIENT_HEAP': DEFAULT_RENDER_CLIENT['memGB']})
 
-TEST_TILESPECS_FILE = os.path.join(os.path.dirname(
-    __file__), 'test_files', 'tilespecs.json')
+TEST_FILES_DIR = os.path.join(os.path.dirname(
+    __file__), 'test_files')
 
-INTERPOLATED_TRANSFORM_TILESPEC = os.path.join(os.path.dirname(
-    __file__), 'test_files', 'tilespec_interpolated.json')
+TEST_TILESPECS_FILE = os.path.join(TEST_FILES_DIR, 'tilespecs.json')
 
-REFERENCE_TRANSFORM_TILESPEC = os.path.join(os.path.dirname(
-    __file__), 'test_files', 'tilespec_ref.json')
+INTERPOLATED_TRANSFORM_TILESPEC = os.path.join(TEST_FILES_DIR, 'tilespec_interpolated.json')
+
+REFERENCE_TRANSFORM_TILESPEC = os.path.join(TEST_FILES_DIR, 'tilespec_ref.json')
+
+REFERENCE_TRANSFORM_TILESPECS = os.path.join(TEST_FILES_DIR, 'transform_references.json')
+
+TRANSFORM_SPECS = os.path.join(TEST_FILES_DIR,'transform_references.json')
 
 NONLINEAR_TRANSFORM_KWARGS = {
     'className': "mpicbg.trakem2.transform.NonLinearCoordinateTransform",
