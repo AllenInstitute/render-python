@@ -43,6 +43,14 @@ class ResolvedTiles():
             tform_json['transformId']=transformId
             self.transforms.append(load_transform_json(tform_json))
 
+    #def get_tilespecs():
+    """return a set of TileSpecs that include resolved tilespecs
+    
+    Returns
+    -------
+    List(renderapi.tilespec.TileSpec)
+        A list of tilespecs stored in this ResolvedTiles with the transformations dereferenced
+    """
 
 @renderaccess
 def get_resolved_tiles_from_z(stack, z, host=None, port=None,
