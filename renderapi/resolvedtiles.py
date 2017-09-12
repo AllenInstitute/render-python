@@ -4,7 +4,6 @@ from .transform import load_transform_json
 import numpy as np
 import json
 import logging
-import numpy as np
 from .utils import NullHandler
 from .render import format_preamble, renderaccess
 from .errors import RenderError
@@ -17,8 +16,14 @@ logger.addHandler(NullHandler())
 class ResolvedTiles():
     def __init__(self,tilespecs=None,transformList=None, json = None):
         if json is None:
-            self.tilespecs=tilespecs
-            self.transforms=transformList
+            if tilespecs is None:
+                self.tilespecs=[]
+            else:
+                self.tilespecs=tilespecs
+            if transformList is None:
+                self.transforms=[]
+            else:
+                self.transforms=transformList
         else:
             self.from_dict(json)
 
