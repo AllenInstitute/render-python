@@ -74,5 +74,4 @@ def get_resolved_tiles_from_z(stack, z, host=None, port=None,
         logger.error(e)
         logger.error(r.text)
         raise RenderError(r.text)
-    print d
     return ResolvedTiles(json = d)
