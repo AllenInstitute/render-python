@@ -9,9 +9,10 @@ from . import image
 from . import transform
 from . import pointmatch
 from . import coordinate
+from . import resolvedtiles
 from .render import connect
 from .render import Render
 
 __all__ = ['render', 'client', 'tilespec', 'errors',
            'stack', 'image', 'pointmatch', 'coordinate',
-           'connect', 'transform', 'Render']
+           'connect', 'transform', 'resolvedtiles','Render']

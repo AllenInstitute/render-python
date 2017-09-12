@@ -117,8 +117,8 @@ def load_transform_json(d, default_type='leaf'):
 
     Returns
     -------
-    func
-        proper function to deserialize this transformation
+    renderapi.transform.Transform
+        deserialized transformation using the most appropriate class
 
     Raises
     ------
@@ -146,8 +146,8 @@ def load_leaf_json(d):
 
     Returns
     -------
-    func
-        proper function to deserialize this transformation
+    renderapi.transform.Transform
+        deserialized transformation
 
     Raises
     ------
