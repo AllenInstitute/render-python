@@ -1,61 +1,63 @@
 #!/usr/bin/env python
 from .tilespec import TileSpec
 from .transform import load_transform_json
-import numpy as np
-import json
-import logging
 from .utils import NullHandler
 from .render import format_preamble, renderaccess
 from .errors import RenderError
-
+import logging
 import requests
 
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
 
-class ResolvedTiles():
-    def __init__(self,tilespecs=None,transformList=None, json = None):
+
+class ResolvedTiles:
+    def __init__(self, tilespecs=None, transformList=None, json=None):
         if json is None:
             if tilespecs is None:
-                self.tilespecs=[]
+                self.tilespecs = []
             else:
-                self.tilespecs=tilespecs
+                self.tilespecs = tilespecs
             if transformList is None:
-                self.transforms=[]
+                self.transforms = []
             else:
-                self.transforms=transformList
+                self.transforms = transformList
         else:
             self.from_dict(json)
 
     def to_dict(self):
-        d ={
-            'transformIdToSpecMap':{tf.transformId: tf.to_dict() for tf in self.transforms},
-            'tileIdToSpecMap':{ts.tileId: ts.to_dict() for ts in self.tilespecs}
+        d = {
+            'transformIdToSpecMap': {tf.transformId: tf.to_dict()
+                                     for tf in self.transforms},
+            'tileIdToSpecMap': {ts.tileId: ts.to_dict()
+                                for ts in self.tilespecs}
         }
         return d
 
-    def from_dict(self,d):
+    def from_dict(self, d):
         self.tilespecs = []
         self.transforms = []
         for ts in d['tileIdToSpecMap'].values():
             self.tilespecs.append(TileSpec(json=ts))
-        for transformId,tform_json in d['transformIdToSpecMap'].iteritems():
-            tform_json['transformId']=transformId
+        for transformId, tform_json in d['transformIdToSpecMap'].iteritems():
+            tform_json['transformId'] = transformId
             self.transforms.append(load_transform_json(tform_json))
 
     #def get_tilespecs():
     """return a set of TileSpecs that include resolved tilespecs
-    
+
     Returns
     -------
     List(renderapi.tilespec.TileSpec)
         A list of tilespecs stored in this ResolvedTiles with the transformations dereferenced
     """
 
+
 @renderaccess
 def get_resolved_tiles_from_z(stack, z, host=None, port=None,
-                          owner=None, project=None, session=requests.session(),
-                          render=None, **kwargs):
+                              owner=None, project=None,
+                              session=requests.session(),
+                              render=None, **kwargs):
     """Get a set of ResolvedTiles from a specific z value.
     Returns a tuple of tilespecs and referenced transforms.
 
@@ -87,4 +89,4 @@ def get_resolved_tiles_from_z(stack, z, host=None, port=None,
         logger.error(e)
         logger.error(r.text)
         raise RenderError(r.text)
-    return ResolvedTiles(json = d)
+    return ResolvedTiles(json=d)
