@@ -8,7 +8,7 @@ import json
 import numpy as np
 import dill
 from test_data import (render_host, render_port,
-                       client_script_location, tilespec_file, tform_file)
+                       client_script_location, tilespec_file, tform_file, test_pool_size)
 from pathos.multiprocessing import ProcessingPool as Pool
 
 root = logging.getLogger()
@@ -79,7 +79,7 @@ def test_import_jsonfiles_validate_client(
 
 def test_import_jsonfiles_parallel(
         render, render_example_tilespec_and_transforms,
-        stack='test_import_jsonfiles_parallel', poolsize=5):
+        stack='test_import_jsonfiles_parallel', poolsize=test_pool_size):
     renderapi.stack.create_stack(stack, render=render)
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     (tfiles, transformFile) = render_example_json_files(
@@ -92,7 +92,7 @@ def test_import_jsonfiles_parallel(
 
 
 def test_import_jsonfiles_parallel_multiple(
-        render, render_example_tilespec_and_transforms, poolsize=3):
+        render, render_example_tilespec_and_transforms, poolsize=test_pool_size):
     stacks = ['testmultiple1', 'testmultiple2', 'testmultiple3']
     mylist = range(10)
     for stack in stacks:
@@ -109,7 +109,7 @@ def test_import_tilespecs_parallel(render,
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     renderapi.client.import_tilespecs_parallel(
         stack, tilespecs, sharedTransforms=tforms,
-        poolsize=3, render=render)
+        poolsize=test_pool_size, render=render)
     validate_stack_import(render, stack, tilespecs)
 
 
@@ -121,7 +121,7 @@ def test_import_jsonfiles(render, render_example_tilespec_and_transforms,
         render_example_tilespec_and_transforms)
 
     renderapi.client.import_jsonfiles(
-        stack, tfiles, transformFile=transformFile, poolsize=3, render=render)
+        stack, tfiles, transformFile=transformFile, poolsize=test_pool_size, render=render)
     validate_stack_import(render, stack, tilespecs)
 
 
