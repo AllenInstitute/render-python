@@ -21,7 +21,7 @@ Render connection objects created with `renderapi.connect()` can default to envi
     export RENDER_CLIENT_HEAP="1G"
 
 
-`Usage examples for a development Array Tomography workflow <https://github.com/fcollman/render-python-apps`_ are available.
+`Usage examples for a development Array Tomography workflow <https://github.com/fcollman/render-python-apps>`_ are available.
 
 Documentation 
 #############
