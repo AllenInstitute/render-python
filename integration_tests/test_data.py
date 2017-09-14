@@ -8,3 +8,4 @@ client_script_location = os.environ.get('RENDER_CLIENT_SCRIPTS',
 example_dir = os.environ.get('RENDER_EXAMPLE_DATA','/var/www/render/examples/')
 tilespec_file = os.path.join(example_dir,'example_1','cycle1_step1_acquire_tiles.json')
 tform_file = os.path.join(example_dir,'example_1','cycle1_step1_acquire_transforms.json')
+test_pool_size = os.environ.get('RENDER_PYTHON_TEST_POOL_SIZE',3)
