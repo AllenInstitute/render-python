@@ -3,11 +3,11 @@ import renderapi
 import rendersettings
 
 args = {
-    'host': 'renderhost',
-    'port': 8080,
+    'host': os.environ.get('RENDER_HOST','renderhost'),
+    'port': os.environ.get('RENDER_PORT',8080),
     'owner': 'renderowner',
     'project': 'renderproject',
-    'client_scripts': '/path/to/client_scripts'
+    'client_scripts': os.environ.get('RENDER_CLIENT_SCRIPTS',/path/to/client_scripts'
     }
 def test_render_client():
     r = renderapi.render.connect(**args)
