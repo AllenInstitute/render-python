@@ -4,7 +4,7 @@ ABSOLUTE_ENV_SCRIPT=`readlink -f $0`
 
 export SCRIPTS_DIR=`dirname ${ABSOLUTE_ENV_SCRIPT}`
 
-export RENDER_CLIENT_JAR=`readlink -f render-ws-java-client-*-standalone.jar`
+export RENDER_CLIENT_JAR=`readlink -f render-ws-java-client-2.0.0-SNAPSHOT-standalone.jar`
 
 export BASE_JAVA_COMMAND="${JAVA_HOME}/bin/java -cp ${RENDER_CLIENT_JAR}"
 
