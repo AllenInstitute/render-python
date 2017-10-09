@@ -24,7 +24,7 @@ MEMORY="$1"
 MAIN_CLASS="$2"
 shift 2
 
-ABSOLUTE_SCRIPT=`readlink -m $0`
+ABSOLUTE_SCRIPT=`readlink -f $0`
 SCRIPTS_DIR=`dirname ${ABSOLUTE_SCRIPT}`
 . ${SCRIPTS_DIR}/setup_java_env.sh ${MEMORY}
 

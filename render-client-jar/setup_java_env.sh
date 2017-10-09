@@ -1,10 +1,10 @@
 #!/bin/bash
 
-ABSOLUTE_ENV_SCRIPT=`readlink -m $0`
+ABSOLUTE_ENV_SCRIPT=`readlink -f $0`
 
 export SCRIPTS_DIR=`dirname ${ABSOLUTE_ENV_SCRIPT}`
 
-export RENDER_CLIENT_JAR=`readlink -m render-ws-java-client-*-standalone.jar`
+export RENDER_CLIENT_JAR=`readlink -f render-ws-java-client-*-standalone.jar`
 
 export BASE_JAVA_COMMAND="${JAVA_HOME}/bin/java -cp ${RENDER_CLIENT_JAR}"
 
