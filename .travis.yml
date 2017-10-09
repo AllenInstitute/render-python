@@ -22,7 +22,7 @@ addons:
 install:
   - pip install -r requirements.txt
   - pip install -r test_requirements.txt
-  - ln -s example_1 /tmp/example_1 
+  - cp -R example_1 /tmp/
 before_install:
   - docker-compose up -d
 env:
