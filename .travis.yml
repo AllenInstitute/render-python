@@ -6,6 +6,8 @@ python:
   - "3.5-dev" # 3.5 development branch
   - "3.6"
   - "3.6-dev" # 3.6 development branch
+services:
+  - docker
 # command to install dependencies
 addons:
   apt:
@@ -19,6 +21,12 @@ addons:
 install:
   - pip install -r requirements.txt
   - pip install -r test_requirements.txt
+  - docker-compose up
+env:
+  - RENDER_HOST=localhost
+  - RENDER_PORT=8080
+  - RENDER_EXAMPLE_DATA=$TRAVIS_BUILD_DIR
+  - RENDER_CLIENT_SCRIPTS=$TRAVIS_BUILD_DIR/render-client-jar
 # command to run tests
 script:
-  - python setup.py test -a test # or py.test for Python versions 3.5 and below
+  - python setup.py test # or py.test for Python versions 3.5 and below
