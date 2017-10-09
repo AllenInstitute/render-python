@@ -29,3 +29,4 @@ env:
 # command to run tests
 script:
   - python setup.py test # or py.test for Python versions 3.5 and below
+  
