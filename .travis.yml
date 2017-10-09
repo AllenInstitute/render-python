@@ -21,6 +21,7 @@ addons:
 install:
   - pip install -r requirements.txt
   - pip install -r test_requirements.txt
+before_install:
   - docker-compose up
 env:
   - RENDER_HOST=localhost
