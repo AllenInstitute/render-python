@@ -8,7 +8,7 @@ import inspect
 import copy
 import json
 from .errors import RenderError
-
+import numpy
 
 class NullHandler(logging.Handler):
     """handler to avoid logging errors for, e.g., missing logger setup"""
@@ -41,6 +41,7 @@ class RenderEncoder(json.JSONEncoder):
             json encodable datatype
 
         """
+        if isinstance(obj, numpy.integer): return int(obj)
         to_dict = getattr(obj, "to_dict", None)
         if callable(to_dict):
             return obj.to_dict()
