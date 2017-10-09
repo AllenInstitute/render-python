@@ -23,7 +23,7 @@ install:
   - pip install -r requirements.txt
   - pip install -r test_requirements.txt
 before_install:
-  - docker-compose up
+  - docker-compose up -d
 env:
   - RENDER_HOST=localhost RENDER_PORT=8080 RENDER_EXAMPLE_DATA=$TRAVIS_BUILD_DIR RENDER_CLIENT_SCRIPTS=$TRAVIS_BUILD_DIR/render-client-jar
 # command to run tests
