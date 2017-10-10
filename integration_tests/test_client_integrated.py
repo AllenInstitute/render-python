@@ -42,7 +42,7 @@ def render_example_tilespec_and_transforms():
 
     tilespecs = [renderapi.tilespec.TileSpec(json=ts) for ts in ts_json]
     tforms = [renderapi.transform.load_transform_json(td) for td in tform_json]
-    print tforms
+    root.debug(tforms)
     return (tilespecs, tforms)
 
 

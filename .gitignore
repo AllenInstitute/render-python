@@ -11,3 +11,4 @@ test-reports/
 docs/_build/
 htmlcov/
 .cache
+.tox

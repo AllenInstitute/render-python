@@ -3,7 +3,13 @@ import renderapi
 import numpy as np
 import scipy.linalg
 import rendersettings
+import importlib
 
+def cross_py23_reload(module):
+    try:
+        reload(module)
+    except NameError as e:
+        importlib.reload(module)
 
 def test_affine_rot_90():
     am = renderapi.transform.AffineModel()
@@ -81,7 +87,9 @@ def test_Polynomial_estimation(use_numpy=False):
                 raise ImportError
             return realimport(name, globals, locals, fromlist, level)
         builtins.__import__ = noscipy_import
-    reload(renderapi.transform)
+
+    cross_py23_reload(renderapi.transform)
+
     assert(renderapi.transform.svd is np.linalg.svd
            if use_numpy else renderapi.transform.svd is scipy.linalg.svd)
 
@@ -99,7 +107,7 @@ def test_Polynomial_estimation(use_numpy=False):
 
     if use_numpy:
         builtins.__import__ = realimport
-    reload(renderapi.transform)
+    cross_py23_reload(renderapi.transform)
     assert(renderapi.transform.svd is scipy.linalg.svd)
 
 
