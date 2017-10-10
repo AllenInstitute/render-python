@@ -88,7 +88,7 @@ test_matches = [
 def render():
     render_test_parameters = {
             'host': render_host,
-            'port': 8080,
+            'port': render_port,
             'owner': 'test',
             'project': 'test_pointmatch_project',
             'client_scripts': client_script_location

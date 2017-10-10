@@ -1,0 +1,31 @@
+language: python
+python:
+  - "2.7"
+  - "3.5"
+  - "3.5-dev" # 3.5 development branch
+  - "3.6"
+  - "3.6-dev" # 3.6 development branch
+services:
+  - docker
+# command to install dependencies
+addons:
+  apt:
+    packages:
+        - libblas-dev
+        - liblapack-dev
+        - libatlas-base-dev
+        - libopenblas-base
+        - libopenblas-dev
+        - gfortran
+        - oracle-java8-set-default
+install:
+  - pip install -r requirements.txt
+  - pip install -r test_requirements.txt
+  - cp -R example_1 /tmp/
+before_install:
+  - docker-compose up -d
+env:
+  - RENDER_HOST=localhost RENDER_PORT=8080 RENDER_EXAMPLE_DATA=/tmp RENDER_CLIENT_SCRIPTS=$TRAVIS_BUILD_DIR/render-client-jar
+# command to run tests
+script:
+  - python setup.py test # or py.test for Python versions 3.5 and below

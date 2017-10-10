@@ -1,0 +1,16 @@
+version: "2.0"
+services:
+ renderservice:
+    image: fcollman/render-ws
+    ports:
+      - "8080:8080"
+    links:
+      - mongo
+    volumes:
+      - ./example_1:/tmp/example_1:ro
+ mongo:
+    image: mongo:3.4.2
+    ports:
+        - "27017"
+    security_opt:
+      - seccomp:unconfined
