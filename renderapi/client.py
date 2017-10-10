@@ -321,7 +321,7 @@ def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
         memGB=memGB, **kwargs)
 
     # TODO this is a weird way to do splits.... is that okay?
-    tilespec_groups = [tilespecs[i::poolsize] for i in xrange(poolsize)]
+    tilespec_groups = [tilespecs[i::poolsize] for i in range(poolsize)]
     with WithPool(poolsize) as pool:
         pool.map(partial_import, tilespec_groups)
     if close_stack:

@@ -1240,10 +1240,10 @@ class Polynomial2DTransform(Transform):
             a (2,K/2) matrix of parameters, with
             first row for x and 2nd row for y
         """
-
+        halfway = int (len(raveled_params) / 2)
         return np.array(
-            [[float(d) for d in raveled_params[:len(raveled_params) / 2]],
-             [float(d) for d in raveled_params[len(raveled_params) / 2:]]])
+            [[float(d) for d in raveled_params[:halfway]],
+             [float(d) for d in raveled_params[halfway:]]])
 
     def tform(self, points):
         """transform a set of points through this transformation
@@ -1538,16 +1538,20 @@ def estimate_transformsum(transformlist, src=None, order=2):
     def flatten(l):
         """generator-iterator to flatten deep lists of lists"""
         for i in l:
-            if (isinstance(i, Iterable) and not
-                    isinstance(i, basestring)):
-                for sub in flatten(i):
-                    yield sub
+            if isinstance(i, Iterable):
+                try:
+                    notstring = isinstance(i, basestring)
+                except NameError as e:
+                    notstring = isinstance(i, str)
+                if notstring:
+                    for sub in flatten(i):
+                        yield sub
             else:
                 yield i
 
     dstpts = estimate_dstpts(transformlist, src)
     tforms = flatten(transformlist)
-    if all([tform.className == AffineModel.className
+    if all([(tform.className == AffineModel.className)
             for tform in tforms]):
         am = AffineModel()
         am.estimate(A=src, B=dstpts, return_params=False)

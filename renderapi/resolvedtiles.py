@@ -39,7 +39,7 @@ class ResolvedTiles:
         self.transforms = []
         for ts in d['tileIdToSpecMap'].values():
             self.tilespecs.append(TileSpec(json=ts))
-        for transformId, tform_json in d['transformIdToSpecMap'].iteritems():
+        for transformId, tform_json in d['transformIdToSpecMap'].items():
             tform_json['transformId'] = transformId
             self.transforms.append(load_transform_json(tform_json))
 
