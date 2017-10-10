@@ -18,14 +18,16 @@ addons:
         - libopenblas-dev
         - gfortran
         - oracle-java8-set-default
+        - maven
 install:
   - pip install -r requirements.txt
   - pip install -r test_requirements.txt
-  - cp -R example_1 /tmp/
+  - git clone https://github.com/saalfeldlab/render.git
+  - mvn package
 before_install:
   - docker-compose up -d
 env:
-  - RENDER_HOST=localhost RENDER_PORT=8080 RENDER_EXAMPLE_DATA=/tmp RENDER_CLIENT_SCRIPTS=$TRAVIS_BUILD_DIR/render-client-jar
+  - RENDER_HOST=localhost RENDER_PORT=8080 RENDER_EXAMPLE_DATA=$TRAVIS_BUILD_DIR/render/render-ws-java-client/src/main/resources RENDER_CLIENT_SCRIPTS=$TRAVIS_BUILD_DIR/render/render-ws-java-client/src/main/scripts
 # command to run tests
 script:
   - python setup.py test # or py.test for Python versions 3.5 and below
