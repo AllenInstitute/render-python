@@ -23,7 +23,7 @@ install:
   - pip install -r requirements.txt
   - pip install -r test_requirements.txt
   - git clone https://github.com/saalfeldlab/render.git
-  - mvn package
+  - mvn package -DskipTests
 before_install:
   - docker-compose up -d
 env:
