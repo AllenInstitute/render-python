@@ -3,7 +3,7 @@
 coordinate mapping functions for render api
 '''
 from .render import format_preamble, renderaccess
-from .utils import NullHandler
+from .utils import NullHandler, renderdumps, renderdump
 from .client import coordinateClient
 from .errors import RenderError
 import requests
@@ -176,7 +176,7 @@ def world_to_local_coordinates_batch(stack, d, z, host=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%s/world-to-local-coordinates" % (str(z))
-    r = session.put(request_url, data=json.dumps(d),
+    r = session.put(request_url, data=renderdumps(d),
                     headers={"content-type": "application/json"})
     return r.json()
 
@@ -230,7 +230,7 @@ def local_to_world_coordinates_batch(stack, d, z, host=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%s/local-to-world-coordinates" % (str(z))
-    r = session.put(request_url, data=json.dumps(d),
+    r = session.put(request_url, data=renderdumps(d),
                     headers={"content-type": "application/json"})
     try:
         return r.json()
@@ -529,7 +529,7 @@ def map_coordinates_clientside(stack, jsondata, z, host, port, owner,
             mode='w', delete=False) as f:
         logger.debug('jsondata:{}'.format(jsondata))
         json_inpath = f.name
-        json.dump(jsondata, f)
+        renderdump(jsondata, f)
 
     # get a temporary location for the output
     with tempfile.NamedTemporaryFile(
