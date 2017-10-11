@@ -44,7 +44,7 @@ class WithPool(Pool):
 
 @renderaccess
 def import_single_json_file(stack, jsonfile, transformFile=None,
-                            client_scripts=None, host=None, port=None,
+                            client_script=None, memGB=None, host=None, port=None,
                             owner=None, project=None, render=None, **kwargs):
     """calls client script to import given jsonfile
 
@@ -67,14 +67,9 @@ def import_single_json_file(stack, jsonfile, transformFile=None,
     my_env = os.environ.copy()
     stack_params = make_stack_params(
         host, port, owner, project, stack)
-    cmd = [os.path.join(client_scripts, 'import_json.sh')] + \
-        stack_params + \
-        transform_params + \
-        [jsonfile]
-    logger.debug(cmd)
-    proc = subprocess.Popen(cmd, env=my_env, stdout=subprocess.PIPE)
-    proc.wait()
-    logger.debug(proc.stdout.read())
+    call_run_ws_client('org.janelia.render.client.ImportJsonClient',
+        stack_params + transform_params + [jsonfile],
+        client_script=client_script,memGB=memGB)
 
 
 @renderaccess
@@ -159,7 +154,7 @@ def import_jsonfiles_parallel(
 
 @renderaccess
 def import_jsonfiles(stack, jsonfiles, transformFile=None,
-                     client_scripts=None, host=None, port=None,
+                     client_script=None, memGB=None, host=None, port=None,
                      owner=None, project=None, close_stack=True,
                      render=None, **kwargs):
     """import jsons using client script serially
@@ -186,14 +181,9 @@ def import_jsonfiles(stack, jsonfiles, transformFile=None,
     my_env = os.environ.copy()
     stack_params = make_stack_params(
         host, port, owner, project, stack)
-    cmd = [os.path.join(client_scripts, 'import_json.sh')] + \
-        stack_params + \
-        transform_params + \
-        jsonfiles
-    logger.debug(cmd)
-    proc = subprocess.Popen(cmd, env=my_env, stdout=subprocess.PIPE)
-    proc.wait()
-    logger.debug(proc.stdout.read())
+    call_run_ws_client('org.janelia.render.client.ImportJsonClient',
+        stack_params + transform_params + jsonfiles,
+        client_script=client_script,memGB=memGB)
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
