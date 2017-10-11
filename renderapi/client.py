@@ -43,7 +43,8 @@ class WithPool(Pool):
 
 
 @renderaccess
-def import_single_json_file(stack, jsonfile, transformFile=None,
+def import_single_json_file(stack, jsonfile, transformFile=None, 
+                            subprocess_mode=None,
                             client_script=None, memGB=None, host=None, port=None,
                             owner=None, project=None, render=None, **kwargs):
     """calls client script to import given jsonfile
@@ -64,12 +65,11 @@ def import_single_json_file(stack, jsonfile, transformFile=None,
         transform_params = []
     else:
         transform_params = ['--transformFile', transformFile]
-    my_env = os.environ.copy()
     stack_params = make_stack_params(
         host, port, owner, project, stack)
     call_run_ws_client('org.janelia.render.client.ImportJsonClient',
         stack_params + transform_params + [jsonfile],
-        client_script=client_script,memGB=memGB)
+        client_script=client_script,memGB=memGB,subprocess_mode=subprocess_mode)
 
 
 @renderaccess
@@ -153,7 +153,7 @@ def import_jsonfiles_parallel(
 
 
 @renderaccess
-def import_jsonfiles(stack, jsonfiles, transformFile=None,
+def import_jsonfiles(stack, jsonfiles, transformFile=None, subprocess_mode=None,
                      client_script=None, memGB=None, host=None, port=None,
                      owner=None, project=None, close_stack=True,
                      render=None, **kwargs):
@@ -178,22 +178,22 @@ def import_jsonfiles(stack, jsonfiles, transformFile=None,
         transform_params = []
     else:
         transform_params = ['--transformFile', transformFile]
-    my_env = os.environ.copy()
     stack_params = make_stack_params(
         host, port, owner, project, stack)
     call_run_ws_client('org.janelia.render.client.ImportJsonClient',
         stack_params + transform_params + jsonfiles,
-        client_script=client_script,memGB=memGB)
+        client_script=client_script,memGB=memGB,subprocess_mode=subprocess_mode)
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
 
 @renderaccess
 def import_jsonfiles_validate_client(stack, jsonfiles,
-                                     transformFile=None, client_scripts=None,
+                                     transformFile=None, client_script=None,
                                      host=None, port=None, owner=None,
                                      project=None, close_stack=True, mem=6,
-                                     validator=None,
+                                     validator=None, subprocess_mode=None,
+                                     memGB=None,
                                      render=None, **kwargs):
     """Uses java client for parallelization and validation
 
@@ -222,18 +222,14 @@ def import_jsonfiles_validate_client(stack, jsonfiles,
 
     my_env = os.environ.copy()
     stack_params = make_stack_params(host, port, owner, project, stack)
-    cmd = [os.path.join(client_scripts, 'run_ws_client.sh')] + \
-        ['{}G'.format(str(int(mem))),
-         'org.janelia.render.client.ImportJsonClient'] + \
+    set_stack_state(stack, 'LOADING', host, port, owner, project)
+
+    call_run_ws_client('org.janelia.render.client.ImportJsonClient',
         stack_params + \
         validator_params + \
         transform_params + \
-        jsonfiles
-
-    set_stack_state(stack, 'LOADING', host, port, owner, project)
-    logger.debug(cmd)
-
-    subprocess.call(cmd, env=my_env)
+        jsonfiles,client_script=client_script,
+        memGB=memGB,subprocess_mode=subprocess_mode)
 
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
