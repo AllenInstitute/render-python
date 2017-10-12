@@ -7,7 +7,7 @@ services:
     links:
       - mongo
     volumes:
-      - $RENDER_EXAMPLE_DATA/example_1:/tmp/example_1:ro
+      - ${RENDER_EXAMPLE_DATA}/example_1:/tmp/example_1:ro
  mongo:
     image: mongo:3.4.2
     ports:
