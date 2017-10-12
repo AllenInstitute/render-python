@@ -38,3 +38,6 @@ cache:
   pip: true                                                                    
   directories:                                                                  
     - $HOME/.m2
+secure: "x3rK0ICjrT1yAguEgq7/UyNDDCbbr46j7DsHLzEEgoM4l5crRECfdclgws4s4Z7RH6TRrW3+CKvhJuq/71QRIWBUN/ZUK9REEvgC13mOFFN7PQlhQGHTQPSiJ1oUTtXG5KenNBOOgz9q4vJNFnahn+L+GuN2TiAYRJGbyE8G5A5uFLIhXHVb+Xo295XkarFtX8EFKQmJJzdyFgqU+NsKW2gbq0hIASmQi3swJZhmbzQXhaj0gCuLjQfnDR+3qHzE+v5mQfObk4v6FRf3mdnZRVqV4S67yKONDK5LCkuI69C/1EKPiAfEEg5RKcRIzQlDjApgYVFf+jFjrVy6RLU9xOp2dstSFmynL96N+K4HoRAw53F08WokBih5hbsEwGAb/Fat1fLVy1hqmboF4d5Fy42TXrPmHgkqwlMXABPVqKwoWQTo0sANQdOVNWaF6NyMDTkUwtAzD9IG+Qwu/9v1zleT0VQ92Uk0s8wTDlkVny+8XGv4Pi2sNBcgG+huECNAOQKCeFbMn0LfMoGaKDXNCW4OHp59wXXXJQHAaN8xujwGpwQxJKb3iwf6uY9wnBpfKtaaCqOcP3Y/WhuiuKf4477bZPoQXD+2DFAPlC5nVjn+LzzN1HigdPCWn8F+SianZsL/iuxgEqmiW6OFGGzpqD4zHFNACky3fTS7yBLnd+Q="
+after_success:
+  - "BRANCHES_TO_MERGE_REGEX='develop' BRANCH_TO_MERGE_INTO=master GITHUB_REPO=cdown/srt travis/merge_script.sh"
