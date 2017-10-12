@@ -676,7 +676,8 @@ def coordinateClient(stack, z, fromJson=None, toJson=None, localToWorld=None,
 
 @renderaccess
 def renderSectionClient(stack, rootDirectory, zs, scale=None,
-                        maxIntensity=None, minIntensity=None, format=None,
+                        maxIntensity=None, minIntensity=None, bounds=None,
+                        format=None,
                         doFilter=None, fillWithNoise=None,
                         subprocess_mode=None, host=None, port=None, owner=None,
                         project=None, client_script=None, memGB=None,
@@ -698,6 +699,8 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
         value todisplay as white on a linear colormap
     minIntensity : int
         value to display as black on a linear colormap
+    bounds: dict
+        dictionary with keys of minX maxX minY maxY
     format : str
         output image format in 'PNG', 'TIFF', 'JPEG'
     doFilter : str
@@ -708,13 +711,26 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
         image values with uniform noise
 
     """
+    if bounds is not None:
+        if bounds['maxX']<bounds['minX']:
+            raise ClientScriptError('maxX:{} is less than minX:{}'.format(bounds['maxX'],bounds['minX']))
+        if bounds['maxY']<bounds['minY']:
+            raise ClientScriptError('maxY:{} is less than minY:{}'.format(bounds['maxY'],bounds['minY']))
+        try:
+            bound_param = ['--bounds',bounds['minX'],bounds['maxX'],bounds['minY'],bounds['maxY']]
+        except KeyError as e:
+            raise ClientScriptError('bounds does not contain correct keys {}'.format(bounds))
+    else:
+        bound_param = []
+
     argvs = (make_stack_params(host, port, owner, project, stack) +
              ['--rootDirectory', rootDirectory] +
              get_param(scale, '--scale') + get_param(format, '--format') +
              get_param(doFilter, '--doFilter') +
              get_param(minIntensity, '--minIntensity') +
              get_param(maxIntensity, '--maxIntensity') +
-             get_param(fillWithNoise, '--fillWithNoise') + zs)
+             get_param(fillWithNoise, '--fillWithNoise') + 
+             bound_param + zs)
     call_run_ws_client('org.janelia.render.client.RenderSectionClient',
                        memGB=memGB, client_script=client_script,
                        subprocess_mode=subprocess_mode, add_args=argvs)

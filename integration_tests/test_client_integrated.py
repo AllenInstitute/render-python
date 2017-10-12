@@ -10,6 +10,7 @@ import dill
 from test_data import (render_host, render_port,
                        client_script_location, tilespec_file, tform_file, test_pool_size)
 from pathos.multiprocessing import ProcessingPool as Pool
+import PIL
 
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)
@@ -163,6 +164,31 @@ def test_renderSectionClient(render, teststack):
         pngfiles += [f for f in filenames if f.endswith('png')]
     assert len(pngfiles) == len(zvalues)
 
+def test_renderSectionClient_bounded(render,teststack):
+    bounds = renderapi.stack.get_stack_bounds(teststack,render=render)
+
+    zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
+    root_directory = tempfile.mkdtemp()
+    root.debug('section_directory:{}'.format(root_directory))
+    renderapi.client.renderSectionClient(teststack,
+                                         root_directory,
+                                         zvalues[0],
+                                         scale=.05,
+                                         render=render,
+                                         bounds=bounds,
+                                         format='png')
+
+    section_directory = os.path.join(
+        root_directory, 'test_project', teststack, 'sections_at_0.05')
+    pngfiles = []
+    for (dirpath, dirname, filenames) in os.walk(section_directory):
+        pngfiles += [f for f in filenames if f.endswith('png')]
+    assert len(pngfiles) == 1
+    img=PIL.Image.open(pngfiles[0])
+    width,height = img.size
+    assert(width == bounds['maxX']-bounds['minX'])
+    assert(height == bounds['maxY']-bounds['minY'])
+ 
 
 def test_importTransformChangesClient(render, teststack):
     deststack = 'test_stack_TCC'
