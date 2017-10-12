@@ -10,9 +10,9 @@ if [ -z "$RENDER_CLIENT_JAR" ]
 then
     export RENDER_CLIENT_JAR=`readlink -m ${REPO_DIR}/render-ws-java-client/target/render-ws-java-client-*-standalone.jar`
 fi
-if [ -z "$JAVA_HOME" ]
+if [ -z "$RENDER_JAVA_HOME" ]
 then
-    export JAVA_HOME=`readlink -m ${REPO_DIR}/deploy/jdk*`
+    export RENDER_JAVA_HOME=`readlink -m ${REPO_DIR}/deploy/jdk*`
 fi
 
 export BASE_JAVA_COMMAND="${JAVA_HOME}/bin/java -cp ${RENDER_CLIENT_JAR}"
