@@ -35,6 +35,6 @@ env:
 script:
   - python setup.py test # or py.test for Python versions 3.5 and below
 cache:   
-  - pip                                                                       
+  pip: true                                                                    
   directories:                                                                  
     - $HOME/.m2
