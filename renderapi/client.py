@@ -717,11 +717,9 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
         if bounds['maxY']<bounds['minY']:
             raise ClientScriptError('maxY:{} is less than minY:{}'.format(bounds['maxY'],bounds['minY']))
         try:
-            bound_param = ['--bounds',
-                           str(int(bounds['minX'])),
-                           str(int(bounds['maxX'])),
-                           str(int(bounds['minY'])),
-                           str(int(bounds['maxY']))]
+            bound_list= ','.join(map(lambda x: str(int(x)),
+                [bounds['minX'],bounds['maxX'],bounds['minY'],bounds['maxY']))
+            bound_param = ['--bounds', bound_list]
         except KeyError as e:
             raise ClientScriptError('bounds does not contain correct keys {}'.format(bounds))
     else:
