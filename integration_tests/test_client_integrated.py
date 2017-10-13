@@ -182,7 +182,7 @@ def test_renderSectionClient_bounded(render,teststack,scale=.05):
         root_directory, 'test_project', teststack, 'sections_at_0.05')
     pngfiles = []
     for (dirpath, dirname, filenames) in os.walk(section_directory):
-        pngfiles += [f for f in filenames if f.endswith('png')]
+        pngfiles += [os.path.join(dirpath,f) for f in filenames if f.endswith('png')]
     assert len(pngfiles) == 1
     img=PIL.Image.open(pngfiles[0])
     width,height = img.size
