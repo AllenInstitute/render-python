@@ -712,11 +712,11 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
 
     """
     if bounds is not None:
-        if bounds['maxX']<bounds['minX']:
-            raise ClientScriptError('maxX:{} is less than minX:{}'.format(bounds['maxX'],bounds['minX']))
-        if bounds['maxY']<bounds['minY']:
-            raise ClientScriptError('maxY:{} is less than minY:{}'.format(bounds['maxY'],bounds['minY']))
         try:
+            if bounds['maxX']<bounds['minX']:
+                raise ClientScriptError('maxX:{} is less than minX:{}'.format(bounds['maxX'],bounds['minX']))
+            if bounds['maxY']<bounds['minY']:
+                raise ClientScriptError('maxY:{} is less than minY:{}'.format(bounds['maxY'],bounds['minY']))
             bound_list= ','.join(map(lambda x: str(int(x)),
                 [bounds['minX'],bounds['maxX'],bounds['minY'],bounds['maxY']]))
             bound_param = ['--bounds', bound_list]
