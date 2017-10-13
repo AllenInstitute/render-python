@@ -177,7 +177,7 @@ def test_renderSectionClient(render,teststack, bounds, raises, scale=.05):
                                              format='png')
         pngfiles = []
         for (dirpath, dirname, filenames) in os.walk(root_directory):
-            pngfiles += [f for f in filenames if f.endswith('png')]
+            pngfiles += [os.path.join(dirpath,f) for f in filenames if f.endswith('png')]
         assert len(pngfiles) == len(zvalues)
         if bounds is not None:
             for f in pngfiles:
