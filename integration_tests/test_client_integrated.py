@@ -164,7 +164,7 @@ def test_renderSectionClient(render, teststack):
         pngfiles += [f for f in filenames if f.endswith('png')]
     assert len(pngfiles) == len(zvalues)
 
-def test_renderSectionClient_bounded(render,teststack):
+def test_renderSectionClient_bounded(render,teststack,scale=.05):
     bounds = renderapi.stack.get_stack_bounds(teststack,render=render)
 
     zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
@@ -173,7 +173,7 @@ def test_renderSectionClient_bounded(render,teststack):
     renderapi.client.renderSectionClient(teststack,
                                          root_directory,
                                          [zvalues[0]],
-                                         scale=.05,
+                                         scale=scale,
                                          render=render,
                                          bounds=bounds,
                                          format='png')
@@ -186,8 +186,8 @@ def test_renderSectionClient_bounded(render,teststack):
     assert len(pngfiles) == 1
     img=PIL.Image.open(pngfiles[0])
     width,height = img.size
-    assert(width == bounds['maxX']-bounds['minX'])
-    assert(height == bounds['maxY']-bounds['minY'])
+    assert(width == (bounds['maxX']-bounds['minX'])*scale)
+    assert(height == (bounds['maxY']-bounds['minY'])*scale)
  
 
 def test_importTransformChangesClient(render, teststack):
