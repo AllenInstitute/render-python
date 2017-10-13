@@ -186,8 +186,8 @@ def test_renderSectionClient_bounded(render,teststack,scale=.05):
     assert len(pngfiles) == 1
     img=PIL.Image.open(pngfiles[0])
     width,height = img.size
-    assert(width == (bounds['maxX']-bounds['minX'])*scale)
-    assert(height == (bounds['maxY']-bounds['minY'])*scale)
+    assert(np.abs(width - (bounds['maxX']-bounds['minX'])*scale)<1)
+    assert(np.abs(height - (bounds['maxY']-bounds['minY'])*scale)<1)
  
 
 def test_importTransformChangesClient(render, teststack):
