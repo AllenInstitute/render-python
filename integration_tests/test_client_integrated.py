@@ -172,7 +172,7 @@ def test_renderSectionClient_bounded(render,teststack):
     root.debug('section_directory:{}'.format(root_directory))
     renderapi.client.renderSectionClient(teststack,
                                          root_directory,
-                                         zvalues[0],
+                                         [zvalues[0]],
                                          scale=.05,
                                          render=render,
                                          bounds=bounds,
