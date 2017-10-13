@@ -164,6 +164,7 @@ def test_renderSectionClient(render, teststack):
         pngfiles += [f for f in filenames if f.endswith('png')]
     assert len(pngfiles) == len(zvalues)
 
+
 def test_renderSectionClient_bounded(render,teststack,scale=.05):
     bounds = renderapi.stack.get_stack_bounds(teststack,render=render)
 
@@ -189,6 +190,36 @@ def test_renderSectionClient_bounded(render,teststack,scale=.05):
     assert(np.abs(width - (bounds['maxX']-bounds['minX'])*scale)<1)
     assert(np.abs(height - (bounds['maxY']-bounds['minY'])*scale)<1)
  
+def test_renderSectionClient_badBounds(teststack,scale=.05):
+    root_directory = tempfile.mkdtemp()
+    root.debug('section_directory:{}'.format(root_directory))
+    with pytest.raises(renderapi.client.ClientScriptError) as e:
+        bounds = {}
+        renderapi.client.renderSectionClient(teststack,
+                                            root_directory,
+                                            [0],
+                                            scale=scale,
+                                            render=render,
+                                            bounds=bounds,
+                                            format='png')
+    with pytest.raises(renderapi.client.ClientScriptError) as e:
+        bounds = {'maxX':1000,'minX':2000,'minY':1000,'maxY':2000}
+        renderapi.client.renderSectionClient(teststack,
+                                            root_directory,
+                                            [0],
+                                            scale=scale,
+                                            render=render,
+                                            bounds=bounds,
+                                            format='png')
+    with pytest.raises(renderapi.client.ClientScriptError) as e:
+        bounds = {'maxX':2000,'minX':1000,'minY':2000,'maxY':1000}
+        renderapi.client.renderSectionClient(teststack,
+                                            root_directory,
+                                            [0],
+                                            scale=scale,
+                                            render=render,
+                                            bounds=bounds,
+                                            format='png') 
 
 def test_importTransformChangesClient(render, teststack):
     deststack = 'test_stack_TCC'
