@@ -10,6 +10,7 @@ import dill
 from test_data import (render_host, render_port,
                        client_script_location, tilespec_file, tform_file, test_pool_size)
 from pathos.multiprocessing import ProcessingPool as Pool
+import PIL
 
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)
@@ -145,23 +146,47 @@ def test_tile_pair_client(render, teststack, **kwargs):
     assert len(tilepairjson['neighborPairs']) > 3
 
 
-def test_renderSectionClient(render, teststack):
-    zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
+@pytest.mark.parametrize("bounds,raises", [
+    ({}, True),
+    ({'maxX': 1000, 'minX': 2000, 'minY': 1000, 'maxY': 2000}, True),
+    ({'maxX': 2000, 'minX': 1000, 'minY': 2000, 'maxY': 1000}, True),
+    ({'maxX': 2000, 'minX': 1000, 'minY': 1000, 'maxY': 2000}, False),
+    (None, False)
+])
+def test_renderSectionClient(render,teststack, bounds, raises, scale=.05):
     root_directory = tempfile.mkdtemp()
     root.debug('section_directory:{}'.format(root_directory))
-    renderapi.client.renderSectionClient(teststack,
-                                         root_directory,
-                                         zvalues,
-                                         scale=.05,
-                                         render=render,
-                                         format='png')
+    zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
 
-    section_directory = os.path.join(
-        root_directory, 'test_project', teststack, 'sections_at_0.05')
-    pngfiles = []
-    for (dirpath, dirname, filenames) in os.walk(section_directory):
-        pngfiles += [f for f in filenames if f.endswith('png')]
-    assert len(pngfiles) == len(zvalues)
+    if raises:
+        with pytest.raises(renderapi.client.ClientScriptError) as e:
+            renderapi.client.renderSectionClient(teststack,
+                                                 root_directory,
+                                                 zvalues,
+                                                 scale=scale,
+                                                 render=render,
+                                                 bounds=bounds,
+                                                 format='png')
+    else:
+        renderapi.client.renderSectionClient(teststack,
+                                             root_directory,
+                                             zvalues,
+                                             scale=scale,
+                                             render=render,
+                                             bounds=bounds,
+                                             format='png')
+        pngfiles = []
+        for (dirpath, dirname, filenames) in os.walk(root_directory):
+            pngfiles += [os.path.join(dirpath,f) for f in filenames if f.endswith('png')]
+        assert len(pngfiles) == len(zvalues)
+        if bounds is not None:
+            for f in pngfiles:
+                img = PIL.Image.open(f)
+                width, height = img.size
+                assert(
+                    np.abs(width - (bounds['maxX'] - bounds['minX']) * scale) < 1)
+                assert(
+                    np.abs(height - (bounds['maxY'] - bounds['minY']) * scale) < 1)
 
 
 def test_importTransformChangesClient(render, teststack):
@@ -177,9 +202,9 @@ def test_importTransformChangesClient(render, teststack):
         teststack, deststack, TCCjson, changeMode='APPEND', render=render)
     renderapi.stack.set_stack_state(deststack, 'COMPLETE', render=render)
     os.remove(TCCjson)
-    
+
     output_ts = renderapi.tilespec.get_tile_specs_from_stack(
-                    deststack, render=render)
+        deststack, render=render)
 
     assert all([ts.tforms[-1].to_dict() == tform_to_append.to_dict()
                 for ts in output_ts])
@@ -200,7 +225,7 @@ def test_transformSectionClient(render, teststack,
     renderapi.stack.set_stack_state(deststack, 'COMPLETE', render=render)
 
     output_ts = renderapi.tilespec.get_tile_specs_from_stack(
-                    deststack, render=render)
+        deststack, render=render)
     root.debug(output_ts[0].tforms[-1].to_dict())
     root.debug(output_ts[-1].tforms[-1].to_dict())
     root.debug(tform.to_dict())
