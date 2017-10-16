@@ -8,9 +8,11 @@ services:
       - mongo
     volumes:
       - "${RENDER_EXAMPLE_DATA}/example_1:/tmp/example_1:ro"
+    environment:
+      - MONGO_HOST=mongo
  mongo:
     image: mongo:3.4.2
-    ports:
+    expose:
         - "27017"
     security_opt:
       - seccomp:unconfined
