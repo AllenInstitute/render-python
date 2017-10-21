@@ -1,123 +1,17 @@
 #!/usr/bin/env python
+import logging
+import requests
 from .render import format_preamble, renderaccess
 from .utils import NullHandler
 from .stack import get_z_values_for_stack
 from .transform import TransformList
 from .errors import RenderError
-from collections import OrderedDict
-import logging
-import requests
+from .image_pyramid import MipMapLevel, ImagePyramid
+from .layout import Layout
+from .channel import Channel
 
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
-
-
-class Layout:
-    """Layout class to describe acquisition settings
-
-    Attributes
-    ----------
-    sectionId : str
-        sectionId this tile was taken from
-    scopeId : str
-        what microscope this came from
-    cameraId : str
-        camera this was taken with
-    imageRow : int
-        what row from a row,col layout this was taken
-    imageCol : int
-        column from a row,col layout this was taken
-    stageX : float
-        X stage coordinates for where this was taken
-    stageY : float
-        Y stage coordinates for where this taken
-    rotation : float
-        angle of camera when this was taken
-    pixelsize : float
-        effective size of pixels (in units of choice)
-
-    """
-    def __init__(self, sectionId=None, scopeId=None, cameraId=None,
-                 imageRow=None, imageCol=None, stageX=None, stageY=None,
-                 rotation=None, pixelsize=None,
-                 force_pixelsize=True, **kwargs):
-        """Initialize Layout
-
-        Parameters
-        ----------
-        sectionId : str
-            sectionId this tile was taken from
-        scopeId : str
-            what microscope this came from
-        cameraId : str
-            camera this was taken with
-        imageRow : int
-            what row from a row,col layout this was taken
-        imageCol : int
-            column from a row,col layout this was taken
-        stageX : float
-            X stage coordinates for where this was taken
-        stageY : float
-            Y stage coordinates for where this taken
-        rotation : float
-            angle of camera when this was taken
-        pixelsize : float
-            effective size of pixels (in units of choice)
-        force_pixelsize : bool
-            whether to default pixelsize to 0.1
-
-        """
-        self.sectionId = sectionId
-        self.scopeId = scopeId
-        self.cameraId = cameraId
-        self.imageRow = imageRow
-        self.imageCol = imageCol
-        self.stageX = stageX
-        self.stageY = stageY
-        self.rotation = rotation
-        if force_pixelsize:
-            pixelsize = 0.100 if pixelsize is None else pixelsize
-        self.pixelsize = pixelsize
-
-    def to_dict(self):
-        """return a dictionary representation of this object
-
-        Returns
-        -------
-        dict
-            json compatible dictionary of this object
-        """
-        d = {}
-        d['sectionId'] = self.sectionId
-        d['temca'] = self.scopeId
-        d['camera'] = self.cameraId
-        d['imageRow'] = self.imageRow
-        d['imageCol'] = self.imageCol
-        d['stageX'] = self.stageX
-        d['stageY'] = self.stageY
-        d['rotation'] = self.rotation
-        d['pixelsize'] = self.pixelsize
-        d = {k: v for k, v in d.items() if v is not None}
-        return d
-
-    def from_dict(self, d):
-        """set this object equal to the fields found in dictionary
-
-        Parameters
-        ----------
-        d : dict
-            dictionary to use to update
-        """
-        if d is not None:
-            self.sectionId = d.get('sectionId')
-            self.cameraId = d.get('camera')
-            self.scopeId = d.get('temca')
-            self.imageRow = d.get('imageRow')
-            self.imageCol = d.get('imageCol')
-            self.stageX = d.get('stageX')
-            self.stageY = d.get('stageY')
-            self.rotation = d.get('rotation')
-            self.pixelsize = d.get('pixelsize')
 
 
 class TileSpec:
@@ -177,11 +71,12 @@ class TileSpec:
         (DEPRECATED, use mipMapLevels, but will override)
 
     '''
+
     def __init__(self, tileId=None, z=None, width=None, height=None,
                  imageUrl=None, maskUrl=None,
                  minint=0, maxint=65535, layout=None, tforms=[],
                  inputfilters=[], scale3Url=None, scale2Url=None,
-                 scale1Url=None, json=None, mipMapLevels=[], **kwargs):
+                 scale1Url=None, json=None, channels=None,mipMapLevels=[], **kwargs):
         if json is not None:
             self.from_dict(json)
         else:
@@ -246,6 +141,8 @@ class TileSpec:
         thedict['transforms']['type'] = 'list'
         # thedict['transforms']['specList']=[t.to_dict() for t in self.tforms]
         thedict['transforms']['specList'] = []
+        if self.channels is not None:
+            thedict['channels']=[ch.to_dict() for ch in self.channels]
         for t in self.tforms:
             strlist = {}
             # added by sharmi - if your speclist contains a speclist (can
@@ -291,12 +188,13 @@ class TileSpec:
         self.maxY = d.get('maxY', None)
         self.minY = d.get('minY', None)
         self.ip = ImagePyramid(mipMapLevels=[
-             MipMapLevel(
-                 int(l), imageUrl=v.get('imageUrl'), maskUrl=v.get('maskUrl'))
-             for l, v in d['mipmapLevels'].items()])
+            MipMapLevel(
+                int(l), imageUrl=v.get('imageUrl'), maskUrl=v.get('maskUrl'))
+            for l, v in d['mipmapLevels'].items()])
 
         tfl = TransformList(json=d['transforms'])
         self.tforms = tfl.tforms
+        self.channels = [Channel(json=ch) for ch in d.get['Channels',[]]]
 
         # TODO filters not implemented -- should skip
         '''
@@ -307,131 +205,6 @@ class TileSpec:
                 f.from_dict(f)
                 self.inputfilters.append(f)
         '''
-
-
-class MipMapLevel:
-    """MipMapLevel class to represent a level of an image pyramid.
-    Can be put in dictionary formatting using dict(mML)
-
-    Attributes
-    ----------
-    level : int
-        level of 2x downsampling represented by mipmaplevel
-    imageUrl : str or None
-        uri corresponding to image
-    maskUrl : str or None
-        uri corresponding to mask
-
-    """
-    def __init__(self, level, imageUrl=None, maskUrl=None):
-        self.level = level
-        self.imageUrl = imageUrl
-        self.maskUrl = maskUrl
-
-    def to_dict(self):
-        """
-        Returns
-        -------
-        dict
-            json compatible dictionary representaton
-        """
-        return dict(self.__iter__())
-
-    def _formatUrls(self):
-        d = {}
-        if self.imageUrl is not None:
-            d.update({'imageUrl': self.imageUrl})
-        if self.maskUrl is not None:
-            d.update({'maskUrl': self.maskUrl})
-        return d
-
-    def __iter__(self):
-        return iter([(self.level, self._formatUrls())])
-
-
-class ImagePyramid:
-    '''Image Pyramid class representing a set of MipMapLevels which correspond
-    to mipmapped (continuously downsmapled by 2x) representations
-    of an image at level 0
-    Can be put into dictionary formatting using dict(ip) or OrderedDict(ip)
-
-    Attributes
-    ----------
-    mipMapLevels : :obj:`list` of :class:`MipMapLevel`
-        list of :class:`MipMapLevel` objects defining image pyramid
-
-    '''
-    def __init__(self, mipMapLevels=[]):
-        self.mipMapLevels = mipMapLevels
-
-    def to_dict(self):
-        """return dictionary representation of this object"""
-        return dict(self.__iter__())
-
-    def to_ordered_dict(self, key=None):
-        """returns :class:`OrderedDict` represention of this object,
-        ordered by mipmapLevel
-
-        Parameters
-        ----------
-        key : func
-            function to sort ordered dict of
-            :class:`mipMapLevel` dicts (default is by level)
-
-        Returns
-        -------
-        OrderedDict
-            sorted dictionary of :class:`mipMapLevels` in ImagePyramid
-
-        """
-        return OrderedDict(sorted(
-            self.__iter__(), key=((lambda x: x[0]) if key
-                                  is None else key)))
-
-    def append(self, mmL):
-        """appends a MipMapLevel to this ImagePyramid
-
-        Parameters
-        ----------
-        mml : :class:`MipMapLevel`
-            :class:`MipMapLevel` to append
-        """
-        self.mipMapLevels.append(mmL)
-
-    def update(self, mmL):
-        """updates the ImagePyramid with this MipMapLevel.
-        will overwrite existing mipMapLevels with same level
-
-        Args:
-            mml (MipMapLevel): mipmap level to update in pyramid
-        """
-        self.mipMapLevels = [
-            l for l in self.mipMapLevels if l.level != mmL.level]
-        self.append(mmL)
-
-    def get(self, to_get):
-        """gets a specific mipmap level in dictionary form
-
-        Parameters
-        ----------
-        to_get : int
-            level to get
-
-        Returns
-        -------
-        dict
-            representation of requested MipMapLevel
-        """
-        return self.to_dict()[to_get]  # TODO should this default
-
-    @property
-    def levels(self):
-        """list of MipMapLevels in this ImagePyramid"""
-        return [int(i.level) for i in self.mipMapLevels]
-
-    def __iter__(self):
-        return iter([
-            l for sl in [list(mmL) for mmL in self.mipMapLevels] for l in sl])
 
 
 @renderaccess
@@ -638,7 +411,7 @@ def get_tile_specs_from_box(stack, z, x, y, width, height,
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%d/box/%d,%d,%d,%d,%3.2f/render-parameters" % (
-                      z, x, y, width, height, scale)
+        z, x, y, width, height, scale)
     logger.debug(request_url)
     r = session.get(request_url)
     try:

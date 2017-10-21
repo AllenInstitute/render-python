@@ -7,7 +7,8 @@ import sys
 import json
 import numpy as np
 from test_data import (render_host, render_port,
-                       client_script_location, tilespec_file, tform_file)
+                       client_script_location, tilespec_file, 
+                       tform_file, test_2_channels_d)
 
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)
@@ -430,3 +431,13 @@ def test_get_resolvedtiles_from_z(render, teststack,
     assert(len(tsz)==len(resolved_tiles.tilespecs))
     matching_ts = next(ts for ts in resolved_tiles.tilespecs if ts.tileId == tsz[0].tileId)
     assert (len(matching_ts.tforms)==len(tsz[0].tforms))
+
+@pytest.fixture(scope=module)
+def multichannel_test_stack(render):
+    stack = 'multichannel_test'
+    tilespecs = [renderapi.tilespec.TileSpec(json = d) for d in test_2_channels_d]
+    renderapi.stack.create_stack(stack,render=render)
+    renderapi.client.import_tilespecs(tilespecs, render=render)
+    renderapi.stack.set_stack_state(stack, render=render)
+    return stack
+
