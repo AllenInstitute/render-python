@@ -1,4 +1,3 @@
-import marshmallow as mm
 from image_pyramid import ImagePyramid, MipMapLevel
 
 class Channel:

@@ -98,7 +98,7 @@ class TileSpec:
             self.scale3Url = scale3Url
             self.scale2Url = scale2Url
             self.scale1Url = scale1Url
-
+            self.channels = channels
             if imageUrl is not None:
                 self.ip.update(MipMapLevel(
                     0, imageUrl=imageUrl, maskUrl=maskUrl))
@@ -194,7 +194,11 @@ class TileSpec:
 
         tfl = TransformList(json=d['transforms'])
         self.tforms = tfl.tforms
-        self.channels = [Channel(json=ch) for ch in d.get['Channels',[]]]
+        chd = d.get('channels',None)
+        if chd is None:
+            self.channels = None
+        else:
+            self.channels = [Channel(json=ch) for ch in chd]
 
         # TODO filters not implemented -- should skip
         '''
