@@ -34,4 +34,3 @@ def test_section_image_channels(render,multichannel_test_stack):
                                                       1.0,channel='DAPI',
                                                       render=render)
     print(section_image.shape)
-    assert(False)
