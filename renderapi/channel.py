@@ -1,4 +1,4 @@
-from image_pyramid import ImagePyramid, MipMapLevel
+from .image_pyramid import ImagePyramid, MipMapLevel
 
 class Channel:
     '''class for storing channels of different mipmapsources'''
