@@ -191,7 +191,7 @@ class TileSpec:
         self.ip = ImagePyramid(mipMapLevels=[
             MipMapLevel(
                 int(l), imageUrl=v.get('imageUrl'), maskUrl=v.get('maskUrl'))
-            for l, v in mmld])
+            for l, v in mmld.items()])
 
         tfl = TransformList(json=d['transforms'])
         self.tforms = tfl.tforms
