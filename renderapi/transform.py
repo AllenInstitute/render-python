@@ -326,7 +326,7 @@ class Transform(object):
     """
 
     def __init__(self, className=None, dataString=None,
-                 transformId=None, json=None):
+                 transformId=None, labels = None,json=None):
         """Initialize Transform
 
         Parameters
@@ -348,6 +348,7 @@ class Transform(object):
             self.className = className
             self.dataString = dataString
             self.transformId = transformId
+            self.labels = labels
 
     def to_dict(self):
         """serialization routine
@@ -363,6 +364,8 @@ class Transform(object):
         d['dataString'] = self.dataString
         if self.transformId is not None:
             d['id'] = self.transformId
+        if self.labels is not None:
+            d['metadata']={'labels':self.labels}
         return d
 
     def from_dict(self, d):
@@ -376,6 +379,11 @@ class Transform(object):
         self.className = d['className']
         self.transformId = d.get('id', None)
         self._process_dataString(d['dataString'])
+        md = d.get('metadata',None)
+        if md is not None:
+            lbls = md.get('labels',None)
+            if lbls is not None:
+                self.labels = lbls
 
     def _process_dataString(self, datastring):
         """method meant to set state of transform from datastring
