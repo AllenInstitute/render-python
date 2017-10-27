@@ -225,7 +225,7 @@ def teststack(request, render, render_example_tilespec_and_transforms):
 def test_stack_bounds(render, teststack):
     # check the stack bounds
     stack_bounds = render.run(renderapi.stack.get_stack_bounds, teststack)
-    expected_bounds = {u'maxZ': 3408.0, u'maxX': 5103.0, u'maxY': 5385.0,
+    expected_bounds = {u'maxZ': 3408.0, u'maxX': 5103.0, u'maxY': 5386.0,
                        u'minX': 149.0, u'minY': 130.0, u'minZ': 3407.0}
 
     for key in stack_bounds.keys():
