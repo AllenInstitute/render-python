@@ -383,10 +383,10 @@ class Transform(object):
         self._process_dataString(d['dataString'])
         md = d.get('metadata', None)
         if md is not None:
-            lbls = md.get('labels', None)
-            if lbls is not None:
-                self.labels = lbls
-
+            self.labels = md.get('labels', None)
+        else:
+            self.labels = None
+           
     def _process_dataString(self, datastring):
         """method meant to set state of transform from datastring
         generic implementation only saves datastring at self.dataString.
