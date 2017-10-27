@@ -43,8 +43,9 @@ class WithPool(Pool):
 
 
 @renderaccess
-def import_single_json_file(stack, jsonfile, transformFile=None,
-                            client_scripts=None, host=None, port=None,
+def import_single_json_file(stack, jsonfile, transformFile=None, 
+                            subprocess_mode=None,
+                            client_script=None, memGB=None, host=None, port=None,
                             owner=None, project=None, render=None, **kwargs):
     """calls client script to import given jsonfile
 
@@ -64,17 +65,11 @@ def import_single_json_file(stack, jsonfile, transformFile=None,
         transform_params = []
     else:
         transform_params = ['--transformFile', transformFile]
-    my_env = os.environ.copy()
     stack_params = make_stack_params(
         host, port, owner, project, stack)
-    cmd = [os.path.join(client_scripts, 'import_json.sh')] + \
-        stack_params + \
-        transform_params + \
-        [jsonfile]
-    logger.debug(cmd)
-    proc = subprocess.Popen(cmd, env=my_env, stdout=subprocess.PIPE)
-    proc.wait()
-    logger.debug(proc.stdout.read())
+    call_run_ws_client('org.janelia.render.client.ImportJsonClient',
+        stack_params + transform_params + [jsonfile],
+        client_script=client_script,memGB=memGB,subprocess_mode=subprocess_mode)
 
 
 @renderaccess
@@ -158,8 +153,8 @@ def import_jsonfiles_parallel(
 
 
 @renderaccess
-def import_jsonfiles(stack, jsonfiles, transformFile=None,
-                     client_scripts=None, host=None, port=None,
+def import_jsonfiles(stack, jsonfiles, transformFile=None, subprocess_mode=None,
+                     client_script=None, memGB=None, host=None, port=None,
                      owner=None, project=None, close_stack=True,
                      render=None, **kwargs):
     """import jsons using client script serially
@@ -183,27 +178,22 @@ def import_jsonfiles(stack, jsonfiles, transformFile=None,
         transform_params = []
     else:
         transform_params = ['--transformFile', transformFile]
-    my_env = os.environ.copy()
     stack_params = make_stack_params(
         host, port, owner, project, stack)
-    cmd = [os.path.join(client_scripts, 'import_json.sh')] + \
-        stack_params + \
-        transform_params + \
-        jsonfiles
-    logger.debug(cmd)
-    proc = subprocess.Popen(cmd, env=my_env, stdout=subprocess.PIPE)
-    proc.wait()
-    logger.debug(proc.stdout.read())
+    call_run_ws_client('org.janelia.render.client.ImportJsonClient',
+        stack_params + transform_params + jsonfiles,
+        client_script=client_script,memGB=memGB,subprocess_mode=subprocess_mode)
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
 
 @renderaccess
 def import_jsonfiles_validate_client(stack, jsonfiles,
-                                     transformFile=None, client_scripts=None,
+                                     transformFile=None, client_script=None,
                                      host=None, port=None, owner=None,
                                      project=None, close_stack=True, mem=6,
-                                     validator=None,
+                                     validator=None, subprocess_mode=None,
+                                     memGB=None,
                                      render=None, **kwargs):
     """Uses java client for parallelization and validation
 
@@ -232,18 +222,14 @@ def import_jsonfiles_validate_client(stack, jsonfiles,
 
     my_env = os.environ.copy()
     stack_params = make_stack_params(host, port, owner, project, stack)
-    cmd = [os.path.join(client_scripts, 'run_ws_client.sh')] + \
-        ['{}G'.format(str(int(mem))),
-         'org.janelia.render.client.ImportJsonClient'] + \
+    set_stack_state(stack, 'LOADING', host, port, owner, project)
+
+    call_run_ws_client('org.janelia.render.client.ImportJsonClient',
         stack_params + \
         validator_params + \
         transform_params + \
-        jsonfiles
-
-    set_stack_state(stack, 'LOADING', host, port, owner, project)
-    logger.debug(cmd)
-
-    subprocess.call(cmd, env=my_env)
+        jsonfiles,client_script=client_script,
+        memGB=memGB,subprocess_mode=subprocess_mode)
 
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
@@ -690,7 +676,8 @@ def coordinateClient(stack, z, fromJson=None, toJson=None, localToWorld=None,
 
 @renderaccess
 def renderSectionClient(stack, rootDirectory, zs, scale=None,
-                        maxIntensity=None, minIntensity=None, format=None,
+                        maxIntensity=None, minIntensity=None, bounds=None,
+                        format=None,
                         doFilter=None, fillWithNoise=None,
                         subprocess_mode=None, host=None, port=None, owner=None,
                         project=None, client_script=None, memGB=None,
@@ -712,6 +699,8 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
         value todisplay as white on a linear colormap
     minIntensity : int
         value to display as black on a linear colormap
+    bounds: dict
+        dictionary with keys of minX maxX minY maxY
     format : str
         output image format in 'PNG', 'TIFF', 'JPEG'
     doFilter : str
@@ -722,13 +711,28 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
         image values with uniform noise
 
     """
+    if bounds is not None:
+        try:
+            if bounds['maxX']<bounds['minX']:
+                raise ClientScriptError('maxX:{} is less than minX:{}'.format(bounds['maxX'],bounds['minX']))
+            if bounds['maxY']<bounds['minY']:
+                raise ClientScriptError('maxY:{} is less than minY:{}'.format(bounds['maxY'],bounds['minY']))
+            bound_list= ','.join(map(lambda x: str(int(x)),
+                [bounds['minX'],bounds['maxX'],bounds['minY'],bounds['maxY']]))
+            bound_param = ['--bounds', bound_list]
+        except KeyError as e:
+            raise ClientScriptError('bounds does not contain correct keys {}'.format(bounds))
+    else:
+        bound_param = []
+
     argvs = (make_stack_params(host, port, owner, project, stack) +
              ['--rootDirectory', rootDirectory] +
              get_param(scale, '--scale') + get_param(format, '--format') +
              get_param(doFilter, '--doFilter') +
              get_param(minIntensity, '--minIntensity') +
              get_param(maxIntensity, '--maxIntensity') +
-             get_param(fillWithNoise, '--fillWithNoise') + zs)
+             get_param(fillWithNoise, '--fillWithNoise') + 
+             bound_param + zs)
     call_run_ws_client('org.janelia.render.client.RenderSectionClient',
                        memGB=memGB, client_script=client_script,
                        subprocess_mode=subprocess_mode, add_args=argvs)
