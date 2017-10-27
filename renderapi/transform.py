@@ -1039,7 +1039,7 @@ class Polynomial2DTransform(Transform):
 
     def __init__(self, dataString=None, src=None, dst=None, order=2,
                  force_polynomial=True, params=None, identity=False,
-                 json=None, **kwargs):
+                 labels=None,json=None, **kwargs):
         """Initialize Polynomial2DTransform
         This provides 5 different ways to initialize the transform which are
         mutually exclusive and applied in the order specified here.
@@ -1085,6 +1085,7 @@ class Polynomial2DTransform(Transform):
                 raise NotImplementedError('Falling back to Affine model is '
                                           'not supported {}')
             self.transformId = None
+            self.labels = labels
 
     @property
     def is_affine(self):
