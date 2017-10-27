@@ -34,7 +34,7 @@ def render():
 @pytest.fixture
 def simpletilespec():
     mml = renderapi.tilespec.MipMapLevel(0, '/not/a/path.jpg')
-    tform = renderapi.transform.AffineModel()
+    tform = renderapi.transform.AffineModel(labels='simple')
     layout = renderapi.tilespec.Layout(sectionId="section0",
                                        scopeId="testscope",
                                        cameraId="testcamera",

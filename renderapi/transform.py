@@ -326,7 +326,7 @@ class Transform(object):
     """
 
     def __init__(self, className=None, dataString=None,
-                 transformId=None, json=None):
+                 transformId=None, labels=None, json=None):
         """Initialize Transform
 
         Parameters
@@ -338,6 +338,8 @@ class Transform(object):
             by mpicbg java class library
         transformId : str, optional
             unique Id for this transform (optional)
+        labels : list of str
+            list of labels to give this transform
         json : dict
             json compatible representation of this transform
             (supersedes className, dataString, and transformId if not None)
@@ -348,6 +350,7 @@ class Transform(object):
             self.className = className
             self.dataString = dataString
             self.transformId = transformId
+            self.labels = labels
 
     def to_dict(self):
         """serialization routine
@@ -363,6 +366,8 @@ class Transform(object):
         d['dataString'] = self.dataString
         if self.transformId is not None:
             d['id'] = self.transformId
+        if self.labels is not None:
+            d['metadata'] = {'labels': self.labels}
         return d
 
     def from_dict(self, d):
@@ -376,7 +381,12 @@ class Transform(object):
         self.className = d['className']
         self.transformId = d.get('id', None)
         self._process_dataString(d['dataString'])
-
+        md = d.get('metadata', None)
+        if md is not None:
+            self.labels = md.get('labels', None)
+        else:
+            self.labels = None
+           
     def _process_dataString(self, datastring):
         """method meant to set state of transform from datastring
         generic implementation only saves datastring at self.dataString.
@@ -427,6 +437,8 @@ class AffineModel(Transform):
         y'+=B1
     transformId : str, optional
         unique transformId for this transform
+    labels : list of str
+        list of labels to give this transform
     M : numpy.array
         3x3 numpy array representing 2d Affine with homogeneous coordinates
         populates with values from M00, M01, M10, M11, B0, B1 with load_M()
@@ -436,7 +448,7 @@ class AffineModel(Transform):
     className = 'mpicbg.trakem2.transform.AffineModel2D'
 
     def __init__(self, M00=1.0, M01=0.0, M10=0.0, M11=1.0, B0=0.0, B1=0.0,
-                 transformId=None, json=None):
+                 transformId=None, labels=None, json=None):
         """Initialize AffineModel, defaulting to identity
 
         Parameters
@@ -455,6 +467,8 @@ class AffineModel(Transform):
             y'+=B1
         transformId : str
             unique transformId for this transform (optional)
+        labels : list of str
+            list of labels to give this transform
         json : dict
             json compatible representation of this transform
             (will supersede all other parameters if not None)
@@ -470,6 +484,7 @@ class AffineModel(Transform):
             self.B0 = B0
             self.B1 = B1
             self.className = 'mpicbg.trakem2.transform.AffineModel2D'
+            self.labels = labels
             self.load_M()
             self.transformId = transformId
 
@@ -744,6 +759,8 @@ class TranslationModel(AffineModel):
         y'+=B1
     transformId : str, optional
         unique transformId for this transform
+    labels : list of str
+            list of labels to give this transform
     M : numpy.array
         3x3 numpy array representing 2d Affine with homogeneous coordinates
         populates with values from M00, M01, M10, M11, B0, B1 with load_M()
@@ -833,6 +850,8 @@ class RigidModel(AffineModel):
         y'+=B1
     transformId : str, optional
         unique transformId for this transform
+    labels : list of str
+        list of labels to give this transform
     M : numpy.array
         3x3 numpy array representing 2d Affine with homogeneous coordinates
         populates with values from M00, M01, M10, M11, B0, B1 with load_M()
@@ -960,6 +979,8 @@ class SimilarityModel(RigidModel):
         y'+=B1
     transformId : str, optional
         unique transformId for this transform
+    labels : list of str
+        list of labels to give this transform
     M : numpy.array
         3x3 numpy array representing 2d Affine with homogeneous coordinates
         populates with values from M00, M01, M10, M11, B0, B1 with load_M()
@@ -1240,7 +1261,7 @@ class Polynomial2DTransform(Transform):
             a (2,K/2) matrix of parameters, with
             first row for x and 2nd row for y
         """
-        halfway = int (len(raveled_params) / 2)
+        halfway = int(len(raveled_params) / 2)
         return np.array(
             [[float(d) for d in raveled_params[:halfway]],
              [float(d) for d in raveled_params[halfway:]]])
@@ -1377,6 +1398,8 @@ class NonLinearCoordinateTransform(Transform):
     ----------
     dataString: str or None
         data string of transformation
+    labels : list of str
+        list of labels to give this transform
     json: dict or None
         json compatible dictionary representation of the transformation
 
@@ -1390,12 +1413,15 @@ class NonLinearCoordinateTransform(Transform):
 
     className = 'mpicbg.trakem2.transform.NonLinearCoordinateTransform'
 
-    def __init__(self, dataString=None, json=None, transformId=None):
+    def __init__(self, dataString=None, json=None, transformId=None,
+                 labels=None):
         if json is not None:
             self.from_dict(json)
         else:
             if dataString is not None:
                 self._process_dataString(dataString)
+            if labels is not None:
+                self.labels = labels
         self.transformId = transformId
         self.className = 'mpicbg.trakem2.transform.NonLinearCoordinateTransform'
 
@@ -1407,14 +1433,14 @@ class NonLinearCoordinateTransform(Transform):
         self.length = int(fields[1])
 
         # cutoff whitespace if there
-        fields = fields[0:2+4*self.length+2]
+        fields = fields[0:2 + 4 * self.length + 2]
         # last 2 fields are width and height
         self.width = int(fields[-2])
         self.height = int(fields[-1])
 
         data = np.array(fields[2:-2], dtype='float32')
         try:
-            self.beta = data[0:2*self.length].reshape(self.length, 2)
+            self.beta = data[0:2 * self.length].reshape(self.length, 2)
         except ValueError as e:
             raise RenderError(
                 'Incorrect number of coefficients in '
@@ -1423,8 +1449,8 @@ class NonLinearCoordinateTransform(Transform):
             raise RenderError("not correct number of coefficents")
 
         # normMean and normVar follow
-        self.normMean = data[self.length*2:self.length*3]
-        self.normVar = data[self.length*3:self.length*4]
+        self.normMean = data[self.length * 2:self.length * 3]
+        self.normVar = data[self.length * 3:self.length * 4]
         if not (self.normMean.shape[0] == self.length):
             raise RenderError(
                 "incorrect number of normMean coefficents "
