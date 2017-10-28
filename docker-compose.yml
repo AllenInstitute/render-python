@@ -11,6 +11,7 @@ services:
       - "${RENDER_EXAMPLE_DATA}/multichannel-test:/tmp/multichannel-test:ro"
     environment:
       - MONGO_HOST=mongo
+      - RENDER_EXAMPLE_DATA=/tmp
  mongo:
     image: mongo:3.4.2
     expose:
