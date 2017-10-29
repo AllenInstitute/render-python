@@ -24,7 +24,7 @@ def resolvedtiles_object(referenced_tilespecs_and_transforms):
 
 def test_resolvedtiles_from_dict(resolvedtiles_object,referenced_tilespecs_and_transforms):
     tilespecs,transforms = referenced_tilespecs_and_transforms
-    d=resolvedtiles_object.to_dict()
+    d=json.loads(renderapi.utils.renderdumps(resolvedtiles_object))
     resolved_tiles = renderapi.resolvedtiles.ResolvedTiles(json=d)
     assert(len(tilespecs)==len(resolved_tiles.tilespecs))
     assert(len(transforms)==len(resolved_tiles.transforms))

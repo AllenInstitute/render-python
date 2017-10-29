@@ -91,7 +91,7 @@ class TileSpec:
             self.inputfilters = inputfilters
             self.layout = Layout(**kwargs) if layout is None else layout
 
-            self.ip = ImagePyramid(mipMapLevels=mipMapLevels)
+            self.ip = ImagePyramid({mml.level:mml for mml in mipMapLevels})
             # legacy scaleXUrl
             self.maskUrl = maskUrl
             self.imageUrl = imageUrl
@@ -136,7 +136,7 @@ class TileSpec:
         thedict['maxIntensity'] = self.maxint
         if self.layout is not None:
             thedict['layout'] = self.layout.to_dict()
-        thedict['mipmapLevels'] = self.ip.to_ordered_dict()
+        thedict['mipmapLevels'] = dict(self.ip)
         thedict['transforms'] = {}
         thedict['transforms']['type'] = 'list'
         # thedict['transforms']['specList']=[t.to_dict() for t in self.tforms]
@@ -188,10 +188,9 @@ class TileSpec:
         self.maxY = d.get('maxY', None)
         self.minY = d.get('minY', None)
         mmld = d.get('mipmapLevels',{})
-        self.ip = ImagePyramid(mipMapLevels=[
-            MipMapLevel(
+        self.ip = ImagePyramid({l:MipMapLevel(
                 int(l), imageUrl=v.get('imageUrl'), maskUrl=v.get('maskUrl'))
-            for l, v in mmld.items()])
+            for l, v in mmld.items()})
 
         tfl = TransformList(json=d['transforms'])
         self.tforms = tfl.tforms

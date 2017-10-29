@@ -35,7 +35,7 @@ class Channel:
             d['minIntensity']=self.minIntensity
         if self.maxIntensity is not None:
             d['maxIntensity']=self.maxIntensity
-        d['mipmapLevels'] = self.ip.to_ordered_dict()
+        d['mipmapLevels'] = dict(self.ip)
         return d
     
     def from_dict(self,d):
@@ -49,8 +49,6 @@ class Channel:
         self.name=d['name']
         self.minIntensity=d['minIntensity']
         self.maxIntensity=d['maxIntensity']
-        self.ip = ImagePyramid(mipMapLevels=[
-            MipMapLevel(
+        self.ip = ImagePyramid({l:MipMapLevel(
                 int(l), imageUrl=v.get('imageUrl'), maskUrl=v.get('maskUrl'))
-            for l, v in d['mipmapLevels'].items()])
-    
+            for l, v in d['mipmapLevels'].items()})
