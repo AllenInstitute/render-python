@@ -26,6 +26,7 @@ IMAGE_FORMATS = {'png': 'png-image',
 
 @renderaccess
 def get_bb_image(stack, z, x, y, width, height, scale=1.0,
+                 channel=None,
                  minIntensity=None, maxIntensity=None, binaryMask=None,
                  filter=None, maxTileSpecsToRender=None,
                  host=None, port=None, owner=None, project=None,
@@ -51,6 +52,8 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
         number of units @scale=1.0 down (+y) of bounding box to render
     scale : float
         scale to render image at (default 1.0)
+    channel : str
+        channel name to render
     binaryMask : bool
         whether to treat maskimage as binary
     maxTileSpecsToRender : int
@@ -91,6 +94,8 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
         qparams['filter'] = jbool(filter)
     if maxTileSpecsToRender is not None:
         qparams['maxTileSpecsToRender'] = maxTileSpecsToRender
+    if channel is not None:
+        qparams.update({'channels':channel})
 
     r = session.get(request_url, params=qparams)
     try:
@@ -103,7 +108,7 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
 
 
 @renderaccess
-def get_tile_image_data(stack, tileId, normalizeForMatching=True,
+def get_tile_image_data(stack, tileId, channel=None,normalizeForMatching=True,
                         removeAllOption=False, scale=None,
                         filter=None, host=None, port=None, owner=None,
                         project=None, img_format=None,
@@ -118,6 +123,8 @@ def get_tile_image_data(stack, tileId, normalizeForMatching=True,
         name of render stack to get tile from
     tileId : str
         tileId of tile to render
+    channel : str
+        channel name to render
     normalizeForMatching : bool
         whether to render the tile with transformations
         removed ('local' coordinates)
@@ -166,6 +173,8 @@ def get_tile_image_data(stack, tileId, normalizeForMatching=True,
         qparams['filter'] = jbool(filter)
     if removeAllOption is not None:
         qparams['removeAllOption'] = jbool(removeAllOption)
+    if channel is not None:
+        qparams.update({'channels':channel})
     logger.debug(request_url)
 
     r = session.get(request_url, params=qparams)
@@ -180,7 +189,8 @@ def get_tile_image_data(stack, tileId, normalizeForMatching=True,
 
 
 @renderaccess
-def get_section_image(stack, z, scale=1.0, filter=False,
+def get_section_image(stack, z, scale=1.0, channel=None,
+                      filter=False,
                       maxTileSpecsToRender=None, img_format=None,
                       host=None, port=None, owner=None, project=None,
                       session=requests.session(),
@@ -198,6 +208,8 @@ def get_section_image(stack, z, scale=1.0, filter=False,
         layer Z
     scale : float
         linear scale at which to render image (e.g. 0.5)
+    channel: str
+        channel name to render
     filter : bool
         whether or not to apply server side filtering
     maxTileSpecsToRender : int
@@ -234,5 +246,8 @@ def get_section_image(stack, z, scale=1.0, filter=False,
     qparams = {'scale': scale, 'filter': jbool(filter)}
     if maxTileSpecsToRender is not None:
         qparams.update({'maxTileSpecsToRender': maxTileSpecsToRender})
+    if channel is not None:
+        qparams.update({'channels':channel})
+
     r = session.get(request_url, params=qparams)
     return np.asarray(Image.open(io.BytesIO(r.content)))

@@ -8,6 +8,7 @@ services:
       - mongo
     volumes:
       - "${RENDER_EXAMPLE_DATA}/example_1:/tmp/example_1:ro"
+      - "${RENDER_EXAMPLE_DATA}/multichannel-test:/tmp/multichannel-test:ro"
     environment:
       - MONGO_HOST=mongo
  mongo:
