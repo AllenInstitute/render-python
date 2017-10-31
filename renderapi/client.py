@@ -421,9 +421,11 @@ def call_run_ws_client(className, add_args=[], renderclient=None,
             'Unknown subprocess mode {} specified -- '
             'using default subprocess.call'.format(subprocess_mode))
     args = map(str, [client_script, memGB, className] + add_args)
-    ret_val= subprocess_modes.get(
-        subprocess_mode, subprocess.call)(args)
-    if (ret_val != 0):
+    sub_mode = subprocess_modes.get(subprocess_mode, subprocess.call)
+    ret_val= sub_mode(args)
+    #if you are using call, then returning 0 means the subprocess failed
+    #and we should raise an exception
+    if (ret_val != 0) and (sub_mode == subprocess.call):
         raise ClientScriptError('client_script call {} failed'.format(args))
     else:
         return ret_val
