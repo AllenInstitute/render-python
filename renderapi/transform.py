@@ -367,7 +367,7 @@ class Transform(object):
         if self.transformId is not None:
             d['id'] = self.transformId
         if self.labels is not None:
-            d['metadata'] = {'labels': self.labels}
+            d['metaData'] = {'labels': self.labels}
         return d
 
     def from_dict(self, d):
@@ -381,7 +381,7 @@ class Transform(object):
         self.className = d['className']
         self.transformId = d.get('id', None)
         self._process_dataString(d['dataString'])
-        md = d.get('metadata', None)
+        md = d.get('metaData', None)
         if md is not None:
             self.labels = md.get('labels', None)
         else:
