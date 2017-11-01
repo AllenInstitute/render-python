@@ -64,7 +64,7 @@ def validate_stack_import(render, stack, tilespecs):
     ts = renderapi.tilespec.get_tile_specs_from_stack(stack, render=render)
     assert len(ts) == len(tilespecs)
 
-@pytest.mark.parameterize('call_mode',('call','check_call','check_output'))
+@pytest.mark.parametrize('call_mode',('call','check_call','check_output'))
 def test_import_jsonfiles_validate_client(
         render, render_example_tilespec_and_transforms,call_mode):
     stack = 'test_import_jsonfiles_validate_client'
@@ -78,7 +78,7 @@ def test_import_jsonfiles_validate_client(
     validate_stack_import(render, stack, tilespecs)
     renderapi.stack.delete_stack(stack, render=render)
 
-@pytest.mark.parameterize('call_mode',('call','check_call','check_output'))
+@pytest.mark.parametrize('call_mode',('call','check_call','check_output'))
 def test_failed_jsonfiles_validate_client(
     render, render_example_tilespec_and_transforms,call_mode):
     stack = 'test_failed_import_jsonfiles_validate_client'
