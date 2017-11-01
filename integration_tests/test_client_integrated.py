@@ -64,19 +64,28 @@ def validate_stack_import(render, stack, tilespecs):
     ts = renderapi.tilespec.get_tile_specs_from_stack(stack, render=render)
     assert len(ts) == len(tilespecs)
 
-
+@pytest.mark.parameterize('call_mode',('call','check_call','check_output'))
 def test_import_jsonfiles_validate_client(
-        render, render_example_tilespec_and_transforms):
+        render, render_example_tilespec_and_transforms,call_mode):
     stack = 'test_import_jsonfiles_validate_client'
     renderapi.stack.create_stack(stack, render=render)
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     (tfiles, transformFile) = render_example_json_files(
         render_example_tilespec_and_transforms)
     renderapi.client.import_jsonfiles_validate_client(
-        stack, tfiles, transformFile=transformFile, render=render)
+        stack, tfiles, transformFile=transformFile, render=render,
+        subprocess_mode=call_mode)
     validate_stack_import(render, stack, tilespecs)
     renderapi.stack.delete_stack(stack, render=render)
 
+@pytest.mark.parameterize('call_mode',('call','check_call','check_output'))
+def test_failed_jsonfiles_validate_client(
+    render, render_example_tilespec_and_transforms,call_mode):
+    stack = 'test_failed_import_jsonfiles_validate_client'
+    with pytest.raises(renderapi.errors.ClientScriptError):
+        renderapi.client.import_jsonfiles_validate_client(
+            stack, ['not_a_file'], render=render,
+            subprocess_mode=call_mode)
 
 def test_import_jsonfiles_parallel(
         render, render_example_tilespec_and_transforms,
