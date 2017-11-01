@@ -82,6 +82,7 @@ def test_import_jsonfiles_validate_client(
 def test_failed_jsonfiles_validate_client(
     render, render_example_tilespec_and_transforms,call_mode):
     stack = 'test_failed_import_jsonfiles_validate_client'
+    renderapi.stack.create_stack(stack, render=render)
     with pytest.raises(renderapi.errors.ClientScriptError):
         renderapi.client.import_jsonfiles_validate_client(
             stack, ['not_a_file'], render=render,
