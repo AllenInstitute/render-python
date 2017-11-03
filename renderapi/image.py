@@ -53,7 +53,8 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
     scale : float
         scale to render image at (default 1.0)
     channel : str
-        channel name to render
+        channel name to render, (e.g. 'DAPI') or a weighted average of channels of the format
+        e.g 'DAPI___.8___GFP___.2'
     binaryMask : bool
         whether to treat maskimage as binary
     maxTileSpecsToRender : int
@@ -124,7 +125,8 @@ def get_tile_image_data(stack, tileId, channel=None,normalizeForMatching=True,
     tileId : str
         tileId of tile to render
     channel : str
-        channel name to render
+        channel name to render, (e.g. 'DAPI') or a weighted average of channels of the format
+        e.g 'DAPI___.8___GFP___.2'
     normalizeForMatching : bool
         whether to render the tile with transformations
         removed ('local' coordinates)
@@ -209,7 +211,8 @@ def get_section_image(stack, z, scale=1.0, channel=None,
     scale : float
         linear scale at which to render image (e.g. 0.5)
     channel: str
-        channel name to render
+        channel name to render, (e.g. 'DAPI') or a weighted average of channels of the format
+        e.g 'DAPI___.8___GFP___.2'
     filter : bool
         whether or not to apply server side filtering
     maxTileSpecsToRender : int
