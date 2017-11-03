@@ -35,6 +35,7 @@ class WithPool(Pool):
     >>> with WithPool(number_processes) as pool:
     >>>     pool.map(myfunc, myInput)
     """
+
     def __init__(self, *args, **kwargs):
         super(WithPool, self).__init__(*args, **kwargs)
 
@@ -43,7 +44,7 @@ class WithPool(Pool):
 
 
 @renderaccess
-def import_single_json_file(stack, jsonfile, transformFile=None, 
+def import_single_json_file(stack, jsonfile, transformFile=None,
                             subprocess_mode=None,
                             client_script=None, memGB=None, host=None, port=None,
                             owner=None, project=None, render=None, **kwargs):
@@ -68,8 +69,8 @@ def import_single_json_file(stack, jsonfile, transformFile=None,
     stack_params = make_stack_params(
         host, port, owner, project, stack)
     call_run_ws_client('org.janelia.render.client.ImportJsonClient',
-        stack_params + transform_params + [jsonfile],
-        client_script=client_script,memGB=memGB,subprocess_mode=subprocess_mode)
+                       stack_params + transform_params + [jsonfile],
+                       client_script=client_script, memGB=memGB, subprocess_mode=subprocess_mode)
 
 
 @renderaccess
@@ -181,8 +182,8 @@ def import_jsonfiles(stack, jsonfiles, transformFile=None, subprocess_mode=None,
     stack_params = make_stack_params(
         host, port, owner, project, stack)
     call_run_ws_client('org.janelia.render.client.ImportJsonClient',
-        stack_params + transform_params + jsonfiles,
-        client_script=client_script,memGB=memGB,subprocess_mode=subprocess_mode)
+                       stack_params + transform_params + jsonfiles,
+                       client_script=client_script, memGB=memGB, subprocess_mode=subprocess_mode)
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
@@ -225,11 +226,11 @@ def import_jsonfiles_validate_client(stack, jsonfiles,
     set_stack_state(stack, 'LOADING', host, port, owner, project)
 
     call_run_ws_client('org.janelia.render.client.ImportJsonClient',
-        stack_params + \
-        validator_params + \
-        transform_params + \
-        jsonfiles,client_script=client_script,
-        memGB=memGB,subprocess_mode=subprocess_mode)
+                       stack_params +
+                       validator_params +
+                       transform_params +
+                       jsonfiles, client_script=client_script,
+                       memGB=memGB, subprocess_mode=subprocess_mode)
 
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
@@ -261,10 +262,10 @@ def import_tilespecs(stack, tilespecs, sharedTransforms=None,
         trjson = renderdump_temp(sharedTransforms)
 
     importJsonClient(stack, tileFiles=[tsjson], transformFile=(
-                         trjson if sharedTransforms is not None else None),
-                     subprocess_mode=subprocess_mode, host=host, port=port,
-                     owner=owner, project=project,
-                     client_script=client_script, memGB=memGB)
+        trjson if sharedTransforms is not None else None),
+        subprocess_mode=subprocess_mode, host=host, port=port,
+        owner=owner, project=project,
+        client_script=client_script, memGB=memGB)
 
     os.remove(tsjson)
     if sharedTransforms is not None:
@@ -420,9 +421,15 @@ def call_run_ws_client(className, add_args=[], renderclient=None,
         logger.warning(
             'Unknown subprocess mode {} specified -- '
             'using default subprocess.call'.format(subprocess_mode))
-    return subprocess_modes.get(
-        subprocess_mode, subprocess.call)(
-            map(str, [client_script, memGB, className] + add_args))
+    args = map(str, [client_script, memGB, className] + add_args)
+    sub_mode = subprocess_modes.get(subprocess_mode, subprocess.check_call)
+    try:
+        ret_val = sub_mode(args)
+    except subprocess.CalledProcessError as e:
+        raise ClientScriptError('client_script call {} failed'.format(args))
+
+    return ret_val
+
 
 
 def get_param(var, flag):
@@ -713,15 +720,18 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
     """
     if bounds is not None:
         try:
-            if bounds['maxX']<bounds['minX']:
-                raise ClientScriptError('maxX:{} is less than minX:{}'.format(bounds['maxX'],bounds['minX']))
-            if bounds['maxY']<bounds['minY']:
-                raise ClientScriptError('maxY:{} is less than minY:{}'.format(bounds['maxY'],bounds['minY']))
-            bound_list= ','.join(map(lambda x: str(int(x)),
-                [bounds['minX'],bounds['maxX'],bounds['minY'],bounds['maxY']]))
+            if bounds['maxX'] < bounds['minX']:
+                raise ClientScriptError('maxX:{} is less than minX:{}'.format(
+                    bounds['maxX'], bounds['minX']))
+            if bounds['maxY'] < bounds['minY']:
+                raise ClientScriptError('maxY:{} is less than minY:{}'.format(
+                    bounds['maxY'], bounds['minY']))
+            bound_list = ','.join(map(lambda x: str(int(x)),
+                                      [bounds['minX'], bounds['maxX'], bounds['minY'], bounds['maxY']]))
             bound_param = ['--bounds', bound_list]
         except KeyError as e:
-            raise ClientScriptError('bounds does not contain correct keys {}'.format(bounds))
+            raise ClientScriptError(
+                'bounds does not contain correct keys {}'.format(bounds))
     else:
         bound_param = []
 
@@ -731,7 +741,7 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
              get_param(doFilter, '--doFilter') +
              get_param(minIntensity, '--minIntensity') +
              get_param(maxIntensity, '--maxIntensity') +
-             get_param(fillWithNoise, '--fillWithNoise') + 
+             get_param(fillWithNoise, '--fillWithNoise') +
              bound_param + zs)
     call_run_ws_client('org.janelia.render.client.RenderSectionClient',
                        memGB=memGB, client_script=client_script,
