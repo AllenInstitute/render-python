@@ -23,15 +23,18 @@ install:
   - pip install -r requirements.txt
   - pip install -r test_requirements.txt
 before_install:
-  - git clone --depth 1 https://github.com/saalfeldlab/render.git fcollman/render -b master
-  - mvn package -pl render-ws-java-client -am -DskipTests -f fcollman/render/pom.xml
-  - export RENDER_CLIENT_JAR=`readlink -m $TRAVIS_BUILD_DIR/fcollman/render/render-ws-java-client/target/render-ws-java-client-*-standalone.jar`
-  - export RENDER_EXAMPLE_DATA=`readlink -m $TRAVIS_BUILD_DIR/fcollman/render/render-ws-java-client/src/main/resources`
+  - git clone --depth 1 https://github.com/saalfeldlab/render.git render -b master
+  - mvn package -pl render-ws-java-client -am -DskipTests -f render/pom.xml
+  - export RENDER_CLIENT_JAR=`readlink -m $TRAVIS_BUILD_DIR/render/render-ws-java-client/target/render-ws-java-client-*-standalone.jar`
+  - export RENDER_WS_JAVA_CLIENT_EXAMPLE_DATA=`readlink -m $TRAVIS_BUILD_DIR/render/render-ws-java-client/src/main/resources`
+  - export RENDER_APP_EXAMPLE_DATA=`readlink -m $TRAVIS_BUILD_DIR/render/render-app/src/test/resources`
   - export RENDER_JAVA_HOME=$JAVA_HOME
+  - mkdir -p /tmp/example_1 && cp -R $RENDER_WS_JAVA_CLIENT_EXAMPLE_DATA/example_1 /tmp/.
+  - cp -R $RENDER_APP_EXAMPLE_DATA/* /tmp/.
+  - export RENDER_EXAMPLE_DATA=/tmp
   - docker-compose up -d
-  - mkdir -p /tmp/example_1 && cp -R $RENDER_EXAMPLE_DATA/example_1 /tmp/.
 env:
-  - RENDER_HOST=localhost RENDER_PORT=8080 RENDER_CLIENT_SCRIPTS=$TRAVIS_BUILD_DIR/fcollman/render/render-ws-java-client/src/main/scripts
+  - RENDER_HOST=localhost RENDER_PORT=8080 RENDER_CLIENT_SCRIPTS=$TRAVIS_BUILD_DIR/render/render-ws-java-client/src/main/scripts
 # command to run tests
 script:
   - python setup.py test # or py.test for Python versions 3.5 and below
