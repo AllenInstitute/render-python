@@ -11,7 +11,7 @@ class Channel:
             name of channel
         maxIntensity: int
             maximum intensity to display (optional)
-        minIntesnity: int
+        minIntensity: int
             minimum default intensity to display (optional)
         ip: ImagePyramid
             set of mipmaplevel images for this channel
