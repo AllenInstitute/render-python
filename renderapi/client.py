@@ -684,8 +684,9 @@ def coordinateClient(stack, z, fromJson=None, toJson=None, localToWorld=None,
 @renderaccess
 def renderSectionClient(stack, rootDirectory, zs, scale=None,
                         maxIntensity=None, minIntensity=None, bounds=None,
-                        format=None,
-                        doFilter=None, fillWithNoise=None,
+                        format=None, channel=None, customOutputFolder=None,
+                        customSubFolder=None,padFileNamesWithZeros=None,
+                        doFilter=None, fillWithNoise=None, imageType=None,
                         subprocess_mode=None, host=None, port=None, owner=None,
                         project=None, client_script=None, memGB=None,
                         render=None, **kwargs):
@@ -710,6 +711,16 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
         dictionary with keys of minX maxX minY maxY
     format : str
         output image format in 'PNG', 'TIFF', 'JPEG'
+    channel : str
+        channel to render out (use on multichannel stack)
+    customOutputFolder : str
+        folder to save all images in (overrides default of sections_at_%scale)
+    customSubFolder : str
+        folder to save all images in under outputFolder (overrides default of none)
+    padFileNamesWithZeros: bool
+        whether to pad file names with zeros to make sortable
+    imageType: int
+        8,16,24 to specify what kind of image type to save
     doFilter : str
         string representing java boolean for whether to render image
         with default filter (varies with render version)
@@ -742,6 +753,11 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
              get_param(minIntensity, '--minIntensity') +
              get_param(maxIntensity, '--maxIntensity') +
              get_param(fillWithNoise, '--fillWithNoise') +
+             get_param(customOutputFolder, '--customOutputFolder')+
+             get_param(imageType,'--imageType')+
+             get_param(channel,'--channels')+
+             get_param(customSubFolder,'--customSubFolder')+
+             get_param(padFileNamesWithZeros,'--padFileNamesWithZeros')+
              bound_param + zs)
     call_run_ws_client('org.janelia.render.client.RenderSectionClient',
                        memGB=memGB, client_script=client_script,
