@@ -803,3 +803,54 @@ def transformSectionClient(stack, transformId, transformClass, transformData,
     call_run_ws_client('org.janelia.render.client.TransformSectionClient',
                        memGB=memGB, client_script=client_script,
                        subprocess_mode=subprocess_mode, add_args=argvs)
+
+@renderaccess
+def mipMapClient(stack, rootDirectory, minLevel, maxLevel, format,
+                 zs=None, forceGeneration=False,
+                 pool_size = 1,
+                 subprocess_mode=None,
+                 host=None, port=None,
+                 owner=None, project=None, client_script=None,
+                 memGB=None, render=None, **kwargs):
+    """run mipMapClient
+    
+    Parameters
+    ----------
+    stack: str
+        stack containing mipmaps to add
+    rootDirectory: str
+        path to root directory to save mipmaps
+    minLevel: int
+        min mip map level to generate
+    maxLevel: int
+        maximum mip map level to generate
+    format: str
+        (tiff, jpg, png) format to generate tiff
+    zs: list
+        list of z values to generate (default all zs in stack)
+    pool_size: int
+        number of parallel processes to launch (default 1)
+
+    """
+    argvs = make_stack_params(host, port, owner, project) + \
+            ['--rootDirectory', rootDirectory] + \
+            ['--minLevel',minLevel] + ['--maxLevel',maxLevel] + \
+            ['--format', format] + ['--forceGeneration',forceGeneration] 
+            
+    if pool_size>1:
+        argsv += ['--numberOfRenderGroups',pool_size]
+        def launch_mipmap_worker(argsv,i):
+            argsv_worker = copy(argsv)
+            argsv_worker += ['--renderGroup',i+1]
+            call_run_ws_client('org.janelia.render.client.MipmapClient',
+            memGb=memGB, client_script=client_script, subprocess_mode=subprocess_mode,
+            add_args=argsv_worker)
+        partial_mipmap = partial(launch_mipmap_worker,argsv)
+        with WithPool(poolsize) as pool:
+            pool.map(partial_mipmap, range(poolsize))
+
+    else:
+        call_run_ws_client('org.janelia.render.client.MipmapClient',
+            memGb=memGB, client_script=client_script, subprocess_mode=subprocess_mode,
+            add_args=argvs)
+
