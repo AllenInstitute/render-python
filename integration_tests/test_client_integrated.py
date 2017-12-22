@@ -242,3 +242,12 @@ def test_transformSectionClient(render, teststack,
     assert all([ts.tforms[-1].to_dict() == tform.to_dict()
                 for ts in output_ts])
     renderapi.stack.delete_stack(deststack, render=render)
+
+def test_mipmapclient(render, teststack, render_example_tilespec_and_transforms, tmpdir):
+    root_directory = str(tmpdir.join('mipmapout'))
+
+    #smoke test of pool_size=1
+    renderapi.client.mipMapClient(stack,root_directory,1,3,'tiff',render=render)
+
+    #smoke test of pool_size>1
+    renderapi.client.mipMapClient(stack,root_directory,1,3,'tiff',pool_size=5,render=render)
