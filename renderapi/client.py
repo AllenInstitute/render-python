@@ -11,7 +11,7 @@ import tempfile
 from .errors import ClientScriptError
 from .utils import NullHandler, renderdump_temp
 from .render import RenderClient, renderaccess
-from .stack import set_stack_state, make_stack_params
+from .stack import set_stack_state, make_stack_params, get_z_values_for_stack
 from pathos.multiprocessing import ProcessingPool as Pool
 
 # setup logger
@@ -806,7 +806,7 @@ def transformSectionClient(stack, transformId, transformClass, transformData,
 
 @renderaccess
 def mipMapClient(stack, rootDirectory, minLevel, maxLevel, format,
-                 zs=None, forceGeneration=False,
+                 zValues=None, forceGeneration=False,
                  pool_size = 1,
                  subprocess_mode=None,
                  host=None, port=None,
@@ -826,30 +826,36 @@ def mipMapClient(stack, rootDirectory, minLevel, maxLevel, format,
         maximum mip map level to generate
     format: str
         (tiff, jpg, png) format to generate tiff
-    zs: list
+    zValues: list
         list of z values to generate (default all zs in stack)
     pool_size: int
         number of parallel processes to launch (default 1)
 
     """
-    argvs = make_stack_params(host, port, owner, project) + \
+    argvs = make_stack_params(host, port, owner, project, stack) + \
             ['--rootDirectory', rootDirectory] + \
             ['--minLevel',minLevel] + ['--maxLevel',maxLevel] + \
-            ['--format', format] + ['--forceGeneration',forceGeneration] 
-            
+            ['--format', format]
+    if forceGeneration:
+        argvs.append('--forceGeneration')
+
+    if zValues is None:
+        zValues = get_z_values_for_stack(stack, render=render)      
     if pool_size>1:
-        argsv += ['--numberOfRenderGroups',pool_size]
-        def launch_mipmap_worker(argsv,i):
-            argsv_worker = copy(argsv)
+        argvs += ['--numberOfRenderGroups',pool_size]
+        def launch_mipmap_worker(argsv,zvalues,i):
+            argsv_worker = list(argvs)
             argsv_worker += ['--renderGroup',i+1]
+            argsv_worker += zValues
             call_run_ws_client('org.janelia.render.client.MipmapClient',
             memGb=memGB, client_script=client_script, subprocess_mode=subprocess_mode,
             add_args=argsv_worker)
-        partial_mipmap = partial(launch_mipmap_worker,argsv)
-        with WithPool(poolsize) as pool:
-            pool.map(partial_mipmap, range(poolsize))
+        partial_mipmap = partial(launch_mipmap_worker,argvs,zValues)
+        with WithPool(pool_size) as pool:
+            pool.map(partial_mipmap, range(pool_size))
 
     else:
+        argvs += zValues
         call_run_ws_client('org.janelia.render.client.MipmapClient',
             memGb=memGB, client_script=client_script, subprocess_mode=subprocess_mode,
             add_args=argvs)
