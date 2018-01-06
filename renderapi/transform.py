@@ -483,11 +483,10 @@ class AffineModel(Transform):
             self.M11 = M11
             self.B0 = B0
             self.B1 = B1
-            self.className = 'mpicbg.trakem2.transform.AffineModel2D'
             self.labels = labels
             self.load_M()
             self.transformId = transformId
-
+            self.className = 'mpicbg.trakem2.transform.AffineModel2D'
     @property
     def dataString(self):
         """dataString string for this transform"""
@@ -770,6 +769,12 @@ class TranslationModel(AffineModel):
 
     def __init__(self, *args, **kwargs):
         super(TranslationModel, self).__init__(*args, **kwargs)
+        self.className = 'mpicbg.trakem2.transform.TranslationModel2D'
+        print(self.className)
+    @property 
+    def dataString(self): 
+        """dataString string for this transform"""
+        return "%.10f %.10f" % (self.B0, self.B1)
 
     def _process_dataString(self, dataString):
         """expected dataString is 'tx ty'"""
