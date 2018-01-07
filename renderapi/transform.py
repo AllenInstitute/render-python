@@ -770,7 +770,7 @@ class TranslationModel(AffineModel):
     def __init__(self, *args, **kwargs):
         super(TranslationModel, self).__init__(*args, **kwargs)
         self.className = 'mpicbg.trakem2.transform.TranslationModel2D'
-        print(self.className)
+
     @property 
     def dataString(self): 
         """dataString string for this transform"""
@@ -870,6 +870,10 @@ class RigidModel(AffineModel):
 
     def __init__(self, *args, **kwargs):
         super(RigidModel, self).__init__(*args, **kwargs)
+        self.className = 'mpicbg.trakem2.transform.RigidModel2D'
+    @property
+    def dataString():
+        return "%0.10f %0.10f %0.10f"%(np.arctan2(self.M11,self.M00), self.B0,self.B1)
 
     def _process_dataString(self, dataString):
         """expected datastring is 'theta tx ty'"""

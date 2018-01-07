@@ -469,3 +469,6 @@ def test_translation_simple():
     print(trans1.className)
     assert(d['dataString']=="%0.10f %0.10f"%(0,1))
     trans1 = renderapi.transform.TranslationModel(json=d)
+
+def test_rigid_simple():
+    rigid1 = renderapi.transform.RigidModel()
