@@ -345,6 +345,7 @@ def estimate_homography_transform(
     if do_rotate:
         assert np.isclose(tform.rotation, random_rotate.rotation)
     # # currently forces as affines
+    # I didn't see the point of this test, and it now fails for TranslationModels
     # am = renderapi.transform.AffineModel(json=tform.to_dict())
     # assert am.M == tform.to_dict()
 
@@ -467,3 +468,4 @@ def test_translation_simple():
     d = trans1.to_dict()
     print(trans1.className)
     assert(d['dataString']=="%0.10f %0.10f"%(0,1))
+    trans1 = renderapi.transform.TranslationModel(json=d)

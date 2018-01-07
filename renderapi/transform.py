@@ -778,9 +778,13 @@ class TranslationModel(AffineModel):
 
     def _process_dataString(self, dataString):
         """expected dataString is 'tx ty'"""
-        tx, ty = map(float(dataString.split(' ')))
+        tx, ty = map(float,dataString.split(' '))
         self.B0 = tx
         self.B1 = ty
+        self.M00 = 1.0
+        self.M11 = 1.0
+        self.M01 = 0.0
+        self.M10 = 0.0
         self.load_M()
 
     @staticmethod
