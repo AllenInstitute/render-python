@@ -466,9 +466,12 @@ def test_affine_convert_point_vector_fail():
 def test_translation_simple():
     trans1 = renderapi.transform.TranslationModel(B1=1,B0=0)
     d = trans1.to_dict()
-    print(trans1.className)
     assert(d['dataString']=="%0.10f %0.10f"%(0,1))
     trans1 = renderapi.transform.TranslationModel(json=d)
 
 def test_rigid_simple():
     rigid1 = renderapi.transform.RigidModel()
+    d = rigid1.to_dict()
+    print(d['dataString'])
+    assert(d['dataString']=="%0.10f %0.10f %0.10f"%(0.0,0.0,0.0))
+    rigid2 = renderapi.transform.RigidModel(json=d)

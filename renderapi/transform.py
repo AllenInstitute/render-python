@@ -872,8 +872,8 @@ class RigidModel(AffineModel):
         super(RigidModel, self).__init__(*args, **kwargs)
         self.className = 'mpicbg.trakem2.transform.RigidModel2D'
     @property
-    def dataString():
-        return "%0.10f %0.10f %0.10f"%(np.arctan2(self.M11,self.M00), self.B0,self.B1)
+    def dataString(self):
+        return "%0.10f %0.10f %0.10f"%(np.arctan2(self.M10,self.M00), self.B0,self.B1)
 
     def _process_dataString(self, dataString):
         """expected datastring is 'theta tx ty'"""
@@ -881,7 +881,7 @@ class RigidModel(AffineModel):
         self.M00 = np.cos(theta)
         self.M01 = -np.sin(theta)
         self.M10 = np.sin(theta)
-        self.M11 = np.sin(theta)
+        self.M11 = np.cos(theta)
         self.B0 = tx
         self.B1 = ty
         self.load_M()
