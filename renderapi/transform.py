@@ -88,6 +88,11 @@ class TransformList:
         """
         return json.dumps(self.to_dict())
 
+    def tform(self,pts):
+        for tf in self.tforms:
+            pts = tf.tform(pts)
+        return pts
+
     def from_dict(self, d):
         """deserialization function
 
@@ -1003,14 +1008,22 @@ class SimilarityModel(RigidModel):
 
     def __init__(self, *args, **kwargs):
         super(SimilarityModel, self).__init__(*args, **kwargs)
+        self.className = 'mpicbg.trakem2.transform.SimilarityModel2D'
+
+    @property
+    def dataString(self):
+        return "%0.10f %0.10f %0.10f %0.10f"%(np.linalg.det(self.M),
+                                              np.arctan2(self.M10,self.M00),
+                                              self.B0,
+                                              self.B1)
 
     def _process_dataString(self, dataString):
         """expected datastring is 's theta tx ty'"""
-        s, theta, tx, ty = map(float(dataString.split(' ')))
+        s, theta, tx, ty = map(float,dataString.split(' '))
         self.M00 = s * np.cos(theta)
         self.M01 = -s * np.sin(theta)
         self.M10 = s * np.sin(theta)
-        self.M11 = s * np.sin(theta)
+        self.M11 = s * np.cos(theta)
         self.B0 = tx
         self.B1 = ty
         self.load_M()
@@ -1148,7 +1161,7 @@ class Polynomial2DTransform(Transform):
             raise EstimationError(
                 'source has {} points, but dest has {}!'.format(
                     len(src), len(dst)))
-        if no_coeff > len(src):
+        if no_coeff > 2*len(src):
             raise EstimationError(
                 'order {} is too large to fit {} points!'.format(
                     order, len(src)))
@@ -1384,7 +1397,7 @@ def estimate_dstpts(transformlist, src=None):
 
     Parameters
     ----------
-    transformlist : :obj:list of :obj:Transform
+    transformlist : :obj:list of :obj:Transform or :obj:TransformList
         transforms that have a tform method implemented
     src : numpy.array
         a Nx2  array of source points
@@ -1395,11 +1408,14 @@ def estimate_dstpts(transformlist, src=None):
         Nx2 array of destination points
     """
     dstpts = src
-    for tform in transformlist:
-        if isinstance(tform, list):
-            dstpts = estimate_dstpts(tform, dstpts)
-        else:
-            dstpts = tform.tform(dstpts)
+    if isinstance(transformlist,TransformList):
+        dstpts = transformlist.tform(dstpts)
+    else:
+        for tform in transformlist:
+            if isinstance(tform, list):
+                dstpts = estimate_dstpts(tform, dstpts)
+            else:
+                dstpts = tform.tform(dstpts)
     return dstpts
 
 
@@ -1586,12 +1602,15 @@ def estimate_transformsum(transformlist, src=None, order=2):
                 if notstring:
                     for sub in flatten(i):
                         yield sub
+            elif isinstance(i, TransformList):
+                for sub in flatten(i.tforms):
+                    yield sub
             else:
                 yield i
 
     dstpts = estimate_dstpts(transformlist, src)
     tforms = flatten(transformlist)
-    if all([(tform.className == AffineModel.className)
+    if all([isinstance(tform,AffineModel)
             for tform in tforms]):
         am = AffineModel()
         am.estimate(A=src, B=dstpts, return_params=False)

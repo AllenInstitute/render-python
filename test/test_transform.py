@@ -12,6 +12,65 @@ def cross_py23_reload(module):
     except NameError as e:
         importlib.reload(module)
 
+@pytest.mark.parametrize(('Class','ds'),
+                            [(renderapi.transform.TranslationModel,"%0.10f %0.10f"%(0,0)),
+                             (renderapi.transform.RigidModel,"%0.10f %0.10f %0.10f"%(0.0,0.0,0.0)),
+                             (renderapi.transform.SimilarityModel,"%0.10f %0.10f %0.10f %0.10f"%(1.0,0.0,0.0,0.0))])
+def test_transform_simple(Class,ds):
+    tform=Class(transformId="test",labels=['testlabel'])
+    d = tform.to_dict()
+    assert(d['dataString']==ds)
+    assert('testlabel' in d['metaData']['labels'])
+    tform = Class(json=d)
+    assert('testlabel' in tform.labels)
+
+
+@pytest.mark.parametrize(('Class','frompts','topts','ds'),
+                         [  (renderapi.transform.TranslationModel,
+                             np.array([[0.0,0.0],[100.0,100.0]]),
+                             np.array([[100.0,0.0],[200.0,100.0]]),
+                             '%0.10f %0.10f'%(100,0)),
+                              (renderapi.transform.RigidModel,
+                             np.array([[0.0,0.0],[100.0,0.0]]),
+                             np.array([[0.0,0.0],[0.0,100.0]]),
+                             '%0.10f %0.10f %0.10f'%(np.pi/2,0,0)),
+                              (renderapi.transform.RigidModel,
+                             np.array([[0.0,0.0],[-100.0,0.0],[-50,0]]),
+                             np.array([[0.0,0.0],[100.0,0.0],[50,0]]),
+                             '%0.10f %0.10f %0.10f'%(np.pi,0,0)),
+                              (renderapi.transform.SimilarityModel,
+                             np.array([[0.0,0.0],[100.0,0.0]]),
+                             np.array([[0.0,0.0],[0.0,200.0]]),
+                             '%0.10f %0.10f %0.10f %0.10f'%(2.0,np.pi/2,0,0))
+                             ])
+def test_transform_estimate(Class,frompts,topts,ds):
+    tform=Class()
+    tform.estimate(frompts,topts)
+    d = tform.to_dict()
+    d['dataString']=ds
+    tform2 = Class(json=d)
+    print(tform,tform2)
+    assert(np.allclose(tform.M,tform2.M))
+
+@pytest.mark.parametrize(('Class','frompts','topts'),
+                         [  (renderapi.transform.RigidModel,
+                             np.array([[0.0,0.0],[0.0,0.0]]),
+                             np.array([[0.0,0.0],[0.0,0.0]])),
+                              (renderapi.transform.Polynomial2DTransform,
+                             np.array([[0.0,0.0],[1.0,0.0],[2.0,0.0],[0.0,1.0],[0.0,2.0]]),
+                             np.array([[0.0,0.0],[1.0,0.0],[4.0,0.0],[0.0,1.0],[0.0,8.0]]))
+                             ])
+def test_transform_estimate_fail(Class,frompts,topts):
+    tform=Class()
+    with pytest.raises(renderapi.transform.EstimationError):
+        tform.estimate(frompts,topts)
+
+def test_reference_transform():
+    tform=Class(refId="test")
+    d = tform.to_dict()
+    assert(d['refId']=="test")
+    tform = Class(json=d)
+
 def test_affine_rot_90():
     am = renderapi.transform.AffineModel()
     # setup a 90 degree clockwise rotation
@@ -105,13 +164,15 @@ def test_Polynomial_estimation(use_numpy=False):
     derived_pt = renderapi.transform.Polynomial2DTransform(
         src=srcpts, dst=dstpts)
     assert(np.allclose(derived_pt.params, default_pt.params))
-
+    assert(derived_pt.coefficients() == 12)
     if use_numpy:
         builtins.__import__ = realimport
     cross_py23_reload(renderapi.transform)
     assert(renderapi.transform.svd is scipy.linalg.svd)
-
-
+    with pytest.raises(renderapi.transform.ConversionError):
+        derived_pt.asorder(1)
+    with pytest.raises(renderapi.transform.ConversionError):
+        derived_pt.fromAffine(derived_pt)
 def test_Polynomial_estimation_numpy():
     test_Polynomial_estimation(use_numpy=True)
 
@@ -406,7 +467,8 @@ def test_non_linear_transform():
                                                "1.3042150458228838E19 1.0829624014456685E19 9.899910593314652E18 "
                                                "9.885988268659214E18 1.1051253229808925E19 1.6002173610912907E19 "
                                                "0.0 2048 2048 "),
-                                               transformId="testing")
+                                               transformId="testing",
+                                               labels=["testing"])
 
     ticks = np.arange(0,2048,64,np.float)
     xx,yy = np.meshgrid(ticks,ticks)
@@ -463,15 +525,45 @@ def test_affine_convert_point_vector_fail():
     with pytest.raises(renderapi.transform.ConversionError):
         affine1.convert_to_point_vector(points_4d)
 
-def test_translation_simple():
-    trans1 = renderapi.transform.TranslationModel(B1=1,B0=0)
-    d = trans1.to_dict()
-    assert(d['dataString']=="%0.10f %0.10f"%(0,1))
-    trans1 = renderapi.transform.TranslationModel(json=d)
+def assert_estimation(tforml):
+    start_pt = np.array([[0,0]])
+    end_pt = renderapi.transform.estimate_dstpts(tforml,
+        start_pt)
+    assert(np.allclose(end_pt,np.array([1.0,1.0])))
+   
+def test_tranform_nested_estimate():
+    t1 = renderapi.transform.AffineModel(B0=1)
+    t2 = renderapi.transform.AffineModel(B1=1.0)
+    t3 = renderapi.transform.AffineModel(B0 = 1.0, B1 = 1.0)
+    t4 = renderapi.transform.TranslationModel(B0=-1.0,B1=-1.0)
+    tform_list = renderapi.transform.TransformList(tforms=[t1,t2])
+    tform_list2 = renderapi.transform.TransformList(tforms=[t3,t4])
+    tform_metalist =  renderapi.transform.TransformList(tforms=[tform_list,tform_list2])
+    tform_list_list = [[t1,t2],[t3,t4]]
+    
+    assert_estimation(tform_metalist)
+    assert_estimation(tform_list_list)
+    assert_estimation([tform_list,tform_list2])
 
-def test_rigid_simple():
-    rigid1 = renderapi.transform.RigidModel()
-    d = rigid1.to_dict()
-    print(d['dataString'])
-    assert(d['dataString']=="%0.10f %0.10f %0.10f"%(0.0,0.0,0.0))
-    rigid2 = renderapi.transform.RigidModel(json=d)
+    src_pts = 3*np.random.random((10,2))
+    tform_sum = renderapi.transform.estimate_transformsum([tform_list,tform_list2],src=src_pts,order=1)
+    tform_expected = renderapi.transform.AffineModel(B0=1.0,B1=1.0)
+    
+    assert(np.allclose(tform_sum.M,tform_expected.M))
+
+def test_new_unknown_transform():
+    d = {
+        'specList':[{
+                'className':'mpicbg.trakem2.transform.StephanCrazyTform',
+                'dataString':"3.0 2.0 1.0 0.0",
+                'metaData':{
+                    'labels':['crazy']
+                },
+                'id':"myfirstcrazy"
+            }]
+        }
+    tform_list = renderapi.transform.TransformList(json=d)
+    tform = tform_list.tforms[0]
+    assert(tform.className == 'mpicbg.trakem2.transform.StephanCrazyTform')
+    assert(tform.transformId == 'myfirstcrazy')
+    assert('crazy' in tform.labels)
