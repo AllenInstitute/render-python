@@ -11,6 +11,8 @@ from test_data import (render_host, render_port,
                        client_script_location, tilespec_file, tform_file, test_pool_size)
 from pathos.multiprocessing import ProcessingPool as Pool
 import PIL
+import urllib
+import urlparse
 
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)
@@ -137,8 +139,7 @@ def test_import_jsonfiles(render, render_example_tilespec_and_transforms,
 
 
 @pytest.fixture(scope="module")
-def teststack(render, render_example_tilespec_and_transforms):
-    stack = 'teststack'
+def teststack(render, render_example_tilespec_and_transforms, stack='teststack'):
     test_import_jsonfiles(render, render_example_tilespec_and_transforms,
                           stack=stack)
     yield stack
@@ -242,3 +243,51 @@ def test_transformSectionClient(render, teststack,
     assert all([ts.tforms[-1].to_dict() == tform.to_dict()
                 for ts in output_ts])
     renderapi.stack.delete_stack(deststack, render=render)
+
+
+def validate_mipmap(root_directory, tilespec, minlevel, maxlevel, extension):
+    parts = urllib.unquote(urlparse.urlparse(tilespec.ip.get(0)['imageUrl']))
+    base_img_path=parts.path
+    new_base=base_img_path+'.'+extension
+    new_base = new_base[1:]
+    for level in range(minlevel,maxlevel+1):
+        expected_img_path=os.path.join(root_directory,str(level),new_base)
+        assert(os.path.isfile(expected_img_path))
+
+def reset_mipmap(render,teststack):
+    md = renderapi.stack.get_stack_metadata(teststack, render=render)
+    md.mipmapPathBuilder=None
+    renderapi.stack.set_stack_metadata(teststack, md, render=render)
+
+@pytest.mark.parametrize('pool_size',(4,1))
+def test_mipmapclient(render, teststack, render_example_tilespec_and_transforms, pool_size,tmpdir_factory):
+    root_directory =  str(tmpdir_factory.mktemp('mipmap'))
+    reset_mipmap(render,teststack)
+
+    (tilespecs,tforms) = render_example_tilespec_and_transforms
+
+    #smoke test of pool_size=1
+    renderapi.client.mipMapClient(teststack,
+                                 root_directory,
+                                 1,3,
+                                 'tiff',
+                                 pool_size=pool_size,
+                                 render=render)
+    print('num_tiles',len(tilespecs))
+    for ts in tilespecs:
+        validate_mipmap(root_directory,ts,1,3,'tif')
+
+    #test with a specific z
+    root_directory =  str(tmpdir_factory.mktemp('mipmap'))
+    reset_mipmap(render,teststack)
+    renderapi.client.mipMapClient(teststack,
+                                 root_directory,
+                                 1,3,
+                                 'tiff',
+                                 zValues=[ts.z],
+                                 pool_size=pool_size,
+                                 render=render)
+    tilespecs = renderapi.tilespec.get_tile_specs_from_z(teststack, ts.z,render=render)
+    for ts in tilespecs:
+        validate_mipmap(root_directory,ts,1,3,'tif')
+        
