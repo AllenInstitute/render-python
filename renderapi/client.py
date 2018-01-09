@@ -91,6 +91,7 @@ class WithPool(Pool):
     >>> with WithPool(number_processes) as pool:
     >>>     pool.map(myfunc, myInput)
     """
+
     def __init__(self, *args, **kwargs):
         super(WithPool, self).__init__(*args, **kwargs)
 
@@ -100,7 +101,8 @@ class WithPool(Pool):
 
 @renderclientaccess
 def import_single_json_file(stack, jsonfile, transformFile=None,
-                            client_scripts=None, host=None, port=None,
+                            subprocess_mode=None,
+                            client_script=None, memGB=None, host=None, port=None,
                             owner=None, project=None, render=None, **kwargs):
     """calls client script to import given jsonfile
 
@@ -120,17 +122,11 @@ def import_single_json_file(stack, jsonfile, transformFile=None,
         transform_params = []
     else:
         transform_params = ['--transformFile', transformFile]
-    my_env = os.environ.copy()
     stack_params = make_stack_params(
         host, port, owner, project, stack)
-    cmd = [os.path.join(client_scripts, 'import_json.sh')] + \
-        stack_params + \
-        transform_params + \
-        [jsonfile]
-    logger.debug(cmd)
-    proc = subprocess.Popen(cmd, env=my_env, stdout=subprocess.PIPE)
-    proc.wait()
-    logger.debug(proc.stdout.read())
+    call_run_ws_client('org.janelia.render.client.ImportJsonClient',
+                       stack_params + transform_params + [jsonfile],
+                       client_script=client_script, memGB=memGB, subprocess_mode=subprocess_mode)
 
 
 @renderclientaccess
@@ -214,8 +210,8 @@ def import_jsonfiles_parallel(
 
 
 @renderaccess
-def import_jsonfiles(stack, jsonfiles, transformFile=None,
-                     client_scripts=None, host=None, port=None,
+def import_jsonfiles(stack, jsonfiles, transformFile=None, subprocess_mode=None,
+                     client_script=None, memGB=None, host=None, port=None,
                      owner=None, project=None, close_stack=True,
                      render=None, **kwargs):
     """import jsons using client script serially
@@ -239,27 +235,22 @@ def import_jsonfiles(stack, jsonfiles, transformFile=None,
         transform_params = []
     else:
         transform_params = ['--transformFile', transformFile]
-    my_env = os.environ.copy()
     stack_params = make_stack_params(
         host, port, owner, project, stack)
-    cmd = [os.path.join(client_scripts, 'import_json.sh')] + \
-        stack_params + \
-        transform_params + \
-        jsonfiles
-    logger.debug(cmd)
-    proc = subprocess.Popen(cmd, env=my_env, stdout=subprocess.PIPE)
-    proc.wait()
-    logger.debug(proc.stdout.read())
+    call_run_ws_client('org.janelia.render.client.ImportJsonClient',
+                       stack_params + transform_params + jsonfiles,
+                       client_script=client_script, memGB=memGB, subprocess_mode=subprocess_mode)
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
 
 @renderclientaccess
 def import_jsonfiles_validate_client(stack, jsonfiles,
-                                     transformFile=None, client_scripts=None,
+                                     transformFile=None, client_script=None,
                                      host=None, port=None, owner=None,
                                      project=None, close_stack=True, mem=6,
-                                     validator=None,
+                                     validator=None, subprocess_mode=None,
+                                     memGB=None,
                                      render=None, **kwargs):
     """Uses java client for parallelization and validation
 
@@ -288,18 +279,14 @@ def import_jsonfiles_validate_client(stack, jsonfiles,
 
     my_env = os.environ.copy()
     stack_params = make_stack_params(host, port, owner, project, stack)
-    cmd = [os.path.join(client_scripts, 'run_ws_client.sh')] + \
-        ['{}G'.format(str(int(mem))),
-         'org.janelia.render.client.ImportJsonClient'] + \
-        stack_params + \
-        validator_params + \
-        transform_params + \
-        jsonfiles
-
     set_stack_state(stack, 'LOADING', host, port, owner, project)
-    logger.debug(cmd)
 
-    subprocess.call(cmd, env=my_env)
+    call_run_ws_client('org.janelia.render.client.ImportJsonClient',
+                       stack_params +
+                       validator_params +
+                       transform_params +
+                       jsonfiles, client_script=client_script,
+                       memGB=memGB, subprocess_mode=subprocess_mode)
 
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
@@ -331,10 +318,10 @@ def import_tilespecs(stack, tilespecs, sharedTransforms=None,
         trjson = renderdump_temp(sharedTransforms)
 
     importJsonClient(stack, tileFiles=[tsjson], transformFile=(
-                         trjson if sharedTransforms is not None else None),
-                     subprocess_mode=subprocess_mode, host=host, port=port,
-                     owner=owner, project=project,
-                     client_script=client_script, memGB=memGB)
+        trjson if sharedTransforms is not None else None),
+        subprocess_mode=subprocess_mode, host=host, port=port,
+        owner=owner, project=project,
+        client_script=client_script, memGB=memGB)
 
     os.remove(tsjson)
     if sharedTransforms is not None:
@@ -377,7 +364,7 @@ def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
         memGB=memGB, **kwargs)
 
     # TODO this is a weird way to do splits.... is that okay?
-    tilespec_groups = [tilespecs[i::poolsize] for i in xrange(poolsize)]
+    tilespec_groups = [tilespecs[i::poolsize] for i in range(poolsize)]
     with WithPool(poolsize) as pool:
         pool.map(partial_import, tilespec_groups)
     if close_stack:
@@ -490,9 +477,15 @@ def call_run_ws_client(className, add_args=[], renderclient=None,
         logger.warning(
             'Unknown subprocess mode {} specified -- '
             'using default subprocess.call'.format(subprocess_mode))
-    return subprocess_modes.get(
-        subprocess_mode, subprocess.call)(
-            map(str, [client_script, memGB, className] + add_args))
+    args = map(str, [client_script, memGB, className] + add_args)
+    sub_mode = subprocess_modes.get(subprocess_mode, subprocess.check_call)
+    try:
+        ret_val = sub_mode(args)
+    except subprocess.CalledProcessError as e:
+        raise ClientScriptError('client_script call {} failed'.format(args))
+
+    return ret_val
+
 
 
 def get_param(var, flag):
@@ -746,8 +739,10 @@ def coordinateClient(stack, z, fromJson=None, toJson=None, localToWorld=None,
 
 @renderclientaccess
 def renderSectionClient(stack, rootDirectory, zs, scale=None,
-                        maxIntensity=None, minIntensity=None, format=None,
-                        doFilter=None, fillWithNoise=None,
+                        maxIntensity=None, minIntensity=None, bounds=None,
+                        format=None, channel=None, customOutputFolder=None,
+                        customSubFolder=None,padFileNamesWithZeros=None,
+                        doFilter=None, fillWithNoise=None, imageType=None,
                         subprocess_mode=None, host=None, port=None, owner=None,
                         project=None, client_script=None, memGB=None,
                         render=None, **kwargs):
@@ -768,8 +763,20 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
         value todisplay as white on a linear colormap
     minIntensity : int
         value to display as black on a linear colormap
+    bounds: dict
+        dictionary with keys of minX maxX minY maxY
     format : str
         output image format in 'PNG', 'TIFF', 'JPEG'
+    channel : str
+        channel to render out (use on multichannel stack)
+    customOutputFolder : str
+        folder to save all images in (overrides default of sections_at_%scale)
+    customSubFolder : str
+        folder to save all images in under outputFolder (overrides default of none)
+    padFileNamesWithZeros: bool
+        whether to pad file names with zeros to make sortable
+    imageType: int
+        8,16,24 to specify what kind of image type to save
     doFilter : str
         string representing java boolean for whether to render image
         with default filter (varies with render version)
@@ -778,13 +785,36 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
         image values with uniform noise
 
     """
+    if bounds is not None:
+        try:
+            if bounds['maxX'] < bounds['minX']:
+                raise ClientScriptError('maxX:{} is less than minX:{}'.format(
+                    bounds['maxX'], bounds['minX']))
+            if bounds['maxY'] < bounds['minY']:
+                raise ClientScriptError('maxY:{} is less than minY:{}'.format(
+                    bounds['maxY'], bounds['minY']))
+            bound_list = ','.join(map(lambda x: str(int(x)),
+                                      [bounds['minX'], bounds['maxX'], bounds['minY'], bounds['maxY']]))
+            bound_param = ['--bounds', bound_list]
+        except KeyError as e:
+            raise ClientScriptError(
+                'bounds does not contain correct keys {}'.format(bounds))
+    else:
+        bound_param = []
+
     argvs = (make_stack_params(host, port, owner, project, stack) +
              ['--rootDirectory', rootDirectory] +
              get_param(scale, '--scale') + get_param(format, '--format') +
              get_param(doFilter, '--doFilter') +
              get_param(minIntensity, '--minIntensity') +
              get_param(maxIntensity, '--maxIntensity') +
-             get_param(fillWithNoise, '--fillWithNoise') + zs)
+             get_param(fillWithNoise, '--fillWithNoise') +
+             get_param(customOutputFolder, '--customOutputFolder')+
+             get_param(imageType,'--imageType')+
+             get_param(channel,'--channels')+
+             get_param(customSubFolder,'--customSubFolder')+
+             get_param(padFileNamesWithZeros,'--padFileNamesWithZeros')+
+             bound_param + zs)
     call_run_ws_client('org.janelia.render.client.RenderSectionClient',
                        memGB=memGB, client_script=client_script,
                        subprocess_mode=subprocess_mode, add_args=argvs)

@@ -1,0 +1,19 @@
+version: "2.0"
+services:
+ renderservice:
+    image: fcollman/render-ws
+    ports:
+      - "8080:8080"
+    links:
+      - mongo
+    volumes:
+      - "${RENDER_EXAMPLE_DATA}/example_1:/tmp/example_1:ro"
+      - "${RENDER_EXAMPLE_DATA}/multichannel-test:/tmp/multichannel-test:ro"
+    environment:
+      - MONGO_HOST=mongo
+ mongo:
+    image: mongo:3.4.2
+    expose:
+        - "27017"
+    security_opt:
+      - seccomp:unconfined

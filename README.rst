@@ -1,6 +1,9 @@
 .. image:: https://readthedocs.org/projects/render-python/badge/
    :target: http://render-python.readthedocs.io/en/latest/
-   :alt: Documentation Status
+   :alt: Documentation Status 
+.. image:: https://travis-ci.org/fcollman/render-python.svg?branch=master
+   :target: https://travis-ci.org/fcollman/render-python
+   :alt: Build Status
 
 render-python
 #############

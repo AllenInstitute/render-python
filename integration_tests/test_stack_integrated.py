@@ -7,7 +7,8 @@ import sys
 import json
 import numpy as np
 from test_data import (render_host, render_port,
-                       client_script_location, tilespec_file, tform_file)
+                       client_script_location, tilespec_file, 
+                       tform_file, test_2_channels_d)
 
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)
@@ -34,7 +35,7 @@ def render():
 @pytest.fixture
 def simpletilespec():
     mml = renderapi.tilespec.MipMapLevel(0, '/not/a/path.jpg')
-    tform = renderapi.transform.AffineModel()
+    tform = renderapi.transform.AffineModel(labels=['simple'])
     layout = renderapi.tilespec.Layout(sectionId="section0",
                                        scopeId="testscope",
                                        cameraId="testcamera",
@@ -62,7 +63,7 @@ def render_example_tilespec_and_transforms():
 
     tilespecs = [renderapi.tilespec.TileSpec(json=ts) for ts in ts_json]
     tforms = [renderapi.transform.load_transform_json(td) for td in tform_json]
-    print tforms
+    root.debug(tforms)
     return (tilespecs, tforms)
 
 
@@ -225,7 +226,7 @@ def teststack(request, render, render_example_tilespec_and_transforms):
 def test_stack_bounds(render, teststack):
     # check the stack bounds
     stack_bounds = render.run(renderapi.stack.get_stack_bounds, teststack)
-    expected_bounds = {u'maxZ': 3408.0, u'maxX': 5102.0, u'maxY': 5385.0,
+    expected_bounds = {u'maxZ': 3408.0, u'maxX': 5103.0, u'maxY': 5386.0,
                        u'minX': 149.0, u'minY': 130.0, u'minZ': 3407.0}
 
     for key in stack_bounds.keys():
@@ -238,7 +239,7 @@ def test_z_bounds(render, teststack, render_example_tilespec_and_transforms):
     zbounds = render.run(renderapi.stack.get_bounds_from_z,
                          teststack, tilespecs[0].z)
 
-    expected_bounds = {u'maxZ': 3407.0, u'maxX': 4917.0, u'maxY': 4506.0,
+    expected_bounds = {u'maxZ': 3407.0, u'maxX': 4918.0, u'maxY': 4507.0,
                        u'minX': 149.0, u'minY': 130.0, u'minZ': 3407.0}
     for key in zbounds.keys():
         assert np.abs(zbounds[key]-expected_bounds[key]) < 1.0
@@ -430,3 +431,6 @@ def test_get_resolvedtiles_from_z(render, teststack,
     assert(len(tsz)==len(resolved_tiles.tilespecs))
     matching_ts = next(ts for ts in resolved_tiles.tilespecs if ts.tileId == tsz[0].tileId)
     assert (len(matching_ts.tforms)==len(tsz[0].tforms))
+
+
+
