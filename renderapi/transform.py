@@ -1610,7 +1610,9 @@ def estimate_transformsum(transformlist, src=None, order=2):
                 if notstring:
                     for sub in flatten(i):
                         yield sub
-
+            elif isinstance(i, TransformList):
+                for sub in flatten(i.tforms):
+                    yield sub
             else:
                 yield i
 
