@@ -8,15 +8,71 @@ from functools import partial
 import logging
 import subprocess
 import tempfile
+from decorator import decorator
 from .errors import ClientScriptError
-from .utils import NullHandler, renderdump_temp
-from .render import RenderClient, renderaccess
+from .utils import NullHandler, renderdump_temp, fitargspec
+from .render import RenderClient, renderaccess, Render
 from .stack import set_stack_state, make_stack_params
 from pathos.multiprocessing import ProcessingPool as Pool
 
 # setup logger
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
+
+
+@decorator
+def renderclientaccess(f, *args, **kwargs):
+    """Decorator allowing functions asking for host, port, owner, project,
+    client_script to default to a connection defined by :class:`RenderClient`
+    object using its :func:`RenderClient.make_kwargs` method.
+    Will also attempt to derive a :class:`RenderClient` from an input
+    :class:`Render` object and fail if client scripts cannot be reached.
+
+    Parameters
+    ----------
+    f : func
+        function to decorate
+    Returns
+    -------
+    obj
+        output of decorated function
+    """
+    args, kwargs = fitargspec(f, args, kwargs)
+    render = kwargs.get('render')
+    if render is not None:
+        if not isinstance(render, RenderClient):
+            if isinstance(render, Render):
+                render = RenderClient(**render.make_kwargs(**kwargs))
+            else:
+                raise ValueError(
+                    'invalid RenderClient object type {} specified!'.format(
+                        type(render)))
+        return f(*args, **render.make_kwargs(**kwargs))
+    else:
+        try:
+            client_script = kwargs.get('client_script')
+            cs_valid = os.path.isfile(client_script)
+        except TypeError as e:
+            try:
+                if os.path.isdir(kwargs.get('client_scripts')):
+                    client_script = os.path.join(client_scripts,
+                                                 'run_ws_client.sh')
+                    cs_valid = os.path.isfile(client_script)
+                else:
+                    raise ClientScriptError(
+                        'invalid client_scripts directory {}'.format(
+                            kwargs.get('client_scripts')))
+            except TypeError as e:
+                raise ClientScriptError(
+                    'No client script information specified: '
+                    'client_scripts={} client_script={}'.format(
+                        kwargs.get('client_scripts'),
+                        kwargs.get('client_script')))
+        if not cs_valid:
+            # TODO should also check for executability
+            raise ClientScriptError(
+                'invalid client script: {} not a file'.format(client_script))
+    return f(*args, **kwargs)
 
 
 class WithPool(Pool):
@@ -43,7 +99,7 @@ class WithPool(Pool):
         super(WithPool, self)._clear()
 
 
-@renderaccess
+@renderclientaccess
 def import_single_json_file(stack, jsonfile, transformFile=None,
                             subprocess_mode=None,
                             client_script=None, memGB=None, host=None, port=None,
@@ -73,7 +129,7 @@ def import_single_json_file(stack, jsonfile, transformFile=None,
                        client_script=client_script, memGB=memGB, subprocess_mode=subprocess_mode)
 
 
-@renderaccess
+@renderclientaccess
 def import_jsonfiles_and_transforms_parallel_by_z(
         stack, jsonfiles, transformfiles, poolsize=20,
         client_scripts=None, host=None, port=None, owner=None,
@@ -113,7 +169,7 @@ def import_jsonfiles_and_transforms_parallel_by_z(
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
 
-@renderaccess
+@renderclientaccess
 def import_jsonfiles_parallel(
         stack, jsonfiles, poolsize=20, transformFile=None,
         client_scripts=None, host=None, port=None, owner=None,
@@ -188,7 +244,7 @@ def import_jsonfiles(stack, jsonfiles, transformFile=None, subprocess_mode=None,
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
 
-@renderaccess
+@renderclientaccess
 def import_jsonfiles_validate_client(stack, jsonfiles,
                                      transformFile=None, client_script=None,
                                      host=None, port=None, owner=None,
@@ -236,7 +292,7 @@ def import_jsonfiles_validate_client(stack, jsonfiles,
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
 
-@renderaccess
+@renderclientaccess
 def import_tilespecs(stack, tilespecs, sharedTransforms=None,
                      subprocess_mode=None, host=None, port=None,
                      owner=None, project=None, client_script=None,
@@ -272,7 +328,7 @@ def import_tilespecs(stack, tilespecs, sharedTransforms=None,
         os.remove(trjson)
 
 
-@renderaccess
+@renderclientaccess
 def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
                               subprocess_mode=None, poolsize=20,
                               close_stack=True, host=None, port=None,
@@ -316,7 +372,7 @@ def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
 
 
 # TODO handle fromJson and toJson persistence in these calls
-@renderaccess
+@renderclientaccess
 def local_to_world_array(stack, points, tileId, subprocess_mode=None,
                          host=None, port=None, owner=None, project=None,
                          client_script=None, memGB=None,
@@ -342,7 +398,7 @@ def local_to_world_array(stack, points, tileId, subprocess_mode=None,
     raise NotImplementedError('Whoops')
 
 
-@renderaccess
+@renderclientaccess
 def world_to_local_array(stack, points, subprocess_mode=None,
                          host=None, port=None, owner=None, project=None,
                          client_script=None, memGB=None,
@@ -436,7 +492,7 @@ def get_param(var, flag):
     return ([flag, var] if var is not None else [])
 
 
-@renderaccess
+@renderclientaccess
 def importJsonClient(stack, tileFiles=None, transformFile=None,
                      subprocess_mode=None,
                      host=None, port=None, owner=None, project=None,
@@ -466,7 +522,7 @@ def importJsonClient(stack, tileFiles=None, transformFile=None,
                        client_script=client_script, memGB=memGB)
 
 
-@renderaccess
+@renderclientaccess
 def tilePairClient(stack, minz, maxz, outjson=None, delete_json=False,
                    baseowner=None, baseproject=None, basestack=None,
                    xyNeighborFactor=None, zNeighborDistance=None,
@@ -577,7 +633,7 @@ def tilePairClient(stack, minz, maxz, outjson=None, delete_json=False,
     return jsondata
 
 
-@renderaccess
+@renderclientaccess
 def importTransformChangesClient(stack, targetStack, transformFile,
                                  targetOwner=None, targetProject=None,
                                  changeMode=None, close_stack=True,
@@ -635,7 +691,7 @@ def importTransformChangesClient(stack, targetStack, transformFile,
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
 
-@renderaccess
+@renderclientaccess
 def coordinateClient(stack, z, fromJson=None, toJson=None, localToWorld=None,
                      numberOfThreads=None, subprocess_mode=None,
                      host=None, port=None, owner=None,
@@ -681,7 +737,7 @@ def coordinateClient(stack, z, fromJson=None, toJson=None, localToWorld=None,
     return jsondata
 
 
-@renderaccess
+@renderclientaccess
 def renderSectionClient(stack, rootDirectory, zs, scale=None,
                         maxIntensity=None, minIntensity=None, bounds=None,
                         format=None, channel=None, customOutputFolder=None,
@@ -764,7 +820,7 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
                        subprocess_mode=subprocess_mode, add_args=argvs)
 
 
-@renderaccess
+@renderclientaccess
 def transformSectionClient(stack, transformId, transformClass, transformData,
                            zValues, targetProject=None, targetStack=None,
                            replaceLast=None, subprocess_mode=None,
