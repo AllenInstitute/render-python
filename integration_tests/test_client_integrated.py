@@ -12,7 +12,11 @@ from test_data import (render_host, render_port,
 from pathos.multiprocessing import ProcessingPool as Pool
 import PIL
 import urllib
-import urlparse
+
+try:
+    from urlparse import urlparse
+except ImportError:
+    from urllib.urlparse import urlparse
 
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)
@@ -246,7 +250,7 @@ def test_transformSectionClient(render, teststack,
 
 
 def validate_mipmap(root_directory, tilespec, minlevel, maxlevel, extension):
-    parts = urllib.unquote(urlparse.urlparse(tilespec.ip.get(0)['imageUrl']).path)
+    parts = urllib.unquote(urlparse(tilespec.ip.get(0)['imageUrl']).path)
     base_img_path=parts.path
     new_base=base_img_path+'.'+extension
     new_base = new_base[1:]
