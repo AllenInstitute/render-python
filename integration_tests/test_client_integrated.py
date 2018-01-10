@@ -246,7 +246,7 @@ def test_transformSectionClient(render, teststack,
 
 
 def validate_mipmap(root_directory, tilespec, minlevel, maxlevel, extension):
-    parts = urllib.unquote(urlparse.urlparse(tilespec.ip.get(0)['imageUrl']))
+    parts = urllib.unquote(urlparse.urlparse(tilespec.ip.get(0)['imageUrl']).path)
     base_img_path=parts.path
     new_base=base_img_path+'.'+extension
     new_base = new_base[1:]
