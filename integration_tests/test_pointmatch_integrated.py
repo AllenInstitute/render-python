@@ -190,3 +190,13 @@ def test_delete_point_matches_between_groups(render):
         collection, '0', '1', render=render)
     groups = renderapi.pointmatch.get_match_groupIds(collection, render=render)
     assert len(groups) == 2
+
+def test_delete_collection(render):
+    collection = 'test_delete_collection'
+    owner = 'test'
+    renderapi.pointmatch.import_matches(
+        collection, test_matches, render=render)
+
+    renderapi.pointmatch.delete_collection(collection,render=render)
+    collections = renderapi.pointmatch.get_matchcollections(render=render)
+    assert(collection not in collections)
