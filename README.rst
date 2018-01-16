@@ -4,7 +4,9 @@
 .. image:: https://travis-ci.org/fcollman/render-python.svg?branch=master
    :target: https://travis-ci.org/fcollman/render-python
    :alt: Build Status
-
+.. image:: https://codecov.io/gh/fcollman/render-python/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/fcollman/render-python
+  
 render-python
 #############
 
