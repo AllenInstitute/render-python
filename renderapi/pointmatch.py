@@ -649,3 +649,47 @@ def import_matches(matchCollection, data, owner=None, host=None, port=None,
     r = session.put(request_url, data=data, headers={
         "content-type": "application/json", "Accept": "application/json"})
     return r
+
+
+@renderaccess
+def delete_collection(matchCollection, owner=None, host=None, port=None,
+                   session=requests.session(), render=None, **kwargs):
+    """delete match collection from render database
+
+    :func:`renderapi.render.renderaccess` decorated function
+
+    Parameters
+    ----------
+    matchCollection : str
+        matchCollection name to delete
+    owner : unicode
+        matchCollection owner (fallback to render.DEFAULT_OWNER)
+        (note match owner != stack owner always)
+    render : Render
+        Render connection object
+    session : requests.session.Session
+        requests session
+
+    Returns
+    -------
+    requests.response.Reponse
+        server response
+
+    Raises
+    ------
+    RenderError
+        if cannot get a proper reponse from server
+
+    """
+    request_url = format_baseurl(host, port) + \
+        "/owner/%s/matchCollection/%s" % (owner, matchCollection)
+    logger.debug(request_url)
+    try:
+        r = session.delete(request_url)
+        return r
+    except Exception as e:
+        logger.error(e)
+        logger.error(request_url)
+        logger.error(r.text)
+        raise RenderError(r.text)
+
