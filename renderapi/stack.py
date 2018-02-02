@@ -124,9 +124,46 @@ def set_stack_metadata(stack, sv, host=None, port=None, owner=None,
 
 
 @renderaccess
-def get_stack_metadata(stack, host=None, port=None, owner=None, project=None,
-                       session=requests.session(), render=None, **kwargs):
-    """get the stack metadata for a stack
+def get_full_stack_metadata(stack, host=None, port=None, owner=None,
+                            project=None, session=requests.session(),
+                            render=None, **kwargs):
+    """get stack metadata for stack
+
+    :func:`renderapi.render.renderaccess` decorated function
+
+    Parameters
+    ----------
+    stack : str
+        stack to get the metadata for
+    render : renderapi.render.Render
+        render connect object
+    session : requests.sessions.Session
+        session object (default start a new one)
+
+    Returns
+    -------
+    dict
+        metadata of the stack
+
+    Raises
+    ------
+        RenderError
+    """
+    request_url = format_preamble(host, port, owner, project, stack)
+
+    logger.debug(request_url)
+    r = session.get(request_url)
+
+    try:
+        return r.json()
+    except Exception as e:
+        logger.error(e)
+        logger.error(r.text)
+        raise RenderError(r.text)
+
+
+def get_stack_metadata(*args, **kwargs):
+    """get the stack version metadata for a stack
 
     :func:`renderapi.render.renderaccess` decorated function
 
@@ -149,18 +186,14 @@ def get_stack_metadata(stack, host=None, port=None, owner=None, project=None,
         RenderError
 
     """
-    request_url = format_preamble(host, port, owner, project, stack)
-
-    logger.debug(request_url)
-    r = session.get(request_url)
+    j = get_full_stack_metadata(*args, **kwargs)
     try:
         sv = StackVersion()
-        sv.from_dict(r.json()['currentVersion'])
+        sv.from_dict(j['currentVersion'])
         return sv
     except Exception as e:
         logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
+        raise RenderError(e)
 
 
 @renderaccess
