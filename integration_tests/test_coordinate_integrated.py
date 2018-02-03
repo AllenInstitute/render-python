@@ -26,7 +26,7 @@ logger.addHandler(ch)
 def render():
     render_test_parameters = {
             'host': render_host,
-            'port': 8080,
+            'port': render_port,
             'owner': 'test_coordinate',
             'project': 'test_coordinate_project',
             'client_scripts': client_script_location
