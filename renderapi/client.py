@@ -17,6 +17,8 @@ from pathos.multiprocessing import ProcessingPool as Pool
 
 # setup logger
 logger = logging.getLogger(__name__)
+FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
+logging.basicConfig(format=FORMAT)
 logger.addHandler(NullHandler())
 
 
@@ -859,3 +861,94 @@ def transformSectionClient(stack, transformId, transformClass, transformData,
     call_run_ws_client('org.janelia.render.client.TransformSectionClient',
                        memGB=memGB, client_script=client_script,
                        subprocess_mode=subprocess_mode, add_args=argvs)
+
+@renderclientaccess
+def stackManagementClient(stack, action, stackState=None, versionNotes=None,
+                           cycleNumber=None, cycleStepNumber=None, stackResolutionX=None,
+                           stackResolutionY=None, stackResolutionZ=None,
+                           materializedBoxRootPath=None, cloneResultProject=None,
+                           cloneResultStack=None, renamedOwner=None,
+                           renamedProject=None, renamedStack=None,
+                           sectionId=None,skipSharedTransformClone=None,
+                           zValues=None, subprocess_mode=None,
+                           host=None, port=None,
+                           owner=None, project=None, client_script=None,
+                           memGB=None, render=None, **kwargs):
+    '''run the stack management client
+    CREATE = make a new stack (use cycleNumber, cycleStepNumber, stackResolutionX,Y,Z,
+    materializedBoxRootPath,versionNotes)
+
+    CLONE = clone a stack (use CREATE plus, cloneResultProject, cloneResultStack,skipSharedTransformClone,zValues)
+
+    RENAME = rename a stack (use renamedOwner, renamedProject, renamedStack)
+
+    SET_STATE = set stack state (use stackState)
+
+    DELETE = delete the stack
+
+    Parameters
+    ----------
+    stack: str
+        Stack name
+    action: str
+        Management action to perform (CREATE, CLONE, RENAME, SET_STATE, DELETE)
+    stackState: str
+        New state for stack (LOADING,COMPLETE,READ_ONLY,OFFLINE)
+    versionNotes: str
+        Notes about the version being created
+    cycleNumber: int 
+        Processing cycle number
+    cycleStepNumber: int
+        Processing cycle step number
+    stackResolutionX: float
+        X resoution (in nanometers) for the stack
+    stackResolutionY: float
+        Y resoution (in nanometers) for the stack
+    stackResolutionZ: float
+        Z resoution (in nanometers) for the stack
+    materializedBoxRootPath: str
+        Root path for materialized boxes
+    cloneResultProject: str
+        Name of project for stack created by clone operation (CLONE only, default is to use source project)
+    cloneResultStack: str
+        Name of stack created by clone operation (CLONE only)
+    renamedOwner: str
+        Name of renamed stack owner (REANAME only, default is to use source owner)
+    renamedProject: str
+        Name of renamed stack project (RENAME only, default is to use source project)
+    renamedStack: str
+        Name of renamed stack 
+    sectionId: str
+        The sectionId to delete (not required)
+    skipSharedTransformClone: bool
+        Only clone tiles, skipping clone of shared transforms (default is false)
+    zValues: list
+        Z values for filtering (optional)
+    '''
+
+    argvs = (make_stack_params(host, port, owner, project, stack)+
+    get_param(action,'--action',)+
+    get_param(stackState,'--stackState')+
+    get_param(versionNotes,'--versionNotes')+
+    get_param(cycleNumber,'--cycleNumber')+
+    get_param(cycleStepNumber,'--cycleStepNumber')+
+    get_param(stackResolutionY,'--stackResolutionY')+
+    get_param(stackResolutionX,'--stackResolutionX')+
+    get_param(stackResolutionZ,'--stackResolutionZ')+
+    get_param(materializedBoxRootPath,'--materializedBoxRootPath')+
+    get_param(cloneResultProject,'--cloneResultProject')+
+    get_param(cloneResultStack,'--cloneResultStack')+
+    get_param(renamedProject,'--renamedProject')+
+    get_param(renamedOwner,'--renamedOwner')+
+    get_param(renamedStack,'--renamedStack')+
+    get_param(sectionId,'--sectionId'))
+    if zValues is not None:
+        argvs += ['--zValues']
+        for z in zvalues:
+            argvs += ["{}".format(z)]
+
+   
+
+    call_run_ws_client('org.janelia.render.client.StackClient',
+                    memGB=memGB, client_script=client_script,
+                    subprocess_mode=subprocess_mode, add_args=argvs)
