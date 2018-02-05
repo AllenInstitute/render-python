@@ -10,6 +10,8 @@ from .errors import RenderError
 from .utils import NullHandler, jbool
 
 logger = logging.getLogger(__name__)
+FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
+logging.basicConfig(format=FORMAT)
 logger.addHandler(NullHandler())
 
 # define acceptable image formats -- currently render generates png, jpeg, tiff
