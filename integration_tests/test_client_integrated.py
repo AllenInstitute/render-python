@@ -242,3 +242,12 @@ def test_transformSectionClient(render, teststack,
     assert all([ts.tforms[-1].to_dict() == tform.to_dict()
                 for ts in output_ts])
     renderapi.stack.delete_stack(deststack, render=render)
+
+def test_point_match_client(teststack, render):
+    collection = 'test_collection'
+    zvalues = np.array(renderapi.stack.get_z_values_for_stack(
+        teststack, render=render))
+    tilepairjson = renderapi.client.tilePairClient(
+        teststack, np.min(zvalues), np.max(zvalues), render=render)
+    tile_pairs = [(tp['p']['id'],tp['q']['id']) for tp in tilepairjson['neighborPairs']]
+    renderapi.client.pointMatchClient(teststack,collection,tile_pairs,render=render)

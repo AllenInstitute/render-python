@@ -11,9 +11,10 @@ import tempfile
 from decorator import decorator
 from .errors import ClientScriptError
 from .utils import NullHandler, renderdump_temp, fitargspec
-from .render import RenderClient, renderaccess, Render
+from .render import RenderClient, renderaccess, Render, format_preamble, format_baseurl
 from .stack import set_stack_state, make_stack_params
 from pathos.multiprocessing import ProcessingPool as Pool
+import attr
 
 # setup logger
 logger = logging.getLogger(__name__)
@@ -857,5 +858,195 @@ def transformSectionClient(stack, transformId, transformClass, transformData,
              ['--transformId', transformId, '--transformClass', transformClass,
               '--transformData', transformData] + zValues)
     call_run_ws_client('org.janelia.render.client.TransformSectionClient',
+                       memGB=memGB, client_script=client_script,
+                       subprocess_mode=subprocess_mode, add_args=argvs)
+
+@renderclientaccess
+def get_canvas_url_template(stack, filter=False, 
+                   renderWithoutMask=False, normalizeForMatching=True,
+                   excludeTransformsAfterLast=None, 
+                   excludeFirstTransformAndAllAfter=None,excludeAllTransforms=False,
+                   host=None, port=None, owner=None, project=None, client_script=None,
+                   render=None, **kwargs):
+    """function for making a render-parameters url template for point matching
+    
+    Parameters
+    ----------
+    stack: str
+        render stack name
+    filter: bool
+        whether to apply default filtering to tile (default=False)
+    renderWithoutMask: bool
+        whether to exclude the mask when rendering tile (default=False)
+    normalizeForMatching: bool
+        whether to apply traditional 'normalizeForMatching' transform manipulation to image
+        this removes the last transform from the transformList, then if there are more than 3 transforms
+        continues to remove transforms until there are exactly 3.  Then assumes the image will be near 0,0
+        with a width/height that is about equal to the raw image width/height.  This is true for Janelia's
+        conventions for transformation alignment, but use at your own risk. (default=True)
+    excludeTransformsAfterLast: str or None
+        alternative to normalizeForMatching, which uses transformLabels.  Will remove all transformations
+        after the last transformation with this transform label.  i.e. if all lens corrections have a 'lens'
+        label.  Then this will remove all non-lens transformations from the list.
+        This is more general than normalizeForMatching=true, but requires you have transform labels applied.
+        default = None
+    excludeFirstTransformAndAllAfter: str
+        alternative to normalizeForMatching which finds the first transform in the list with a given label
+        and then removes that transform and all transforms that follow it. i.e. if you had a compound list
+        of transformations, and you had labelled the first non-local transform 'montage' then setting
+        excludeFirstTransformAndAllAfter='montage' would remove that montage transform and any other
+        transforms that you had applied after it. default= None.
+    excludeAllTransforms: bool
+        alternative to normalizeForMatching which simply removes all transforms from the list.
+        default=False
+    """
+    request_url = format_preamble(host, port, owner, project, stack)
+    tile_base_url = request_url+"/tile"
+    url_suffix = "render-parameters"
+    if filter:
+        url_suffix += '?filter=true'
+    else:
+        url_suffix += '?filter=false'
+
+    if normalizeForMatching:
+        url_suffix += '&normalizeForMatching=true'
+    if normalizeForMatching:
+        url_suffix += '&normalizeForMatching=false'
+
+    if renderWithoutMask:
+        url_suffix += '&renderWithoutMask=true'
+    else:
+        url_suffix += '&renderWithoutMask=false'
+
+    if excludeTransformsAfterLast is not None:
+        url_suffix += '&excludeTransformsAfterLast={}'.format(excludeTransformsAfterLast)
+    if excludeFirstTransformAndAllAfter is not None:
+        url_suffix += '&excludeFirstTransformAndAllAfter={}'.format(excludeFirstTransformAndAllAfter) 
+    if excludeAllTransforms:
+        url_suffix += '&excludeAllTransforms=true'
+        
+    canvas_url_template = "%s/{}/%s"%(tile_base_url,
+                                        url_suffix)
+    return canvas_url_template
+
+class SiftOptions(object):
+    SIFTfdSize = attr.ib(default=89)
+    SIFTmaxScale = attr.ib(default=.85)
+    SIFTminScale = attr.ib(default=.5)
+    SIFTsteps = attr.ib(default=3)
+    matchIterations = attr.ib(default=1000)
+    matchMaxEpsilon = attr.ib(default=20.0)
+    matchMaxNumInliers = attr.ib(default=500)
+    matchMaxTrust = attr.ib(default=3.0)
+    matchMinInlierRatio = attr.ib(default=0.0)
+    matchMinNumInliers = attr.ib(default=8)
+    matchModelType = attr.ib(default='AFFINE')
+    matchRod = attr.ib(default=0.92)
+    renderScale = attr.ib(default=.35)
+    
+    @matchModelType.validator
+    def checkModel(self,attribute,value):
+        assert value in ['AFFINE','RIGID','TRANSLATION','SIMILARITY']
+
+    @renderScale.validator
+    def checkScale(self,attribute,value):
+        assert (value>0.0)
+        assert (value<=1.0)
+
+    def to_java_args(self):
+        args = []
+        for key,value in self.__dict__.items():
+            args.append("--{}".format(key))
+            args.append("{}".value)
+        return args
+
+@renderclientaccess
+def pointMatchClient(stack, collection, tile_pairs,
+                     sift_options=SiftOptions(),
+                     pointMatchRender=None,
+                     debugDirectory=None, 
+                     filter=False, 
+                     renderWithoutMask=False, normalizeForMatching=True,
+                     excludeTransformsAfterLast=None, excludeAllTransforms=None,
+                     excludeFirstTransformAndAllAfter=None,    
+                     subprocess_mode=None,
+                     host=None, port=None,
+                     owner=None, project=None, client_script=None,
+                     memGB=None, render=None, **kwargs):
+    """run SiftPointMatchClient.java
+
+    Parameters
+    ----------
+    stack : str
+        stack containing the tiles
+    collection : str
+        point match collection to save results into
+    tile_pairs : iterable
+        list of iterables of length 2 containing tileIds to calculate point matches between
+    sift_options: SiftOptions
+        options for running point matching
+    pointMatchRender : renderapi.render.renderaccess
+        renderaccess object specifying the render server to store point matches in
+        defaults to values specified by render and its keyword argument overrides
+    debugDirectory : str
+        directory to store debug results (optional)
+    filter: bool
+        whether to apply default filtering to tile (default=False)
+    renderWithoutMask: bool
+        whether to exclude the mask when rendering tile (default=False)
+    normalizeForMatching: bool
+        whether to apply traditional 'normalizeForMatching' transform manipulation to image
+        this removes the last transform from the transformList, then if there are more than 3 transforms
+        continues to remove transforms until there are exactly 3.  Then assumes the image will be near 0,0
+        with a width/height that is about equal to the raw image width/height.  This is true for Janelia's
+        conventions for transformation alignment, but use at your own risk. (default=True)
+    excludeTransformsAfterLast: str or None
+        alternative to normalizeForMatching, which uses transformLabels.  Will remove all transformations
+        after the last transformation with this transform label.  i.e. if all lens corrections have a 'lens'
+        label.  Then this will remove all non-lens transformations from the list.
+        This is more general than normalizeForMatching=true, but requires you have transform labels applied.
+        default = None
+    excludeFirstTransformAndAllAfter: str
+        alternative to normalizeForMatching which finds the first transform in the list with a given label
+        and then removes that transform and all transforms that follow it. i.e. if you had a compound list
+        of transformations, and you had labelled the first non-local transform 'montage' then setting
+        excludeFirstTransformAndAllAfter='montage' would remove that montage transform and any other
+        transforms that you had applied after it. default= None.
+    excludeAllTransforms: bool
+        alternative to normalizeForMatching which simply removes all transforms from the list.
+        default=False
+
+    """
+    if pointMatchRender is None:
+        pointMatchRender = Render(host, port, owner, project, client_script)
+    
+    baseDataUrl = format_baseurl(pointMatchRender.DEFAULT_KWARGS['host'], 
+                                                  pointMatchRender.DEFAULT_KWARGS['port'])
+    argvs = []
+    argvs += ['--baseDataUrl', baseDataUrl]
+    argvs += ['--owner', pointMatchRender.DEFAULT_KWARGS['owner']]
+    argvs += ['--collection', collection]
+     #argvs += ['--matchStorageFile', os.path.join(outdir, 'matches.json')]
+    if debugDirectory is not None:
+        argvs += ['--debugDirectory', debugDirectory]
+    argvs += sift_options.to_java_args()
+
+    canvas_url_template = get_canvas_url_template(stack,
+                            filter, 
+                            renderWithoutMask, 
+                            normalizeForMatching,
+                            excludeTransformsAfterLast,
+                            excludeFirstTransformAndAllAfter,
+                            excludeAllTransforms,
+                            host=host,
+                            port=port,
+                            owner=owner,
+                            project=project,
+                            client_script=client_script)
+
+    for tile1,tile2 in tile_pairs:
+        argvs += [canvas_url_template.format(tile1),canvas_url_template.format(tile2)]
+        
+    call_run_ws_client('org.janelia.render.client.PointMatchClient',
                        memGB=memGB, client_script=client_script,
                        subprocess_mode=subprocess_mode, add_args=argvs)
