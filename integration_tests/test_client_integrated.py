@@ -251,6 +251,5 @@ def test_point_match_client(teststack, render):
         teststack, np.min(zvalues), np.max(zvalues), render=render)
     tile_pairs = [(tp['p']['id'],tp['q']['id']) for tp in tilepairjson['neighborPairs'][0:1]]
     renderapi.client.pointMatchClient(teststack,collection,tile_pairs,render=render)
-    pms = rendearpi.pointmatch.get_matches_involving_tile(collection,tp['p']['groupId'],tp['p']['id'],render=render)
+    pms = renderapi.pointmatch.get_matches_involving_tile(collection,tp['p']['groupId'],tp['p']['id'],render=render)
     assert(len(pms)>0)
-    
