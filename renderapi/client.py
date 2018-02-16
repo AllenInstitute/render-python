@@ -930,34 +930,33 @@ def get_canvas_url_template(stack, filter=False,
     return canvas_url_template
 
 class SiftOptions(object):
-    SIFTfdSize = attr.ib(default=89)
-    SIFTmaxScale = attr.ib(default=.85)
-    SIFTminScale = attr.ib(default=.5)
-    SIFTsteps = attr.ib(default=3)
-    matchIterations = attr.ib(default=1000)
-    matchMaxEpsilon = attr.ib(default=20.0)
-    matchMaxNumInliers = attr.ib(default=500)
-    matchMaxTrust = attr.ib(default=3.0)
-    matchMinInlierRatio = attr.ib(default=0.0)
-    matchMinNumInliers = attr.ib(default=8)
-    matchModelType = attr.ib(default='AFFINE')
-    matchRod = attr.ib(default=0.92)
-    renderScale = attr.ib(default=.35)
     
-    @matchModelType.validator
-    def checkModel(self,attribute,value):
-        assert value in ['AFFINE','RIGID','TRANSLATION','SIMILARITY']
-
-    @renderScale.validator
-    def checkScale(self,attribute,value):
-        assert (value>0.0)
-        assert (value<=1.0)
+    def __init__(self, SIFTfdSize=None, SIFTmaxScale=None,
+                 SIFTminScale=None, SIFTsteps=None, matchIterations=None,
+                 matchMaxEpsilon=None, matchMaxNumInliers=None,
+                 matchMaxTrust=None,  matchMinInlierRatio=None, matchMinNumInliers=None,
+                 matchModelType=None, matchRod=None, renderScale=None, **kwargs):
+        self.SIFTfdSize=SIFTfdSize
+        self.SIFTmaxScale=SIFTmaxScale
+        self.SIFTminScale=SIFTminScale
+        self.SIFTsteps=SIFTsteps
+        self.matchIterations=matchIterations
+        self.matchMaxEpsilon=matchMaxEpsilon
+        self.matchMaxNumInliers=matchMaxNumInliers
+        self.matchMaxTrust=matchMaxTrust
+        self.matchMinInlierRatio=matchMinInlierRatio
+        self.matchMinNumInliers=matchMinNumInliers
+        self.matchMinNumInliers=matchMinNumInliers
+        self.matchModelType=matchModelType
+        self.matchRod=matchRod
+        self.renderScale=renderScale
 
     def to_java_args(self):
         args = []
         for key,value in self.__dict__.items():
-            args.append("--{}".format(key))
-            args.append("{}".value)
+            if value is not None:
+                args.append("--{}".format(key))
+                args.append("{}".value)
         return args
 
 @renderclientaccess
