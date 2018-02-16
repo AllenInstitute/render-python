@@ -243,7 +243,7 @@ def test_transformSectionClient(render, teststack,
                 for ts in output_ts])
     renderapi.stack.delete_stack(deststack, render=render)
 
-def test_point_match_client(teststack, render):
+def test_point_match_client(teststack, render,tmpdir):
     collection = 'test_client_collection'
     zvalues = np.array(renderapi.stack.get_z_values_for_stack(
         teststack, render=render))
@@ -255,6 +255,7 @@ def test_point_match_client(teststack, render):
     renderapi.client.pointMatchClient(teststack,
                                       collection,
                                       tile_pairs,
+                                      debugDirectory=tmpdir,
                                       sift_options=sift_options,
                                       render=render)
     tp = tilepairjson['neighborPairs'][0]
