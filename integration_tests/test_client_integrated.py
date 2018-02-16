@@ -249,7 +249,14 @@ def test_point_match_client(teststack, render):
         teststack, render=render))
     tilepairjson = renderapi.client.tilePairClient(
         teststack, np.min(zvalues), np.max(zvalues), render=render)
+    
     tile_pairs = [(tp['p']['id'],tp['q']['id']) for tp in tilepairjson['neighborPairs'][0:1]]
-    renderapi.client.pointMatchClient(teststack,collection,tile_pairs,render=render)
+    sift_options = renderapi.client.SiftOptions(renderScale=.25)
+    renderapi.client.pointMatchClient(teststack,
+                                      collection,
+                                      tile_pairs,
+                                      sift_options=sift_options,
+                                      render=render)
+    tp = tilepairjson['neighborPairs'][0]
     pms = renderapi.pointmatch.get_matches_involving_tile(collection,tp['p']['groupId'],tp['p']['id'],render=render)
     assert(len(pms)>0)
