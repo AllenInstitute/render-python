@@ -910,7 +910,7 @@ def get_canvas_url_template(stack, filter=False,
 
     if normalizeForMatching:
         url_suffix += '&normalizeForMatching=true'
-    if normalizeForMatching:
+    else:
         url_suffix += '&normalizeForMatching=false'
 
     if renderWithoutMask:
