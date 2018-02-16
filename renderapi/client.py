@@ -956,7 +956,7 @@ class SiftOptions(object):
         for key,value in self.__dict__.items():
             if value is not None:
                 args.append("--{}".format(key))
-                args.append("{}".value)
+                args.append("{}".format(value))
         return args
 
 @renderclientaccess
