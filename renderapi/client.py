@@ -14,7 +14,6 @@ from .utils import NullHandler, renderdump_temp, fitargspec
 from .render import RenderClient, renderaccess, Render, format_preamble, format_baseurl
 from .stack import set_stack_state, make_stack_params
 from pathos.multiprocessing import ProcessingPool as Pool
-import attr
 
 # setup logger
 logger = logging.getLogger(__name__)
@@ -127,7 +126,8 @@ def import_single_json_file(stack, jsonfile, transformFile=None,
         host, port, owner, project, stack)
     call_run_ws_client('org.janelia.render.client.ImportJsonClient',
                        stack_params + transform_params + [jsonfile],
-                       client_script=client_script, memGB=memGB, subprocess_mode=subprocess_mode)
+                       client_script=client_script, memGB=memGB,
+                       subprocess_mode=subprocess_mode, **kwargs)
 
 
 @renderclientaccess
@@ -202,7 +202,7 @@ def import_jsonfiles_parallel(
                              transformFile=transformFile,
                              client_scripts=client_scripts,
                              host=host, port=port, owner=owner,
-                             project=project)
+                             project=project, **kwargs)
     with WithPool(poolsize) as pool:
         pool.map(partial_import, jsonfiles)
 
@@ -240,7 +240,8 @@ def import_jsonfiles(stack, jsonfiles, transformFile=None, subprocess_mode=None,
         host, port, owner, project, stack)
     call_run_ws_client('org.janelia.render.client.ImportJsonClient',
                        stack_params + transform_params + jsonfiles,
-                       client_script=client_script, memGB=memGB, subprocess_mode=subprocess_mode)
+                       client_script=client_script, memGB=memGB,
+                       subprocess_mode=subprocess_mode, **kwargs)
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
@@ -287,7 +288,8 @@ def import_jsonfiles_validate_client(stack, jsonfiles,
                        validator_params +
                        transform_params +
                        jsonfiles, client_script=client_script,
-                       memGB=memGB, subprocess_mode=subprocess_mode)
+                       memGB=memGB, subprocess_mode=subprocess_mode,
+                       **kwargs)
 
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
@@ -322,7 +324,7 @@ def import_tilespecs(stack, tilespecs, sharedTransforms=None,
         trjson if sharedTransforms is not None else None),
         subprocess_mode=subprocess_mode, host=host, port=port,
         owner=owner, project=project,
-        client_script=client_script, memGB=memGB)
+        client_script=client_script, memGB=memGB, **kwargs)
 
     os.remove(tsjson)
     if sharedTransforms is not None:
@@ -426,8 +428,27 @@ def world_to_local_array(stack, points, subprocess_mode=None,
     raise NotImplementedError('Whoops.')
 
 
+def run_subprocess_mode(args, subprocess_mode=None, **kwargs):
+    subprocess_options = ['bufsize', 'executable', 'stdin', 'stdout',
+                          'stderr', 'preexec_fn', 'close_fds', 'shell',
+                          'cwd', 'env', 'universal_newlines', 'startupinfo',
+                          'creationflags']
+    subprocess_kwargs = {k: v for k, v in kwargs.items()
+                         if k in subprocess_options}
+    subprocess_modes = {'call': subprocess.call,
+                        'check_call': subprocess.check_call,
+                        'check_output': subprocess.check_output,
+                        None: subprocess.check_call}
+    if subprocess_mode not in subprocess_modes:
+        logger.warning(
+            'Unknown subprocess mode {} specified -- '
+            'using default subprocess.check_call'.format(subprocess_mode))
+    sub_mode = subprocess_modes.get(subprocess_mode, subprocess.check_call)
+    return sub_mode(args, **subprocess_kwargs)
+
+
 def call_run_ws_client(className, add_args=[], renderclient=None,
-                       memGB=None, client_script=None, subprocess_mode=None,
+                       memGB=None, client_script=None,
                        **kwargs):
     """simple call for run_ws_client.sh -- all arguments set in add_args
 
@@ -465,23 +486,15 @@ def call_run_ws_client(className, add_args=[], renderclient=None,
                                       subprocess_mode=subprocess_mode,
                                       **renderclient.make_kwargs(
                                           memGB=memGB,
-                                          client_script=client_script))
+                                          client_script=client_script,
+                                          **kwargs))
     if memGB is None:
         logger.warning('call_run_ws_client requires memory specification -- '
                        'defaulting to 1G')
         memGB = '1G'
-
-    subprocess_modes = {'call': subprocess.call,
-                        'check_call': subprocess.check_call,
-                        'check_output': subprocess.check_output}
-    if subprocess_mode not in subprocess_modes:
-        logger.warning(
-            'Unknown subprocess mode {} specified -- '
-            'using default subprocess.call'.format(subprocess_mode))
     args = map(str, [client_script, memGB, className] + add_args)
-    sub_mode = subprocess_modes.get(subprocess_mode, subprocess.check_call)
     try:
-        ret_val = sub_mode(args)
+        ret_val = run_subprocess_mode(args, **kwargs)
     except subprocess.CalledProcessError as e:
         raise ClientScriptError('client_script call {} failed'.format(args))
 
@@ -519,7 +532,7 @@ def importJsonClient(stack, tileFiles=None, transformFile=None,
               else [tileFiles]))
     call_run_ws_client('org.janelia.render.client.ImportJsonClient',
                        add_args=argvs, subprocess_mode=subprocess_mode,
-                       client_script=client_script, memGB=memGB)
+                       client_script=client_script, memGB=memGB, **kwargs)
 
 
 @renderclientaccess
@@ -623,7 +636,7 @@ def tilePairClient(stack, minz, maxz, outjson=None, delete_json=False,
     call_run_ws_client('org.janelia.render.client.TilePairClient',
                        memGB=memGB, client_script=client_script,
                        subprocess_mode=subprocess_mode,
-                       add_args=argvs)
+                       add_args=argvs, **kwargs)
 
     with open(outjson, 'r') as f:
         jsondata = json.load(f)
@@ -686,7 +699,7 @@ def importTransformChangesClient(stack, targetStack, transformFile,
     call_run_ws_client(
         'org.janelia.render.client.ImportTransformChangesClient', memGB=memGB,
         client_script=client_script, subprocess_mode=subprocess_mode,
-        add_args=argvs)
+        add_args=argvs, **kwargs)
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
@@ -729,7 +742,8 @@ def coordinateClient(stack, z, fromJson=None, toJson=None, localToWorld=None,
              get_param(numberOfThreads, '--numberOfThreads'))
     call_run_ws_client('org.janelia.render.client.CoordinateClient',
                        memGB=memGB, client_script=client_script,
-                       subprocess_mode=subprocess_mode, add_args=argvs)
+                       subprocess_mode=subprocess_mode, add_args=argvs,
+                       **kwargs)
 
     with open(toJson, 'r') as f:
         jsondata = json.load(f)
@@ -817,7 +831,8 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
              bound_param + zs)
     call_run_ws_client('org.janelia.render.client.RenderSectionClient',
                        memGB=memGB, client_script=client_script,
-                       subprocess_mode=subprocess_mode, add_args=argvs)
+                       subprocess_mode=subprocess_mode, add_args=argvs,
+                       **kwargs)
 
 
 @renderclientaccess
@@ -858,7 +873,8 @@ def transformSectionClient(stack, transformId, transformClass, transformData,
               '--transformData', transformData] + zValues)
     call_run_ws_client('org.janelia.render.client.TransformSectionClient',
                        memGB=memGB, client_script=client_script,
-                       subprocess_mode=subprocess_mode, add_args=argvs)
+                       subprocess_mode=subprocess_mode, add_args=argvs,
+                       **kwargs)
 
 
 @renderclientaccess
@@ -1106,4 +1122,5 @@ def pointMatchClient(stack, collection, tile_pairs,
 
     call_run_ws_client('org.janelia.render.client.PointMatchClient',
                        memGB=memGB, client_script=client_script,
-                       subprocess_mode=subprocess_mode, add_args=argvs)
+                       subprocess_mode=subprocess_mode, add_args=argvs,
+                       **kwargs)
