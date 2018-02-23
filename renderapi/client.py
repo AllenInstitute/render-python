@@ -488,7 +488,6 @@ def call_run_ws_client(className, add_args=[], renderclient=None,
     return ret_val
 
 
-
 def get_param(var, flag):
     return ([flag, var] if var is not None else [])
 
@@ -861,13 +860,14 @@ def transformSectionClient(stack, transformId, transformClass, transformData,
                        memGB=memGB, client_script=client_script,
                        subprocess_mode=subprocess_mode, add_args=argvs)
 
+
 @renderclientaccess
-def get_canvas_url_template(stack, filter=False,
-                   renderWithoutMask=False, normalizeForMatching=True,
-                   excludeTransformsAfterLast=None,
-                   excludeFirstTransformAndAllAfter=None,excludeAllTransforms=False,
-                   host=None, port=None, owner=None, project=None, client_script=None,
-                   render=None, **kwargs):
+def get_canvas_url_template(
+        stack, filter=False, renderWithoutMask=False,
+        normalizeForMatching=True, excludeTransformsAfterLast=None,
+        excludeFirstTransformAndAllAfter=None, excludeAllTransforms=False,
+        host=None, port=None, owner=None, project=None, client_script=None,
+        render=None, **kwargs):
     """function for making a render-parameters url template for point matching
 
     Parameters
@@ -919,13 +919,15 @@ def get_canvas_url_template(stack, filter=False,
         url_suffix += '&renderWithoutMask=false'
 
     if excludeTransformsAfterLast is not None:
-        url_suffix += '&excludeTransformsAfterLast={}'.format(excludeTransformsAfterLast)
+        url_suffix += '&excludeTransformsAfterLast={}'.format(
+            excludeTransformsAfterLast)
     if excludeFirstTransformAndAllAfter is not None:
-        url_suffix += '&excludeFirstTransformAndAllAfter={}'.format(excludeFirstTransformAndAllAfter)
+        url_suffix += '&excludeFirstTransformAndAllAfter={}'.format(
+            excludeFirstTransformAndAllAfter)
     if excludeAllTransforms:
         url_suffix += '&excludeAllTransforms=true'
 
-    canvas_url_template = "%s/{}/%s"%(tile_base_url,
+    canvas_url_template = "%s/{}/%s" % (tile_base_url,
                                         url_suffix)
     return canvas_url_template
 
@@ -939,8 +941,7 @@ class ArgumentParameters(object):
         def jbool_str(c):
             return str(c) if type(c) is not bool else "true" if c else "false"
         if any([i is None for i in cmd]):
-            # FIXME exception class
-            raise Exception(
+            raise ClientScriptError(
                 'missing argument in command "{}"'.format(map(str, cmd)))
         return map(jbool_str, cmd)
 
@@ -951,8 +952,6 @@ class ArgumentParameters(object):
     @staticmethod
     def get_flag_cmd(v, flag=None):
         # for arity 0
-        raise NotImplementedError(
-            "flag commands are not supported by ArgumentParameters")
         return [flag] if v else []
 
     def to_java_args(self):
@@ -967,6 +966,7 @@ class FeatureRenderParameters(ArgumentParameters):
     def __init__(self, renderScale=None, renderWithFilter=None,
                  renderWithoutMask=None, renderFullScaleWidth=None,
                  renderFullScaleHeight=None, fillWithNoise=None, **kwargs):
+        super(FeatureRenderParameters, self).__init__(**kwargs)
         self.renderScale = renderScale
         self.renderWithFilter = renderWithFilter
         self.renderWithoutMask = renderWithoutMask
@@ -1003,7 +1003,6 @@ class MatchDerivationParameters(ArgumentParameters):
         self.matchRod = matchRod
 
 
-
 class SiftPointMatchOptions(MatchDerivationParameters,
                             FeatureExtractionParameters):
     def __init__(self, renderScale=None, fillWithNoise=None, **kwargs):
@@ -1020,7 +1019,8 @@ def pointMatchClient(stack, collection, tile_pairs,
                      debugDirectory=None,
                      filter=False,
                      renderWithoutMask=False, normalizeForMatching=True,
-                     excludeTransformsAfterLast=None, excludeAllTransforms=None,
+                     excludeTransformsAfterLast=None,
+                     excludeAllTransforms=None,
                      excludeFirstTransformAndAllAfter=None,
                      subprocess_mode=None,
                      host=None, port=None,
@@ -1082,12 +1082,12 @@ def pointMatchClient(stack, collection, tile_pairs,
     argvs += ['--baseDataUrl', baseDataUrl]
     argvs += ['--owner', pointMatchRender.DEFAULT_KWARGS['owner']]
     argvs += ['--collection', collection]
-     #argvs += ['--matchStorageFile', os.path.join(outdir, 'matches.json')]
     if debugDirectory is not None:
         argvs += ['--debugDirectory', debugDirectory]
     argvs += sift_options.to_java_args()
 
-    canvas_url_template = get_canvas_url_template(stack,
+    canvas_url_template = get_canvas_url_template(
+                            stack,
                             filter,
                             renderWithoutMask,
                             normalizeForMatching,
@@ -1100,8 +1100,9 @@ def pointMatchClient(stack, collection, tile_pairs,
                             project=project,
                             client_script=client_script)
 
-    for tile1,tile2 in tile_pairs:
-        argvs += [canvas_url_template.format(tile1),canvas_url_template.format(tile2)]
+    for tile1, tile2 in tile_pairs:
+        argvs += [canvas_url_template.format(tile1),
+                  canvas_url_template.format(tile2)]
 
     call_run_ws_client('org.janelia.render.client.PointMatchClient',
                        memGB=memGB, client_script=client_script,
