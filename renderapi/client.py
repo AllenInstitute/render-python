@@ -862,14 +862,14 @@ def transformSectionClient(stack, transformId, transformClass, transformData,
                        subprocess_mode=subprocess_mode, add_args=argvs)
 
 @renderclientaccess
-def get_canvas_url_template(stack, filter=False, 
+def get_canvas_url_template(stack, filter=False,
                    renderWithoutMask=False, normalizeForMatching=True,
-                   excludeTransformsAfterLast=None, 
+                   excludeTransformsAfterLast=None,
                    excludeFirstTransformAndAllAfter=None,excludeAllTransforms=False,
                    host=None, port=None, owner=None, project=None, client_script=None,
                    render=None, **kwargs):
     """function for making a render-parameters url template for point matching
-    
+
     Parameters
     ----------
     stack: str
@@ -921,53 +921,107 @@ def get_canvas_url_template(stack, filter=False,
     if excludeTransformsAfterLast is not None:
         url_suffix += '&excludeTransformsAfterLast={}'.format(excludeTransformsAfterLast)
     if excludeFirstTransformAndAllAfter is not None:
-        url_suffix += '&excludeFirstTransformAndAllAfter={}'.format(excludeFirstTransformAndAllAfter) 
+        url_suffix += '&excludeFirstTransformAndAllAfter={}'.format(excludeFirstTransformAndAllAfter)
     if excludeAllTransforms:
         url_suffix += '&excludeAllTransforms=true'
-        
+
     canvas_url_template = "%s/{}/%s"%(tile_base_url,
                                         url_suffix)
     return canvas_url_template
 
-class SiftOptions(object):
-    
-    def __init__(self, SIFTfdSize=None, SIFTmaxScale=None,
-                 SIFTminScale=None, SIFTsteps=None, matchIterations=None,
-                 matchMaxEpsilon=None, matchMaxNumInliers=None,
-                 matchMaxTrust=None,  matchMinInlierRatio=None, matchMinNumInliers=None,
-                 matchModelType=None, matchRod=None, renderScale=None, **kwargs):
-        self.SIFTfdSize=SIFTfdSize
-        self.SIFTmaxScale=SIFTmaxScale
-        self.SIFTminScale=SIFTminScale
-        self.SIFTsteps=SIFTsteps
-        self.matchIterations=matchIterations
-        self.matchMaxEpsilon=matchMaxEpsilon
-        self.matchMaxNumInliers=matchMaxNumInliers
-        self.matchMaxTrust=matchMaxTrust
-        self.matchMinInlierRatio=matchMinInlierRatio
-        self.matchMinNumInliers=matchMinNumInliers
-        self.matchMinNumInliers=matchMinNumInliers
-        self.matchModelType=matchModelType
-        self.matchRod=matchRod
-        self.renderScale=renderScale
+
+class ArgumentParameters(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def sanitize_cmd(cmd):
+        def jbool_str(c):
+            return str(c) if type(c) is not bool else "true" if c else "false"
+        if any([i is None for i in cmd]):
+            # FIXME exception class
+            raise Exception(
+                'missing argument in command "{}"'.format(map(str, cmd)))
+        return map(jbool_str, cmd)
+
+    @staticmethod
+    def get_cmd_opt(v, flag=None):
+        return [] if v is None else [v] if flag is None else [flag, v]
+
+    @staticmethod
+    def get_flag_cmd(v, flag=None):
+        # for arity 0
+        raise NotImplementedError(
+            "flag commands are not supported by ArgumentParameters")
+        return [flag] if v else []
 
     def to_java_args(self):
         args = []
-        for key,value in self.__dict__.items():
-            if value is not None:
-                args.append("--{}".format(key))
-                args.append("{}".format(value))
-        return args
+        for key, value in self.__dict__.items():
+            if (value is not None) and not (key == 'kwargs'):
+                args += self.get_cmd_opt(value, "--{}".format(key))
+        return self.sanitize_cmd(args)
+
+
+class FeatureRenderParameters(ArgumentParameters):
+    def __init__(self, renderScale=None, renderWithFilter=None,
+                 renderWithoutMask=None, renderFullScaleWidth=None,
+                 renderFullScaleHeight=None, fillWithNoise=None, **kwargs):
+        self.renderScale = renderScale
+        self.renderWithFilter = renderWithFilter
+        self.renderWithoutMask = renderWithoutMask
+        self.renderFullScaleWidth = renderFullScaleWidth
+        self.renderFullScaleHeight = renderFullScaleHeight
+        self.fillWithNoise = fillWithNoise
+
+
+class FeatureExtractionParameters(ArgumentParameters):
+    def __init__(self, SIFTfdSize=None, SIFTmaxScale=None,
+                 SIFTminScale=None, SIFTsteps=None, **kwargs):
+        super(FeatureExtractionParameters, self).__init__(**kwargs)
+        self.SIFTfdSize = SIFTfdSize
+        self.SIFTmaxScale = SIFTmaxScale
+        self.SIFTminScale = SIFTminScale
+        self.SIFTsteps = SIFTsteps
+
+
+class MatchDerivationParameters(ArgumentParameters):
+    def __init__(self, matchIterations=None,
+                 matchMaxEpsilon=None, matchMaxNumInliers=None,
+                 matchMaxTrust=None,  matchMinInlierRatio=None,
+                 matchMinNumInliers=None,
+                 matchModelType=None, matchRod=None, **kwargs):
+        super(MatchDerivationParameters, self).__init__(**kwargs)
+        self.matchIterations = matchIterations
+        self.matchMaxEpsilon = matchMaxEpsilon
+        self.matchMaxNumInliers = matchMaxNumInliers
+        self.matchMaxTrust = matchMaxTrust
+        self.matchMinInlierRatio = matchMinInlierRatio
+        self.matchMinNumInliers = matchMinNumInliers
+        self.matchMinNumInliers = matchMinNumInliers
+        self.matchModelType = matchModelType
+        self.matchRod = matchRod
+
+
+
+class SiftPointMatchOptions(MatchDerivationParameters,
+                            FeatureExtractionParameters):
+    def __init__(self, renderScale=None, fillWithNoise=None, **kwargs):
+        # TODO add missing parameters
+        super(SiftPointMatchOptions, self).__init__(**kwargs)
+        self.renderScale = renderScale
+        self.fillWithNoise = fillWithNoise
+
 
 @renderclientaccess
 def pointMatchClient(stack, collection, tile_pairs,
-                     sift_options=SiftOptions(),
+                     sift_options=None,
                      pointMatchRender=None,
-                     debugDirectory=None, 
-                     filter=False, 
+                     debugDirectory=None,
+                     filter=False,
                      renderWithoutMask=False, normalizeForMatching=True,
                      excludeTransformsAfterLast=None, excludeAllTransforms=None,
-                     excludeFirstTransformAndAllAfter=None,    
+                     excludeFirstTransformAndAllAfter=None,
                      subprocess_mode=None,
                      host=None, port=None,
                      owner=None, project=None, client_script=None,
@@ -1016,11 +1070,14 @@ def pointMatchClient(stack, collection, tile_pairs,
         default=False
 
     """
+    sift_options = (SiftPointMatchOptions(**kwargs) if sift_options is None
+                    else sift_options)
+
     if pointMatchRender is None:
         pointMatchRender = Render(host, port, owner, project, client_script)
-    
-    baseDataUrl = format_baseurl(pointMatchRender.DEFAULT_KWARGS['host'], 
-                                                  pointMatchRender.DEFAULT_KWARGS['port'])
+
+    baseDataUrl = format_baseurl(pointMatchRender.DEFAULT_KWARGS['host'],
+                                 pointMatchRender.DEFAULT_KWARGS['port'])
     argvs = []
     argvs += ['--baseDataUrl', baseDataUrl]
     argvs += ['--owner', pointMatchRender.DEFAULT_KWARGS['owner']]
@@ -1031,8 +1088,8 @@ def pointMatchClient(stack, collection, tile_pairs,
     argvs += sift_options.to_java_args()
 
     canvas_url_template = get_canvas_url_template(stack,
-                            filter, 
-                            renderWithoutMask, 
+                            filter,
+                            renderWithoutMask,
                             normalizeForMatching,
                             excludeTransformsAfterLast,
                             excludeFirstTransformAndAllAfter,
@@ -1045,7 +1102,7 @@ def pointMatchClient(stack, collection, tile_pairs,
 
     for tile1,tile2 in tile_pairs:
         argvs += [canvas_url_template.format(tile1),canvas_url_template.format(tile2)]
-        
+
     call_run_ws_client('org.janelia.render.client.PointMatchClient',
                        memGB=memGB, client_script=client_script,
                        subprocess_mode=subprocess_mode, add_args=argvs)
