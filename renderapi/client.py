@@ -54,14 +54,15 @@ def renderclientaccess(f, *args, **kwargs):
             cs_valid = os.path.isfile(client_script)
         except TypeError as e:
             try:
-                if os.path.isdir(kwargs.get('client_scripts')):
+                client_scripts = kwargs.get('client_scripts')
+                if os.path.isdir(client_scripts):
                     client_script = os.path.join(client_scripts,
                                                  'run_ws_client.sh')
                     cs_valid = os.path.isfile(client_script)
                 else:
                     raise ClientScriptError(
                         'invalid client_scripts directory {}'.format(
-                            kwargs.get('client_scripts')))
+                            client_scripts))
             except TypeError as e:
                 raise ClientScriptError(
                     'No client script information specified: '
