@@ -962,19 +962,6 @@ class ArgumentParameters(object):
         return self.sanitize_cmd(args)
 
 
-class FeatureRenderParameters(ArgumentParameters):
-    def __init__(self, renderScale=None, renderWithFilter=None,
-                 renderWithoutMask=None, renderFullScaleWidth=None,
-                 renderFullScaleHeight=None, fillWithNoise=None, **kwargs):
-        super(FeatureRenderParameters, self).__init__(**kwargs)
-        self.renderScale = renderScale
-        self.renderWithFilter = renderWithFilter
-        self.renderWithoutMask = renderWithoutMask
-        self.renderFullScaleWidth = renderFullScaleWidth
-        self.renderFullScaleHeight = renderFullScaleHeight
-        self.fillWithNoise = fillWithNoise
-
-
 class FeatureExtractionParameters(ArgumentParameters):
     def __init__(self, SIFTfdSize=None, SIFTmaxScale=None,
                  SIFTminScale=None, SIFTsteps=None, **kwargs):
