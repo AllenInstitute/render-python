@@ -261,3 +261,14 @@ def test_point_match_client(teststack, render,tmpdir):
     tp = tilepairjson['neighborPairs'][0]
     pms = renderapi.pointmatch.get_matches_involving_tile(collection,tp['p']['groupId'],tp['p']['id'],render=render)
     assert(len(pms)>0)
+
+
+def test_call_run_ws_client_renderclient(render, teststack):
+    # class for this test should be something relatively lightweight....
+    test_class = 'org.janelia.render.client.ValidateTilesClient'
+    zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
+    args = renderapi.stack.make_stack_params(
+        render.DEFAULT_HOST, render.DEFAULT_PORT, render.DEFAULT_OWNER,
+        render.DEFAULT_PROJECT, teststack) + [zvalues[0]]
+    assert not renderapi.client.call_run_ws_client(
+        test_class, add_args=args, subprocess_mode='call', renderclient=render)
