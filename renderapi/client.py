@@ -484,7 +484,6 @@ def call_run_ws_client(className, add_args=[], renderclient=None,
     if renderclient is not None:
         if isinstance(renderclient, RenderClient):
             return call_run_ws_client(className, add_args=add_args,
-                                      subprocess_mode=subprocess_mode,
                                       **renderclient.make_kwargs(
                                           memGB=memGB,
                                           client_script=client_script,
