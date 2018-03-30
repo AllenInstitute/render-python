@@ -309,7 +309,8 @@ def test_bb_image(render, teststack, **kwargs):
         dr = data.ravel()
         assert data.shape[0] == (np.floor(height*.25))
         assert data.shape[1] == (np.floor(width*.25))
-        assert data.shape[2] >= 3
+        if len(data.shape)>2:
+            assert data.shape[2] >= 3
 
 
 def test_bb_image_options(render, teststack):
