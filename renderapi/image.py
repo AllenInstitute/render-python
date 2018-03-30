@@ -21,7 +21,7 @@ IMAGE_FORMATS = {'png': 'png-image',
                  'tif': 'tiff-image',
                  '.tif': 'tiff-image',
                  'tiff': 'tiff-image',
-                 'tiff16':'tiff16-image'
+                 'tiff16':'tiff16-image',
                  None: 'png-image'}  # Default to png
 
 
