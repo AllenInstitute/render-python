@@ -96,6 +96,9 @@ class WithPool(Pool):
     def __init__(self, *args, **kwargs):
         super(WithPool, self).__init__(*args, **kwargs)
 
+    def __enter__(self):
+        return self
+        
     def __exit__(self, *args, **kwargs):
         self.close()
         self.join()
