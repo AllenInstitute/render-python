@@ -13,7 +13,7 @@ from .errors import ClientScriptError
 from .utils import NullHandler, renderdump_temp, fitargspec
 from .render import RenderClient, renderaccess, Render, format_preamble, format_baseurl
 from .stack import set_stack_state, make_stack_params
-from pathos.multiprocessing import ProcessingPool as Pool
+from multiprocessing.pool import Pool
 
 # setup logger
 logger = logging.getLogger(__name__)
@@ -97,7 +97,8 @@ class WithPool(Pool):
         super(WithPool, self).__init__(*args, **kwargs)
 
     def __exit__(self, *args, **kwargs):
-        super(WithPool, self)._clear()
+        self.close()
+        self.join()
 
 
 @renderclientaccess
