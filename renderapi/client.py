@@ -1115,14 +1115,4 @@ def pointMatchClient(stack, collection, tile_pairs,
                        memGB=memGB, client_script=client_script,
                        subprocess_mode=subprocess_mode, add_args=argvs,
                        **kwargs)
-import time
-def simple_subfunction(a,i):
-    print(a,i)
-    time.sleep(1)
-    return i
-
-def my_module():
-    values = range(10)
-    myfunc = partial(simple_subfunction,5)
-    with WithPool(5) as pool:
-        results=pool.map(myfunc,values)
+                       
