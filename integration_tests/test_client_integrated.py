@@ -272,6 +272,3 @@ def test_call_run_ws_client_renderclient(render, teststack):
     assert not renderapi.client.call_run_ws_client(
         test_class, add_args=args, subprocess_mode='call', renderclient=render)
 
-def test_my_module():
-    renderapi.client.my_module()
-    
