@@ -6,10 +6,8 @@ import logging
 import sys
 import json
 import numpy as np
-import dill
 from test_data import (render_host, render_port,
                        client_script_location, tilespec_file, tform_file, test_pool_size)
-from pathos.multiprocessing import ProcessingPool as Pool
 import PIL
 
 root = logging.getLogger()
