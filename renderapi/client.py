@@ -13,7 +13,7 @@ from .errors import ClientScriptError
 from .utils import NullHandler, renderdump_temp, fitargspec
 from .render import RenderClient, renderaccess, Render, format_preamble, format_baseurl
 from .stack import set_stack_state, make_stack_params
-from pathos.multiprocessing import ProcessingPool as Pool
+from multiprocessing.pool import Pool
 
 # setup logger
 logger = logging.getLogger(__name__)
@@ -77,15 +77,15 @@ def renderclientaccess(f, *args, **kwargs):
 
 
 class WithPool(Pool):
-    """pathos ProcessingPool with functioning __exit__ call
+    """Multiprocessing.pool.Pool with functioning __exit__ call
 
     Parameters
     ----------
     *args
         variable length argument list matching input
-        to pathos.multiprocessing.Pool
+        to multiprocessing.pool.Pool
     **kwargs
-        keyword argument input matching pathos.multiprocessing.Pool
+        keyword argument input matching multiprocessing.pool.Pool
 
     Examples
     --------
@@ -96,8 +96,12 @@ class WithPool(Pool):
     def __init__(self, *args, **kwargs):
         super(WithPool, self).__init__(*args, **kwargs)
 
+    def __enter__(self):
+        return self
+        
     def __exit__(self, *args, **kwargs):
-        super(WithPool, self)._clear()
+        self.close()
+        self.join()
 
 
 @renderclientaccess
@@ -1111,3 +1115,4 @@ def pointMatchClient(stack, collection, tile_pairs,
                        memGB=memGB, client_script=client_script,
                        subprocess_mode=subprocess_mode, add_args=argvs,
                        **kwargs)
+                       

@@ -6,10 +6,8 @@ import logging
 import sys
 import json
 import numpy as np
-import dill
 from test_data import (render_host, render_port,
                        client_script_location, tilespec_file, tform_file, test_pool_size)
-from pathos.multiprocessing import ProcessingPool as Pool
 import PIL
 
 root = logging.getLogger()
@@ -101,14 +99,15 @@ def test_import_jsonfiles_parallel(
     validate_stack_import(render, stack, tilespecs)
     renderapi.stack.delete_stack(stack, render=render)
 
-
+def square(x):
+    return x**2
 def test_import_jsonfiles_parallel_multiple(
         render, render_example_tilespec_and_transforms, poolsize=test_pool_size):
     stacks = ['testmultiple1', 'testmultiple2', 'testmultiple3']
     mylist = range(10)
     for stack in stacks:
         with renderapi.client.WithPool(poolsize) as pool:
-            results = pool.map(lambda x: x**2, mylist)
+            results = pool.map(square, mylist)
         test_import_jsonfiles_parallel(
             render, render_example_tilespec_and_transforms, stack, poolsize=poolsize)
 
@@ -272,3 +271,4 @@ def test_call_run_ws_client_renderclient(render, teststack):
         render.DEFAULT_PROJECT, teststack) + [zvalues[0]]
     assert not renderapi.client.call_run_ws_client(
         test_class, add_args=args, subprocess_mode='call', renderclient=render)
+
