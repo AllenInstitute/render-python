@@ -422,7 +422,7 @@ def test_get_sectionId_for_z(render, teststack, render_example_tilespec_and_tran
     sectionId = render.run(renderapi.stack.get_sectionId_for_z, teststack, tilespecs[0].z)
     assert (sectionId == tilespecs[0].layout.sectionId)
 
-def test_get_put_resolvedtiles_from_z(render, teststack,
+def test_get_resolvedtiles_from_z(render, teststack,
                                   render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     resolved_tiles = renderapi.resolvedtiles.get_resolved_tiles_from_z(teststack,
