@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 import logging
 import requests
-import shapely.geometry
 import numpy as np
-import copy
 from .render import format_preamble, renderaccess
 from .utils import NullHandler
 from .stack import get_z_values_for_stack
@@ -122,7 +120,7 @@ class TileSpec:
         return box
 
     def bbox_transformed(self,ndiv_inner=0,tf_limit=None):
-        """method to return a transformed bounding box
+        """method to return Nx2 transformed coordinates of bounding box
         Paramters
         ---------
         ndiv_inner : starting with just corner points, add intermediate
@@ -135,32 +133,35 @@ class TileSpec:
 
         Returns
         -------
-        shapely polygon
+        Nx2 array ready for input to shapely.Polygon()
         """
-        #create a shapely bounding box
-        shapely_bbox = shapely.geometry.box(0,0,self.width,self.height)
+        #start with closed Nx2 array of corners
+        xy = np.zeros((5,2)).astype('float')
+        xy[0,:] = [0,0]
+        xy[1,:] = [0,self.height]
+        xy[2,:] = [self.width,self.height]
+        xy[3,:] = [self.width,0]
+        xy[4,:] = [0,0]
+    
         while ndiv_inner>0:
-            coords = shapely_bbox.exterior.coords[:]
-            newcoords = copy.copy(coords)
-            i=0
-            for k in np.arange(len(coords)-1):
-                newcoords.insert(k+1+i,(0.5*(coords[k][0]+coords[k+1][0]),0.5*(coords[k][1]+coords[k+1][1])))
-                i+=1
-            shapely_bbox = shapely.geometry.Polygon(newcoords)
+            sz = 2*xy.shape[0]-1
+            newxy = np.zeros((sz,2)).astype('float')
+            newxy[0::2,:] = xy[:,:]
+            newxy[1:sz:2,:] = 0.5*(newxy[0:(sz-2):2,:] + newxy[2:sz:2,:])
+            xy = newxy
             ndiv_inner-=1
 
-        #get Nx2 coordinate array
-        xy = np.swapaxes(np.vstack((shapely_bbox.exterior.coords.xy[0],shapely_bbox.exterior.coords.xy[1])),0,1)
-
-        #cycle through the tspec tforms and apply the transforms
+        #set which transforms
         if (tf_limit==None)|(tf_limit>len(self.tforms)):
             tlist = self.tforms
         else:
             tlist = self.tforms[0:tf_limit]
+
+        #cycle through the tspec tforms and apply the transforms
         for transform in tlist:
             xy = transform.tform(xy)
 
-        return shapely.geometry.Polygon(xy)
+        return xy
 
 
     def to_dict(self):
