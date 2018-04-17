@@ -386,7 +386,7 @@ class Transform(object):
             self.labels = md.get('labels', None)
         else:
             self.labels = None
-           
+
     def _process_dataString(self, datastring):
         """method meant to set state of transform from datastring
         generic implementation only saves datastring at self.dataString.
@@ -1039,7 +1039,7 @@ class Polynomial2DTransform(Transform):
 
     def __init__(self, dataString=None, src=None, dst=None, order=2,
                  force_polynomial=True, params=None, identity=False,
-                 labels=None,json=None, **kwargs):
+                 labels=None, transformId=None, json=None, **kwargs):
         """Initialize Polynomial2DTransform
         This provides 5 different ways to initialize the transform which are
         mutually exclusive and applied in the order specified here.
@@ -1084,7 +1084,7 @@ class Polynomial2DTransform(Transform):
             if not force_polynomial and self.is_affine:
                 raise NotImplementedError('Falling back to Affine model is '
                                           'not supported {}')
-            self.transformId = None
+            self.transformId = transformId
             self.labels = labels
 
     @property
@@ -1423,8 +1423,8 @@ class NonLinearCoordinateTransform(Transform):
                 self._process_dataString(dataString)
             if labels is not None:
                 self.labels = labels
-        self.transformId = transformId
-        self.className = 'mpicbg.trakem2.transform.NonLinearCoordinateTransform'
+            self.transformId = transformId
+            self.className = 'mpicbg.trakem2.transform.NonLinearCoordinateTransform'
 
     def _process_dataString(self, dataString):
 
