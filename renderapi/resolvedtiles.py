@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from .tilespec import TileSpec
 from .transform import load_transform_json
-from .utils import NullHandler
+from .utils import NullHandler, put_json, jbool
 from .render import format_preamble, renderaccess
 from .errors import RenderError
 import logging
@@ -52,6 +52,37 @@ class ResolvedTiles:
         A list of tilespecs stored in this ResolvedTiles with the transformations dereferenced
     """
 
+@renderaccess
+def put_resolved_tiles(stack,resolved_tiles,deriveData=True,
+    host=None,port=None,owner=None,project=None,
+    session=requests.session(),render=None,**kwargs):
+    """upload resolved tiles to the server
+
+    :func:`renderapi.render.renderaccess` decorated function
+
+    Parameters
+    ----------
+    stack : str
+        render stack
+    resolved_tiles: renderapi.resolvedtiles.ResolvedTiles
+        resolved tiles to upload
+    deriveData: bool
+        whether or not to calculate bounding boxes serverside
+    render: renderapi.render.Render
+        render connect object
+    
+    Returns
+    -------
+    requests.response.Reponse
+        server response
+    """
+    request_url = format_preamble(
+        host, port, owner, project, stack) + '/resolvedTiles'
+    qparams = {} if deriveData is None else {'deriveData': jbool(deriveData)}
+    logger.debug(request_url)
+    r=put_json(session,request_url,resolved_tiles.to_dict(),qparams)
+    logger.debug(r)
+    return r
 
 @renderaccess
 def get_resolved_tiles_from_z(stack, z, host=None, port=None,

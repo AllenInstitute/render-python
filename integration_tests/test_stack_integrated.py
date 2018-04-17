@@ -422,7 +422,7 @@ def test_get_sectionId_for_z(render, teststack, render_example_tilespec_and_tran
     sectionId = render.run(renderapi.stack.get_sectionId_for_z, teststack, tilespecs[0].z)
     assert (sectionId == tilespecs[0].layout.sectionId)
 
-def test_get_resolvedtiles_from_z(render, teststack,
+def test_get_put_resolvedtiles_from_z(render, teststack,
                                   render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     resolved_tiles = renderapi.resolvedtiles.get_resolved_tiles_from_z(teststack,
@@ -433,5 +433,15 @@ def test_get_resolvedtiles_from_z(render, teststack,
     matching_ts = next(ts for ts in resolved_tiles.tilespecs if ts.tileId == tsz[0].tileId)
     assert (len(matching_ts.tforms)==len(tsz[0].tforms))
 
-
-
+def test_put_resolved_tiles_scratch(render,render_example_tilespec_and_transforms):
+    (tilespecs, tforms) = render_example_tilespec_and_transforms
+    out_stack = 'resolved_test_stack'
+    renderapi.stack.create_stack(out_stack,render=render)
+    resolved_tilespecs = renderapi.resolvedtiles.ResolvedTiles(tilespecs,tforms)
+    print(renderapi.utils.renderdumps(resolved_tilespecs))
+    r=renderapi.resolvedtiles.put_resolved_tiles(out_stack,resolved_tilespecs,
+        render=render)
+    print(r)
+    tilespecs_out = renderapi.tilespec.get_tile_specs_from_stack(out_stack,
+                                                                   render=render)
+    assert(len(tilespecs_out)==len(resolved_tilespecs.tilespecs))
