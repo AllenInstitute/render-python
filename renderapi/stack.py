@@ -807,6 +807,34 @@ def get_stack_tileIds(stack, host=None, port=None, owner=None, project=None,
 def put_tilespecs(stack, tilespecs, sharedTransforms=None, deriveData=None,
                   host=None, port=None, owner=None, project=None,
                   session=requests.session(), render=None, **kwargs):
+    """write tilespecs into a stack
+
+    :func:`renderapi.render.renderaccess` decorated function
+
+    Parameters
+    ----------
+    stack : str
+        stack to get tileIds
+    tilespecs : :obj:`list` of :obj:`renderapi.tilespec.TileSpec`
+        tilespecs to upload
+    sharedTransforms: :obj:`list` of :obj:`renderapi.transform.Transform` or :obj:`renderapi.transform.TransformList` or :obj:`renderapi.transform.ReferenceTransform` or :obj:`renderapi.transform.InterpolatedTransform`
+        shared transforms which can be referenced by tilespecs
+    deriveData : boolean
+        whether to derive the tilespec bounding boxes server side (note: bounding boxes are not JSON serialized in tilespec class by default)
+    render : renderapi.render.Render
+        render connect object
+    session : requests.sessions.Session
+        session object (default start a new one)
+
+    Returns
+    -------
+    requests.session.response
+        server response
+
+    Raises
+    ------
+    RenderError
+    """
     request_url = '{}/resolvedTiles'.format(format_preamble(
         host, port, owner, project, stack))
     body = {
