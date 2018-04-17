@@ -80,7 +80,7 @@ def put_resolved_tiles(stack,resolved_tiles,deriveData=True,
         host, port, owner, project, stack) + '/resolvedTiles'
     qparams = {} if deriveData is None else {'deriveData': jbool(deriveData)}
     logger.debug(request_url)
-    r=put_json(session,request_url,resolved_tiles.to_dict(),qparams)
+    r=put_json(session,request_url,resolved_tiles,qparams)
     logger.debug(r)
     return r
 
