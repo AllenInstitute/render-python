@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 import logging
 import requests
+import shapely.geometry
+import numpy as np
+import copy
 from .render import format_preamble, renderaccess
 from .utils import NullHandler
 from .stack import get_z_values_for_stack
@@ -117,6 +120,48 @@ class TileSpec:
             logger.error(
                 'undefined bounding box for tile {}'.format(self.tileId))
         return box
+
+    def bbox_transformed(self,ndiv_inner=0,tf_limit=None):
+        """method to return a transformed bounding box
+        Paramters
+        ---------
+        ndiv_inner : starting with just corner points, add intermediate
+            points to the boundary, recursively, ndiv_inner times
+        tf_limit :
+            0 returns the raw bounding box
+            1 returns the bounding box with the first transform applied
+            ...
+            None all transforms are applied
+
+        Returns
+        -------
+        shapely polygon
+        """
+        #create a shapely bounding box
+        shapely_bbox = shapely.geometry.box(0,0,self.width,self.height)
+        while ndiv_inner>0:
+            coords = shapely_bbox.exterior.coords[:]
+            newcoords = copy.copy(coords)
+            i=0
+            for k in np.arange(len(coords)-1):
+                newcoords.insert(k+1+i,(0.5*(coords[k][0]+coords[k+1][0]),0.5*(coords[k][1]+coords[k+1][1])))
+                i+=1
+            shapely_bbox = shapely.geometry.Polygon(newcoords)
+            ndiv_inner-=1
+
+        #get Nx2 coordinate array
+        xy = np.swapaxes(np.vstack((shapely_bbox.exterior.coords.xy[0],shapely_bbox.exterior.coords.xy[1])),0,1)
+
+        #cycle through the tspec tforms and apply the transforms
+        if (tf_limit==None)|(tf_limit>len(self.tforms)):
+            tlist = self.tforms
+        else:
+            tlist = self.tforms[0:tf_limit]
+        for transform in tlist:
+            xy = transform.tform(xy)
+
+        return shapely.geometry.Polygon(xy)
+
 
     def to_dict(self):
         """method to produce a json tilespec for this tile
