@@ -801,3 +801,17 @@ def get_stack_tileIds(stack, host=None, port=None, owner=None, project=None,
         logger.error(e)
         logger.error(r.text)
         raise RenderError(r.text)
+
+
+@renderaccess
+def put_tilespecs(stack, tilespecs, sharedTransforms=None, deriveData=None,
+                  host=None, port=None, owner=None, project=None,
+                  session=requests.session(), render=None, **kwargs):
+    request_url = '{}/resolvedTiles'.format(format_preamble(
+        host, port, owner, project, stack))
+    body = {
+        "tileIdToSpecMap": {ts.tileId: ts.to_dict() for ts in tilespecs},
+        "transformIdToSpecMap": {tform.refId: tform.to_dict() for tform in (
+            [] if sharedTransforms is None else sharedTransforms)}}
+    qparams = {} if deriveData is None else {'deriveData': jbool(deriveData)}
+    return put_json(session, request_url, body, qparams)

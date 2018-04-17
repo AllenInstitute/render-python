@@ -7,7 +7,7 @@ import sys
 import json
 import numpy as np
 from test_data import (render_host, render_port,
-                       client_script_location, tilespec_file, 
+                       client_script_location, tilespec_file,
                        tform_file, test_2_channels_d)
 
 root = logging.getLogger()
@@ -174,6 +174,21 @@ def test_import_tilespecs(render, simpletilespec):
     stack = 'test_insert2'
     render.run(renderapi.stack.create_stack, stack, force_resolution=True)
     render.run(renderapi.client.import_tilespecs, stack, [simpletilespec])
+    response = render.run(renderapi.stack.set_stack_state, stack, 'COMPLETE')
+    assert response.status_code == 201
+    ts_out = render.run(renderapi.tilespec.get_tile_spec,
+                        stack, simpletilespec.tileId)
+    assert ts_out.z == simpletilespec.z
+    render.run(renderapi.stack.delete_stack, stack)
+
+
+@pytest.mark.parametrize("deriveData", [True])
+def test_import_tilespecs_serverside(render, simpletilespec, deriveData):
+    stack = 'test_insert_serverside'
+    render.run(renderapi.stack.create_stack, stack, force_resolution=True)
+    render.run(
+        renderapi.stack.put_tilespecs, stack, [simpletilespec],
+        deriveData=deriveData)
     response = render.run(renderapi.stack.set_stack_state, stack, 'COMPLETE')
     assert response.status_code == 201
     ts_out = render.run(renderapi.tilespec.get_tile_spec,
@@ -432,6 +447,3 @@ def test_get_resolvedtiles_from_z(render, teststack,
     assert(len(tsz)==len(resolved_tiles.tilespecs))
     matching_ts = next(ts for ts in resolved_tiles.tilespecs if ts.tileId == tsz[0].tileId)
     assert (len(matching_ts.tforms)==len(tsz[0].tforms))
-
-
-
