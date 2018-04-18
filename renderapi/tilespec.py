@@ -143,6 +143,7 @@ class TileSpec:
         xy[3,:] = [self.width,0]
         xy[4,:] = [0,0]
     
+        #recursively add points to the boundary
         while ndiv_inner>0:
             sz = 2*xy.shape[0]-1
             newxy = np.zeros((sz,2)).astype('float')
@@ -159,10 +160,12 @@ class TileSpec:
 
         #cycle through the tspec tforms and apply the transforms
         for transform in tlist:
-            xy = transform.tform(xy)
-
+            try:
+                xy = transform.tform(xy)
+            except: 
+                raise RenderError('transform class does not have tform method?')
+            
         return xy
-
 
     def to_dict(self):
         """method to produce a json tilespec for this tile
