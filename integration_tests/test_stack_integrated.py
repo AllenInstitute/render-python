@@ -360,7 +360,7 @@ def test_section_image(render, teststack, **kwargs):
 
 
 def test_section_image_options(render, teststack):
-    img = test_section_image(render, teststack, filter=True,
+    test_section_image(render, teststack, filter=True,
                              maxTileSpecsToRender=50)
 
 
