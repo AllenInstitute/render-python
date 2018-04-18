@@ -98,7 +98,7 @@ class WithPool(Pool):
 
     def __enter__(self):
         return self
-        
+
     def __exit__(self, *args, **kwargs):
         self.close()
         self.join()
@@ -137,7 +137,7 @@ def import_single_json_file(stack, jsonfile, transformFile=None,
 
 @renderclientaccess
 def import_jsonfiles_and_transforms_parallel_by_z(
-        stack, jsonfiles, transformfiles, poolsize=20,
+        stack, jsonfiles, transformfiles, poolsize=20, mpPool=WithPool,
         client_scripts=None, host=None, port=None, owner=None,
         project=None, close_stack=True, render=None, **kwargs):
     """imports json files and transform files in parallel
@@ -168,7 +168,7 @@ def import_jsonfiles_and_transforms_parallel_by_z(
     partial_import = partial(import_single_json_file, stack, render=render,
                              client_scripts=client_scripts, host=host,
                              port=port, owner=owner, project=project)
-    with WithPool(poolsize) as pool:
+    with mpPool(poolsize) as pool:
         pool.map(partial_import, jsonfiles, transformfiles)
 
     if close_stack:
@@ -177,7 +177,7 @@ def import_jsonfiles_and_transforms_parallel_by_z(
 
 @renderclientaccess
 def import_jsonfiles_parallel(
-        stack, jsonfiles, poolsize=20, transformFile=None,
+        stack, jsonfiles, poolsize=20, transformFile=None, mpPool=WithPool,
         client_scripts=None, host=None, port=None, owner=None,
         project=None, close_stack=True, render=None, **kwargs):
     """import jsons using client script in parallel
@@ -208,7 +208,7 @@ def import_jsonfiles_parallel(
                              client_scripts=client_scripts,
                              host=host, port=port, owner=owner,
                              project=project, **kwargs)
-    with WithPool(poolsize) as pool:
+    with mpPool(poolsize) as pool:
         pool.map(partial_import, jsonfiles)
 
     if close_stack:
@@ -339,6 +339,7 @@ def import_tilespecs(stack, tilespecs, sharedTransforms=None,
 @renderclientaccess
 def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
                               subprocess_mode=None, poolsize=20,
+                              mpPool=WithPool,
                               close_stack=True, host=None, port=None,
                               owner=None, project=None,
                               client_script=None, memGB=None, render=None,
@@ -373,7 +374,7 @@ def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
 
     # TODO this is a weird way to do splits.... is that okay?
     tilespec_groups = [tilespecs[i::poolsize] for i in range(poolsize)]
-    with WithPool(poolsize) as pool:
+    with mpPool(poolsize) as pool:
         pool.map(partial_import, tilespec_groups)
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
@@ -1115,4 +1116,3 @@ def pointMatchClient(stack, collection, tile_pairs,
                        memGB=memGB, client_script=client_script,
                        subprocess_mode=subprocess_mode, add_args=argvs,
                        **kwargs)
-                       
