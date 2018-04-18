@@ -13,6 +13,7 @@ from .errors import ClientScriptError
 from .utils import NullHandler, renderdump_temp, fitargspec
 from .render import RenderClient, renderaccess, Render, format_preamble, format_baseurl
 from .stack import set_stack_state, make_stack_params
+from .resolvedtiles import put_tilespecs
 from multiprocessing.pool import Pool
 
 # setup logger
@@ -302,6 +303,7 @@ def import_jsonfiles_validate_client(stack, jsonfiles,
 
 @renderclientaccess
 def import_tilespecs(stack, tilespecs, sharedTransforms=None,
+                     use_rest=False,deriveData=True,
                      subprocess_mode=None, host=None, port=None,
                      owner=None, project=None, client_script=None,
                      memGB=None, render=None, **kwargs):
@@ -316,10 +318,22 @@ def import_tilespecs(stack, tilespecs, sharedTransforms=None,
         list of tilespecs to import
     sharedTransforms : :obj:`list` of :class:`renderapi.transform.Transform` or :class:`renderapi.transform.TransformList` or :class:`renderapi.transform.InterpolatedTransform`, optional
         list of shared referenced transforms to be ingested
+    use_rest: bool
+        whether to import the tilespecs using the post method directly with deriveData=True
+    deriveData: bool
+        if doing use_rest, will determine whether to have the server calculate bounds (default=True)
     render : renderapi.render.Render
         render connect object
 
     """
+    if use_rest:
+        put_tilespecs(stack,
+                      deriveData=deriveData,
+                      tilespecs=tilespecs,
+                      shared_transforms=sharedTransforms,
+                      host=host,port=port,owner=owner,project=project,**kwargs)
+
+
     tsjson = renderdump_temp(tilespecs)
 
     if sharedTransforms is not None:
@@ -338,6 +352,7 @@ def import_tilespecs(stack, tilespecs, sharedTransforms=None,
 
 @renderclientaccess
 def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
+                              
                               subprocess_mode=None, poolsize=20,
                               mpPool=WithPool,
                               close_stack=True, host=None, port=None,

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from .tilespec import TileSpec
 from .transform import load_transform_json
-from .utils import NullHandler
+from .utils import NullHandler, put_json, jbool
 from .render import format_preamble, renderaccess
 from .errors import RenderError
 import logging
@@ -52,6 +52,47 @@ class ResolvedTiles:
         A list of tilespecs stored in this ResolvedTiles with the transformations dereferenced
     """
 
+@renderaccess
+def put_tilespecs(stack,resolved_tiles=None,deriveData=True,
+    tilespecs=None,shared_transforms=None,
+    host=None,port=None,owner=None,project=None,
+    session=requests.session(),render=None,**kwargs):
+    """upload resolved tiles to the server
+
+    :func:`renderapi.render.renderaccess` decorated function
+
+    Parameters
+    ----------
+    stack : str
+        render stack
+    resolved_tiles: renderapi.resolvedtiles.ResolvedTiles
+        resolved tiles to upload
+    deriveData: bool
+        whether or not to calculate bounding boxes serverside
+    tilespecs: list[renderapi.tilespec.Tilespec]
+        list of tilespecs to upload
+    sharedTransforms: list[renderapi.transform.Transform]
+        list of shared transforms to upload
+    render: renderapi.render.Render
+        render connect object
+    
+    Returns
+    -------
+    requests.response.Reponse
+        server response
+    """
+    request_url = format_preamble(
+        host, port, owner, project, stack) + '/resolvedTiles'
+    qparams = {} if deriveData is None else {'deriveData': jbool(deriveData)}
+    logger.debug(request_url)
+    if resolved_tiles is None:
+        if (tilespecs is  None):
+            raise RenderError("need to pass resolved_tiles or tilespecs")
+        resolved_tiles = ResolvedTiles(tilespecs=tilespecs,
+                                       transformList=shared_transforms)
+    r=put_json(session,request_url,resolved_tiles,qparams)
+    logger.debug(r)
+    return r
 
 @renderaccess
 def get_resolved_tiles_from_z(stack, z, host=None, port=None,
