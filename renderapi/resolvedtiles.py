@@ -53,7 +53,8 @@ class ResolvedTiles:
     """
 
 @renderaccess
-def put_resolved_tiles(stack,resolved_tiles,deriveData=True,
+def put_tilespecs(stack,resolved_tiles=None,deriveData=True,
+    tilespecs=None,shared_transforms=None,
     host=None,port=None,owner=None,project=None,
     session=requests.session(),render=None,**kwargs):
     """upload resolved tiles to the server
@@ -68,6 +69,10 @@ def put_resolved_tiles(stack,resolved_tiles,deriveData=True,
         resolved tiles to upload
     deriveData: bool
         whether or not to calculate bounding boxes serverside
+    tilespecs: list[renderapi.tilespec.Tilespec]
+        list of tilespecs to upload
+    sharedTransforms: list[renderapi.transform.Transform]
+        list of shared transforms to upload
     render: renderapi.render.Render
         render connect object
     
@@ -80,6 +85,11 @@ def put_resolved_tiles(stack,resolved_tiles,deriveData=True,
         host, port, owner, project, stack) + '/resolvedTiles'
     qparams = {} if deriveData is None else {'deriveData': jbool(deriveData)}
     logger.debug(request_url)
+    if resolved_tiles is None:
+        if (tilespecs is  None):
+            raise RenderError("need to pass resolved_tiles or tilespecs")
+        resolved_tiles = ResolvedTiles(tilespecs=tilespecs,
+                                       transformList=shared_transforms)
     r=put_json(session,request_url,resolved_tiles,qparams)
     logger.debug(r)
     return r

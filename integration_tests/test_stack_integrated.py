@@ -438,10 +438,23 @@ def test_put_resolved_tiles_scratch(render,render_example_tilespec_and_transform
     out_stack = 'resolved_test_stack'
     renderapi.stack.create_stack(out_stack,render=render)
     resolved_tilespecs = renderapi.resolvedtiles.ResolvedTiles(tilespecs,tforms)
-    print(renderapi.utils.renderdumps(resolved_tilespecs))
-    r=renderapi.resolvedtiles.put_resolved_tiles(out_stack,resolved_tilespecs,
+    r=renderapi.resolvedtiles.put_tilespecs(out_stack,resolved_tilespecs,
         render=render)
-    print(r)
     tilespecs_out = renderapi.tilespec.get_tile_specs_from_stack(out_stack,
                                                                    render=render)
     assert(len(tilespecs_out)==len(resolved_tilespecs.tilespecs))
+
+def test_put_tilespecs_and_tforms(render,render_example_tilespec_and_transforms):
+    (tilespecs, tforms) = render_example_tilespec_and_transforms
+    out_stack = 'resolved_test_stack2'
+    renderapi.stack.create_stack(out_stack,render=render)
+    r=renderapi.resolvedtiles.put_tilespecs(out_stack,tilespecs=tilespecs,
+        shared_transforms=tforms,render=render)
+    tilespecs_out = renderapi.tilespec.get_tile_specs_from_stack(out_stack,
+                                                                   render=render)
+    assert(len(tilespecs_out)==len(tilespecs))
+
+def test_put_tilespecs_fail(render):
+    with pytest.raises(renderapi.errors.RenderError):
+        r=renderapi.resolvedtiles.put_tilespecs('fail_stack',render=render)
+        
