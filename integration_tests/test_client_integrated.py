@@ -86,21 +86,28 @@ def test_failed_jsonfiles_validate_client(
             stack, ['not_a_file'], render=render,
             subprocess_mode=call_mode)
 
+@pytest.mark.parametrize('use_rest,stack',
+                        [(True,'test_import_jsonfiles_parallel'),
+                         (False,'test_import_jsonfiles_parallel_rest')])                                
 def test_import_jsonfiles_parallel(
-        render, render_example_tilespec_and_transforms,
-        stack='test_import_jsonfiles_parallel', poolsize=test_pool_size):
+        render, render_example_tilespec_and_transforms, 
+        stack, use_rest,
+        poolsize=test_pool_size):
     renderapi.stack.create_stack(stack, render=render)
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     (tfiles, transformFile) = render_example_json_files(
         render_example_tilespec_and_transforms)
     renderapi.client.import_jsonfiles_parallel(
         stack, tfiles, transformFile=transformFile,
-        render=render, poolsize=poolsize)
+        render=render, poolsize=poolsize, use_rest=use_rest)
     validate_stack_import(render, stack, tilespecs)
     renderapi.stack.delete_stack(stack, render=render)
 
 def square(x):
     return x**2
+#this test was added in order to validate that multiple WithPools would work
+#pathos was breaking when we did this before.  Should now be not relevant, 
+#but who ever deletes a test if you don't have to.
 def test_import_jsonfiles_parallel_multiple(
         render, render_example_tilespec_and_transforms, poolsize=test_pool_size):
     stacks = ['testmultiple1', 'testmultiple2', 'testmultiple3']
@@ -109,7 +116,8 @@ def test_import_jsonfiles_parallel_multiple(
         with renderapi.client.WithPool(poolsize) as pool:
             results = pool.map(square, mylist)
         test_import_jsonfiles_parallel(
-            render, render_example_tilespec_and_transforms, stack, poolsize=poolsize)
+            render, render_example_tilespec_and_transforms, stack, 
+            use_rest=False,poolsize=poolsize)
 
 
 def test_import_tilespecs_parallel(render,
