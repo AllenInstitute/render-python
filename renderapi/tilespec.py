@@ -162,8 +162,9 @@ class TileSpec:
         for transform in tlist:
             try:
                 xy = transform.tform(xy)
-            except: 
-                raise RenderError('transform class does not have tform method?')
+            except Exception as e:
+                logger.error(e)
+                raise RenderError("transform class does not have tform method?")
             
         return xy
 
