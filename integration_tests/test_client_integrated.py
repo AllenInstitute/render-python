@@ -104,7 +104,7 @@ def test_bbox_transformed(render, render_example_tilespec_and_transforms):
     ts = tilespecs[0]
     xy = ts.bbox_transformed(ndiv_inner=0,tf_limit=0)
     assert xy.shape == (5,2)
-    assert xy[2,:] = np.array([ts.width,ts.height])
+    assert np.abs((xy[2,:]-np.array([ts.width,ts.height])).sum()) < 1e-10
     xy = ts.bbox_transformed(ndiv_inner=1,tf_limit=0)
     assert xy.shape == (9,2)
     xy = ts.bbox_transformed(ndiv_inner=1,tf_limit=4)
