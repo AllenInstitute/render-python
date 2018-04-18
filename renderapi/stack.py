@@ -152,14 +152,8 @@ def get_full_stack_metadata(stack, host=None, port=None, owner=None,
     request_url = format_preamble(host, port, owner, project, stack)
 
     logger.debug(request_url)
-    r = session.get(request_url)
+    return get_json(request_url)
 
-    try:
-        return r.json()
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
 
 
 def get_stack_metadata(*args, **kwargs):
@@ -536,13 +530,8 @@ def get_z_values_for_stack(stack, project=None, host=None, port=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + "/zValues/"
     logger.debug(request_url)
-    r = session.get(request_url)
-    try:
-        return r.json()
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
+    return get_json(request_url)
+
 
 
 def get_z_value_for_section(stack, sectionId, **kwargs):
@@ -596,13 +585,7 @@ def get_bounds_from_z(stack, z, host=None, port=None, owner=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + '/z/%f/bounds' % (z)
 
-    r = session.get(request_url)
-    try:
-        return r.json()
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
+    return get_json(request_url)
 
 
 @renderaccess
@@ -633,13 +616,8 @@ def get_stack_bounds(stack, host=None, port=None, owner=None, project=None,
     """
     request_url = format_preamble(
         host, port, owner, project, stack) + '/bounds'
-    r = session.get(request_url)
-    try:
-        return r.json()
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
+    return get_json(request_url)
+
 
 
 @renderaccess
@@ -717,13 +695,7 @@ def get_stack_sectionData(stack, host=None, port=None, owner=None,
     """
     request_url = format_preamble(
         host, port, owner, project, stack) + '/sectionData'
-    r = session.get(request_url)
-    try:
-        return r.json()
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
+    return get_json(request_url)
 
 
 @renderaccess
@@ -756,13 +728,8 @@ def get_section_z_value(stack, sectionId, host=None, port=None,
     """
     request_url = format_preamble(
         host, port, owner, project, stack) + "/section/%s/z" % sectionId
-    r = session.get(request_url)
-    try:
-        return float(r.json())
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
+    return get_json(request_url)
+
 
 
 @renderaccess

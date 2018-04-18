@@ -244,14 +244,8 @@ def get_tile_spec_renderparameters(stack, tile, host=None, port=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/tile/%s/render-parameters" % (tile)
-    r = session.get(request_url)
-    try:
-        tilespec_json = r.json()
-        return tilespec_json
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
+    return get_json(request_url)
+
 
 
 @renderaccess
@@ -318,14 +312,8 @@ def get_tile_spec_raw(stack, tile, host=None, port=None, owner=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/tile/%s/" % (tile)
-    r = session.get(request_url)
-    try:
-        tilespec_json = r.json()
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
-    return TileSpec(json=tilespec_json)
+    return TileSpec(json=get_json(request_url))
+
 
 
 @renderaccess
@@ -418,13 +406,7 @@ def get_tile_specs_from_box(stack, z, x, y, width, height,
         "/z/%d/box/%d,%d,%d,%d,%3.2f/render-parameters" % (
         z, x, y, width, height, scale)
     logger.debug(request_url)
-    r = session.get(request_url)
-    try:
-        tilespecs_json = r.json()
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
+    tilespecs_json = get_json(request_url)
     return [TileSpec(json=tilespec_json)
             for tilespec_json in tilespecs_json['tileSpecs']]
 
@@ -456,13 +438,7 @@ def get_tile_specs_from_z(stack, z, host=None, port=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + '/z/%f/tile-specs' % (z)
     logger.debug(request_url)
-    r = session.get(request_url)
-    try:
-        tilespecs_json = r.json()
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
+    tilespecs_json = get_json(request_url)
 
     if len(tilespecs_json) == 0:
         return None

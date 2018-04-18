@@ -482,13 +482,8 @@ def get_owners(host=None, port=None, session=requests.session(),
 
     """
     request_url = "%s/owners/" % format_baseurl(host, port)
-    r = session.get(request_url)
-    try:
-        return r.json()
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
+    return get_json(request_url)
+
 
 
 @renderaccess
@@ -517,13 +512,8 @@ def get_stack_metadata_by_owner(owner=None, host=None, port=None,
     request_url = "%s/owner/%s/stacks/" % (
         format_baseurl(host, port), owner)
     logger.debug(request_url)
-    r = session.get(request_url)
-    try:
-        return r.json()
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
+    return get_json(request_url)
+
 
 
 @renderaccess

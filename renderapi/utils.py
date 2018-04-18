@@ -9,6 +9,7 @@ import copy
 import json
 from .errors import RenderError
 import numpy
+import requests
 
 class NullHandler(logging.Handler):
     """handler to avoid logging errors for, e.g., missing logger setup"""
@@ -145,6 +146,38 @@ def put_json(session, request_url, d, params=None):
             'cannot put {} to {} with params {}'.format(
                 d, request_url, params))
 
+def get_json(session,request_url,params,stream=False,**kwargs):
+    """get_json wrapper for requests to handle errors
+
+    Parameters
+    ----------
+    session : requests.session.Session
+        requests session
+    request_url : str
+        url
+    params : dict
+        requests parameters
+
+    Returns
+    -------
+    dict
+        json response from server
+
+    Raises
+    ------
+    RenderError
+        if cannot get json successfully
+    """
+   
+    r = session.get(request_url,params,stream=stream,**kwargs)
+
+    try:
+        return r.json()
+    except Exception as e:
+        logger.error(e)
+        logger.error(r.text)
+        raise RenderError(r.text)
+    
 
 def renderdumps(obj, *args, **kwargs):
     """json.dumps using the RenderEncode
