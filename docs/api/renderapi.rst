@@ -68,6 +68,14 @@ renderapi\.tilespec module
     :undoc-members:
     :show-inheritance:
 
+renderapi\.resolvedtiles module
+--------------------------
+
+.. automodule:: renderapi.resolvedtiles
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 renderapi\.transform module
 ---------------------------
 
