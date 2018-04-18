@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from setuptools import setup
+from setuptools import setup, find_packages
 import sys
 from setuptools.command.test import test as TestCommand
 
@@ -35,7 +35,7 @@ setup(name='render-python',
       author='Forrest Collman, Russel Torres, Eric Perlman, Sharmi Seshamani',
       author_email='forrest.collman@gmail.com',
       url='https://github.com/fcollman/render-python',
-      packages=['renderapi'],
+      packages=find_packages(),
       setup_requires=['setuptools_scm'],
       install_requires=required,
       tests_require=test_required,
