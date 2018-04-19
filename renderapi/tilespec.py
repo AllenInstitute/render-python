@@ -153,18 +153,14 @@ class TileSpec:
             ndiv_inner-=1
 
         #set which transforms
-        if (tf_limit==None)|(tf_limit>len(self.tforms)):
-            tlist = self.tforms
-        else:
-            tlist = self.tforms[0:tf_limit]
+        tlist = self.tforms[0:tf_limit]
 
         #cycle through the tspec tforms and apply the transforms
         for transform in tlist:
             try:
                 xy = transform.tform(xy)
-            except Exception as e:
-                logger.error(e)
-                raise RenderError("transform class does not have tform method?")
+            except (AttributeError,TypeError) as e:
+                raise RenderError('unacceptable transform instance: {}'.format(e))
             
         return xy
 
