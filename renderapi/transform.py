@@ -103,7 +103,7 @@ class TransformList:
                 self.tforms.append(load_transform_json(td))
         return self.tforms
 
-
+        
 def load_transform_json(d, default_type='leaf'):
     """function to get the proper deserialization function
 
@@ -1365,7 +1365,7 @@ class Polynomial2DTransform(Transform):
             [aff.M[1, 2], aff.M[1, 0], aff.M[1, 1]]]))
 
 
-def estimate_dstpts(transformlist, src=None):
+def estimate_dstpts(transformlist, src=None, reference_tforms=None):
     """estimate destination points for list of transforms.  Recurses
     through lists.
 
@@ -1384,7 +1384,19 @@ def estimate_dstpts(transformlist, src=None):
     dstpts = src
     for tform in transformlist:
         if isinstance(tform, list):
-            dstpts = estimate_dstpts(tform, dstpts)
+            dstpts = estimate_dstpts(tform, dstpts,reference_tforms)
+        elif isinstance(tform,TransformList):
+            dstpts = estimate_dstpts(tform.tforms,dstpts,reference_tforms)
+        elif isinstance(tform,ReferenceTransform):       
+            try:
+                tform_deref= next(tf for tf in reference_tforms if tf.transformId==tform.refId)
+            except TypeError:
+                raise RenderError("you supplied a set of tranforms that includes a reference transform,\
+                                   but didn't supply a set of reference transforms to enable dereferencing")
+            except StopIteration:
+                raise RenderError("the list of transforms you provided references transorm {} but that transform\
+                                    could not be found in the list of reference transforms".format(tform.refId))
+            dstpts=estimate_dstpts([tform_deref],dstpts,reference_tforms)
         else:
             dstpts = tform.tform(dstpts)
     return dstpts
