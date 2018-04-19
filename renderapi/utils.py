@@ -146,7 +146,7 @@ def put_json(session, request_url, d, params=None):
             'cannot put {} to {} with params {}'.format(
                 d, request_url, params))
 
-def get_json(session,request_url,params,stream=False,**kwargs):
+def get_json(session,request_url,params=None,stream=False,**kwargs):
     """get_json wrapper for requests to handle errors
 
     Parameters
@@ -157,7 +157,10 @@ def get_json(session,request_url,params,stream=False,**kwargs):
         url
     params : dict
         requests parameters
-
+    stream: bool
+        requests whether to stream
+    kwargs: dict
+        kwargs to pass to requests.get
     Returns
     -------
     dict
@@ -169,8 +172,10 @@ def get_json(session,request_url,params,stream=False,**kwargs):
         if cannot get json successfully
     """
    
-    r = session.get(request_url,params,stream=stream,**kwargs)
-
+    r = session.get(request_url,params=params,stream=stream,**kwargs)
+    if r.status_code != 200:
+        message = "request to {} returned error code {} with message {}"
+        raise RenderError(message.format(r.url,r.status_code,r.text))
     try:
         return r.json()
     except Exception as e:

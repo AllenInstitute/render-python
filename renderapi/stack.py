@@ -6,6 +6,7 @@ from .errors import RenderError
 from .utils import jbool, NullHandler, post_json, put_json
 from .render import (format_baseurl, format_preamble,
                      renderaccess)
+from .utils import get_json
 import json
 
 logger = logging.getLogger(__name__)
@@ -152,7 +153,7 @@ def get_full_stack_metadata(stack, host=None, port=None, owner=None,
     request_url = format_preamble(host, port, owner, project, stack)
 
     logger.debug(request_url)
-    return get_json(request_url)
+    return get_json(session,request_url)
 
 
 
@@ -530,7 +531,7 @@ def get_z_values_for_stack(stack, project=None, host=None, port=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + "/zValues/"
     logger.debug(request_url)
-    return get_json(request_url)
+    return get_json(session,request_url)
 
 
 
@@ -585,7 +586,7 @@ def get_bounds_from_z(stack, z, host=None, port=None, owner=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + '/z/%f/bounds' % (z)
 
-    return get_json(request_url)
+    return get_json(session,request_url)
 
 
 @renderaccess
@@ -616,7 +617,7 @@ def get_stack_bounds(stack, host=None, port=None, owner=None, project=None,
     """
     request_url = format_preamble(
         host, port, owner, project, stack) + '/bounds'
-    return get_json(request_url)
+    return get_json(session,request_url)
 
 
 
@@ -695,7 +696,7 @@ def get_stack_sectionData(stack, host=None, port=None, owner=None,
     """
     request_url = format_preamble(
         host, port, owner, project, stack) + '/sectionData'
-    return get_json(request_url)
+    return get_json(session,request_url)
 
 
 @renderaccess
@@ -728,7 +729,7 @@ def get_section_z_value(stack, sectionId, host=None, port=None,
     """
     request_url = format_preamble(
         host, port, owner, project, stack) + "/section/%s/z" % sectionId
-    return get_json(request_url)
+    return get_json(session,request_url)
 
 
 

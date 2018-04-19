@@ -2,7 +2,7 @@
 import logging
 import requests
 from .render import format_preamble, renderaccess
-from .utils import NullHandler
+from .utils import NullHandler, get_json
 from .stack import get_z_values_for_stack
 from .transform import TransformList
 from .errors import RenderError
@@ -244,7 +244,7 @@ def get_tile_spec_renderparameters(stack, tile, host=None, port=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/tile/%s/render-parameters" % (tile)
-    return get_json(request_url)
+    return get_json(session,request_url)
 
 
 
@@ -312,7 +312,7 @@ def get_tile_spec_raw(stack, tile, host=None, port=None, owner=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/tile/%s/" % (tile)
-    return TileSpec(json=get_json(request_url))
+    return TileSpec(json=get_json(session,request_url))
 
 
 
@@ -406,7 +406,7 @@ def get_tile_specs_from_box(stack, z, x, y, width, height,
         "/z/%d/box/%d,%d,%d,%d,%3.2f/render-parameters" % (
         z, x, y, width, height, scale)
     logger.debug(request_url)
-    tilespecs_json = get_json(request_url)
+    tilespecs_json = get_json(session,request_url)
     return [TileSpec(json=tilespec_json)
             for tilespec_json in tilespecs_json['tileSpecs']]
 
@@ -438,7 +438,7 @@ def get_tile_specs_from_z(stack, z, host=None, port=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + '/z/%f/tile-specs' % (z)
     logger.debug(request_url)
-    tilespecs_json = get_json(request_url)
+    tilespecs_json = get_json(session,request_url)
 
     if len(tilespecs_json) == 0:
         return None
