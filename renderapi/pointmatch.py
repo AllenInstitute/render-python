@@ -116,6 +116,7 @@ def get_match_groupIds(matchCollection, owner=None, host=None,
 
 @renderaccess
 def get_matches_outside_group(matchCollection, groupId, mergeCollections=None,
+                              stream=True,
                               owner=None, host=None,
                               port=None, session=requests.session(),
                               render=None, **kwargs):
@@ -132,6 +133,8 @@ def get_matches_outside_group(matchCollection, groupId, mergeCollections=None,
         groupId to query
     mergeCollections : :obj:`list` of :obj:`str`
         other matchCollections to aggregate into answer
+    stream: bool
+        whether to invoke streaming on get (default True)
     owner : unicode
         matchCollection owner (fallback to render.DEFAULT_OWNER)
         (note match owner != stack owner always)
@@ -155,7 +158,7 @@ def get_matches_outside_group(matchCollection, groupId, mergeCollections=None,
             owner, matchCollection, groupId)
     request_url = add_merge_collections(request_url, mergeCollections)
 
-    return get_json(session,request_url)
+    return get_json(session,request_url,stream=stream)
 
 
 @renderaccess
