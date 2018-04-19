@@ -118,6 +118,8 @@ def rest_delete(session,request_url,params=None):
     if r.status_code not in [200,202,204]:
         raise RenderError("delete of {} returned {}".format(r.url,r.status_code))
     return r
+
+
 def put_json(session, request_url, d, params=None):
     """PUT requests with RenderError handling
 
@@ -157,6 +159,7 @@ def put_json(session, request_url, d, params=None):
                 d, r.url,r.status_code))
     return r
    
+
 def get_json(session,request_url,params=None,stream=False,**kwargs):
     """get_json wrapper for requests to handle errors
 
@@ -171,7 +174,7 @@ def get_json(session,request_url,params=None,stream=False,**kwargs):
     stream: bool
         requests whether to stream
     kwargs: dict
-        kwargs to pass to requests.get
+        kwargs to shout into the dark
     Returns
     -------
     dict
@@ -183,7 +186,7 @@ def get_json(session,request_url,params=None,stream=False,**kwargs):
         if cannot get json successfully
     """
    
-    r = session.get(request_url,params=params,stream=stream,**kwargs)
+    r = session.get(request_url,params=params,stream=stream)
     if r.status_code != 200:
         message = "request to {} returned error code {} with message {}"
         raise RenderError(message.format(r.url,r.status_code,r.text))
