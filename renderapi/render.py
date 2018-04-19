@@ -5,7 +5,7 @@ import requests
 from .utils import defaultifNone, NullHandler, fitargspec, get_json
 from .errors import ClientScriptError, RenderError
 from decorator import decorator
-from six.moves import input
+from six.moves import input as raw_input
 
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -293,7 +293,7 @@ def connect(host=None, port=None, owner=None, project=None,
     """
     if host is None:
         if 'RENDER_HOST' not in os.environ:
-            host = str(input("Enter Render Host: "))
+            host = str(raw_input("Enter Render Host: "))
             if host == '':  # pragma: no cover
                 logger.critical('Render Host must not be empty!')
                 raise ValueError('Render Host must not be empty!')
@@ -305,7 +305,7 @@ def connect(host=None, port=None, owner=None, project=None,
 
     if port is None:
         if 'RENDER_PORT' not in os.environ:
-            port = str(int(input("Enter Render Port: ")))
+            port = str(int(raw_input("Enter Render Port: ")))
             if port == '':  # pragma: no cover
                 # TODO better (no) port handling
                 logger.critical('Render Port must not be empty!')
@@ -315,7 +315,7 @@ def connect(host=None, port=None, owner=None, project=None,
 
     if project is None:
         if 'RENDER_PROJECT' not in os.environ:
-            project = str(input("Enter Render Project: "))
+            project = str(raw_input("Enter Render Project: "))
         else:
             project = str(os.environ['RENDER_PROJECT'])
         if project == '':  # pragma: no cover
@@ -324,7 +324,7 @@ def connect(host=None, port=None, owner=None, project=None,
 
     if owner is None:
         if 'RENDER_OWNER' not in os.environ:
-            owner = str(input("Enter Render Owner: "))
+            owner = str(raw_input("Enter Render Owner: "))
         else:
             owner = str(os.environ['RENDER_OWNER'])
         if owner == '':  # pragma: no cover
@@ -333,7 +333,7 @@ def connect(host=None, port=None, owner=None, project=None,
 
     if client_scripts is None and not web_only:
         if 'RENDER_CLIENT_SCRIPTS' not in os.environ:
-            client_scripts = str(input(
+            client_scripts = str(raw_input(
                 "Enter Render Client Scripts location: "))
         else:
             client_scripts = str(os.environ['RENDER_CLIENT_SCRIPTS'])
@@ -344,7 +344,7 @@ def connect(host=None, port=None, owner=None, project=None,
                              'not be empty!')
     if client_script is None:
         if 'RENDER_CLIENT_SCRIPT' not in os.environ:
-            # client_script = str(input("Enter Render Client Script: "))
+            # client_script = str(raw_input("Enter Render Client Script: "))
             client_script = RenderClient.clientscript_from_clientscripts(
                 client_scripts)
         else:
