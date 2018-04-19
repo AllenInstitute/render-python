@@ -3,9 +3,10 @@ import logging
 from time import strftime
 import requests
 from .errors import RenderError
-from .utils import jbool, NullHandler, post_json, put_json
+from .utils import jbool, NullHandler, post_json, put_json,rest_delete
 from .render import (format_baseurl, format_preamble,
                      renderaccess)
+from .utils import get_json
 import json
 
 logger = logging.getLogger(__name__)
@@ -152,14 +153,8 @@ def get_full_stack_metadata(stack, host=None, port=None, owner=None,
     request_url = format_preamble(host, port, owner, project, stack)
 
     logger.debug(request_url)
-    r = session.get(request_url)
+    return get_json(session,request_url)
 
-    try:
-        return r.json()
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
 
 
 def get_stack_metadata(*args, **kwargs):
@@ -320,7 +315,7 @@ def delete_stack(stack, host=None, port=None, owner=None,
 
     """
     request_url = format_preamble(host, port, owner, project, stack)
-    r = session.delete(request_url)
+    r = rest_delete(session,request_url)
     logger.debug(r.text)
     return r
 
@@ -351,7 +346,7 @@ def delete_section(stack, z, host=None, port=None, owner=None,
     """
     request_url = '{}/z/{}'.format(
         format_preamble(host, port, owner, project, stack), z)
-    r = session.delete(request_url)
+    r = rest_delete(session,request_url)
     logger.debug(r.text)
     return r
 
@@ -384,7 +379,7 @@ def delete_tile(stack, tileId, host=None, port=None, owner=None,
     """
     request_url = '{}/tile/{}'.format(
         format_preamble(host, port, owner, project, stack), tileId)
-    r = session.delete(request_url)
+    r = rest_delete(session,request_url)
     logger.debug(r.text)
     return r
 
@@ -536,13 +531,8 @@ def get_z_values_for_stack(stack, project=None, host=None, port=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + "/zValues/"
     logger.debug(request_url)
-    r = session.get(request_url)
-    try:
-        return r.json()
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
+    return get_json(session,request_url)
+
 
 
 def get_z_value_for_section(stack, sectionId, **kwargs):
@@ -596,13 +586,7 @@ def get_bounds_from_z(stack, z, host=None, port=None, owner=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + '/z/%f/bounds' % (z)
 
-    r = session.get(request_url)
-    try:
-        return r.json()
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
+    return get_json(session,request_url)
 
 
 @renderaccess
@@ -633,13 +617,8 @@ def get_stack_bounds(stack, host=None, port=None, owner=None, project=None,
     """
     request_url = format_preamble(
         host, port, owner, project, stack) + '/bounds'
-    r = session.get(request_url)
-    try:
-        return r.json()
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
+    return get_json(session,request_url)
+
 
 
 @renderaccess
@@ -717,13 +696,7 @@ def get_stack_sectionData(stack, host=None, port=None, owner=None,
     """
     request_url = format_preamble(
         host, port, owner, project, stack) + '/sectionData'
-    r = session.get(request_url)
-    try:
-        return r.json()
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
+    return get_json(session,request_url)
 
 
 @renderaccess
@@ -756,13 +729,8 @@ def get_section_z_value(stack, sectionId, host=None, port=None,
     """
     request_url = format_preamble(
         host, port, owner, project, stack) + "/section/%s/z" % sectionId
-    r = session.get(request_url)
-    try:
-        return float(r.json())
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
+    return get_json(session,request_url)
+
 
 
 @renderaccess
