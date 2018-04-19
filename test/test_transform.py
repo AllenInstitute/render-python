@@ -5,7 +5,6 @@ import scipy.linalg
 import rendersettings
 import importlib
 import pytest
-import rendersettings   
 
 def cross_py23_reload(module):
     try:
