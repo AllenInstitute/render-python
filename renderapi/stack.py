@@ -3,7 +3,7 @@ import logging
 from time import strftime
 import requests
 from .errors import RenderError
-from .utils import jbool, NullHandler, post_json, put_json
+from .utils import jbool, NullHandler, post_json, put_json,rest_delete
 from .render import (format_baseurl, format_preamble,
                      renderaccess)
 from .utils import get_json
@@ -315,7 +315,7 @@ def delete_stack(stack, host=None, port=None, owner=None,
 
     """
     request_url = format_preamble(host, port, owner, project, stack)
-    r = session.delete(request_url)
+    r = rest_delete(session,request_url)
     logger.debug(r.text)
     return r
 
@@ -346,7 +346,7 @@ def delete_section(stack, z, host=None, port=None, owner=None,
     """
     request_url = '{}/z/{}'.format(
         format_preamble(host, port, owner, project, stack), z)
-    r = session.delete(request_url)
+    r = rest_delete(session,request_url)
     logger.debug(r.text)
     return r
 
@@ -379,7 +379,7 @@ def delete_tile(stack, tileId, host=None, port=None, owner=None,
     """
     request_url = '{}/tile/{}'.format(
         format_preamble(host, port, owner, project, stack), tileId)
-    r = session.delete(request_url)
+    r = rest_delete(session,request_url)
     logger.debug(r.text)
     return r
 

@@ -94,16 +94,30 @@ def post_json(session, request_url, d, params=None):
         headers['Accept'] = "application/json"
     r = session.post(request_url, data=payload, params=params,
                      headers=headers)
-    try:
-        return r
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
+    if r.status_code not in [200,201,204]:
         raise RenderError(
-            'cannot post {} to {} with params {}'.format(
-                d, request_url, params))
+            'cannot post {} to {} with params {} returned status_code {}'.format(
+                d, request_url, params,r.status_code))
+    return r
+    
+def rest_delete(session,request_url,params=None):
+    """DELETE requests with RenderError handling
 
-
+    Parameters
+    ----------
+    session : requests.session.Session
+        requests session
+    request_url : str
+        url
+    Returns
+    -------
+    requests.response
+        server response
+    """
+    r = session.delete(request_url)
+    if r.status_code not in [200,202,204]:
+        raise RenderError("delete of {} returned {}".format(r.url,r.status_code))
+    return r
 def put_json(session, request_url, d, params=None):
     """PUT requests with RenderError handling
 
@@ -137,15 +151,12 @@ def put_json(session, request_url, d, params=None):
         headers['Accept'] = "application/json"
     r = session.put(request_url, data=payload, params=params,
                     headers=headers)
-    try:
-        return r
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
+    if r.status_code not in [200,201,204]:
         raise RenderError(
-            'cannot put {} to {} with params {}'.format(
-                d, request_url, params))
-
+            'put {} to {} returned status code {}'.format(
+                d, r.url,r.status_code))
+    return r
+   
 def get_json(session,request_url,params=None,stream=False,**kwargs):
     """get_json wrapper for requests to handle errors
 

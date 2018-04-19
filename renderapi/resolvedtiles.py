@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from .tilespec import TileSpec
 from .transform import load_transform_json
-from .utils import NullHandler, put_json, jbool
+from .utils import NullHandler, put_json, jbool, get_json
 from .render import format_preamble, renderaccess
 from .errors import RenderError
 import logging
@@ -123,11 +123,5 @@ def get_resolved_tiles_from_z(stack, z, host=None, port=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + '/z/%f/resolvedTiles' % (z)
     logger.debug(request_url)
-    r = session.get(request_url)
-    try:
-        d = r.json()
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
+    d= get_json(session,request_url)
     return ResolvedTiles(json=d)
