@@ -332,27 +332,25 @@ def import_tilespecs(stack, tilespecs, sharedTransforms=None,
                       tilespecs=tilespecs,
                       shared_transforms=sharedTransforms,
                       host=host,port=port,owner=owner,project=project,**kwargs)
+    else:
+        tsjson = renderdump_temp(tilespecs)
 
+        if sharedTransforms is not None:
+            trjson = renderdump_temp(sharedTransforms)
 
-    tsjson = renderdump_temp(tilespecs)
+        importJsonClient(stack, tileFiles=[tsjson], transformFile=(
+            trjson if sharedTransforms is not None else None),
+            subprocess_mode=subprocess_mode, host=host, port=port,
+            owner=owner, project=project,
+            client_script=client_script, memGB=memGB, **kwargs)
 
-    if sharedTransforms is not None:
-        trjson = renderdump_temp(sharedTransforms)
-
-    importJsonClient(stack, tileFiles=[tsjson], transformFile=(
-        trjson if sharedTransforms is not None else None),
-        subprocess_mode=subprocess_mode, host=host, port=port,
-        owner=owner, project=project,
-        client_script=client_script, memGB=memGB, **kwargs)
-
-    os.remove(tsjson)
-    if sharedTransforms is not None:
-        os.remove(trjson)
+        os.remove(tsjson)
+        if sharedTransforms is not None:
+            os.remove(trjson)
 
 
 @renderclientaccess
-def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
-                              
+def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,                          
                               subprocess_mode=None, poolsize=20,
                               mpPool=WithPool,
                               close_stack=True, host=None, port=None,
@@ -379,6 +377,7 @@ def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
         mark render stack as COMPLETE after successful import
     render : :class:renderapi.render.Render
         render connect object
+    kwargs: dict .. all other kwargs to pass on to renderapi.client.import_tilespecs
     """
     set_stack_state(stack, 'LOADING', host, port, owner, project)
     partial_import = partial(
