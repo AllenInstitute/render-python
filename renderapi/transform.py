@@ -1387,8 +1387,15 @@ def estimate_dstpts(transformlist, src=None, reference_tforms=None):
             dstpts = estimate_dstpts(tform, dstpts,reference_tforms)
         elif isinstance(tform,TransformList):
             dstpts = estimate_dstpts(tform.tforms,dstpts,reference_tforms)
-        elif isinstance(tform,ReferenceTransform):
-            tform_deref= next(tf for tf in reference_tforms if tf.refId==tform.transformId)
+        elif isinstance(tform,ReferenceTransform):       
+            try:
+                tform_deref= next(tf for tf in reference_tforms if tf.transformId==tform.refId)
+            except TypeError:
+                raise RenderError("you supplied a set of tranforms that includes a reference transform,\
+                                   but didn't supply a set of reference transforms to enable dereferencing")
+            except StopIteration:
+                raise RenderError("the list of transforms you provided references transorm {} but that transform\
+                                    could not be found in the list of reference transforms".format(tform.refId))
             dstpts=estimate_dstpts([tform_deref],dstpts,reference_tforms)
         else:
             dstpts = tform.tform(dstpts)

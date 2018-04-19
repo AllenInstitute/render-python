@@ -5,7 +5,7 @@ import scipy.linalg
 import rendersettings
 import importlib
 import pytest
-
+import rendersettings   
 
 def cross_py23_reload(module):
     try:
@@ -457,3 +457,30 @@ def test_load_json_transforms(transform_class, transform_json):
             transform_json['metaData']['labels'])
     assert (tform.className == tform_d['className'] ==
             transform_json['className'])
+
+@pytest.fixture(scope='module')
+def referenced_tilespecs_and_transforms():
+    with open(rendersettings.REFERENCE_TRANSFORM_TILESPECS,'r') as fp:
+        ds = json.load(fp)
+        tilespecs = [renderapi.tilespec.TileSpec(json=d) for d in ds]
+
+    with open(rendersettings.REFERENCE_TRANSFORM_SPECS,'r') as fp:
+        ds = json.load(fp)
+        transforms = [renderapi.transform.load_transform_json(tf) for tf in ds]
+    return tilespecs,transforms
+
+def test_estimate_dstpoints_reference(referenced_tilespecs_and_transforms):
+    tilespecs,transforms = referenced_tilespecs_and_transforms
+
+    ticks = np.arange(0,2048,64,np.float)
+    xx,yy = np.meshgrid(ticks,ticks)
+    x = np.ravel(xx).T
+    y = np.ravel(yy).T
+    xy = np.vstack((x,y)).T
+
+    xyt=renderapi.transform.estimate_dstpts(tilespecs[0].tforms,xy,transforms)
+    assert(xy.shape==xyt.shape)
+    with pytest.raises(renderapi.errors.RenderError):
+        renderapi.transform.estimate_dstpts(tilespecs[0].tforms,xy)
+    with pytest.raises(renderapi.errors.RenderError):
+        renderapi.transform.estimate_dstpts(tilespecs[0].tforms,xy,[transforms[2]])
