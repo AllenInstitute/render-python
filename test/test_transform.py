@@ -6,7 +6,7 @@ import rendersettings
 import importlib
 import pytest
 
-EPSILON = 0.0000000000001
+EPSILON = 0.0000000001
 def cross_py23_reload(module):
     try:
         reload(module)
