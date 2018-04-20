@@ -58,7 +58,7 @@ def world_to_local_coordinates(stack, z, x, y, host=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%d/world-to-local-coordinates/%f,%f" % (z, x, y)
-    return get_json(session,request_url)
+    return get_json(session, request_url)
 
 
 @renderaccess
@@ -103,8 +103,7 @@ def local_to_world_coordinates(stack, tileId, x, y,
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/tile/%s/local-to-world-coordinates/%f,%f" % (tileId, x, y)
-    return get_json(session,request_url)
-
+    return get_json(session, request_url)
 
 
 @renderaccess
@@ -252,7 +251,7 @@ def package_point_match_data_into_json(dataarray, tileId,
     dict
         dictionary representation of those points and tileId
         following
-        
+
         ::
 
             {
@@ -513,7 +512,7 @@ def map_coordinates_clientside(stack, jsondata, z, host, port, owner,
     json
         json data as would be returned by client calls
         of local>world or world>local
-    """
+    """  # noqa: E501
     # write point match json to temp file on disk
     with tempfile.NamedTemporaryFile(
             prefix='render_coordinates_in_', suffix='.json',
