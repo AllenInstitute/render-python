@@ -222,9 +222,13 @@ def test_renderSectionClient(render, teststack, bounds, raises, scale=.05):
                 img = PIL.Image.open(f)
                 width, height = img.size
                 assert(
-                    np.abs(width - (bounds['maxX'] - bounds['minX']) * scale) < 1)
+                    np.abs(
+                        width - (bounds['maxX'] - bounds['minX']) * scale) < 1)
                 assert(
-                    np.abs(height - (bounds['maxY'] - bounds['minY']) * scale) < 1)
+                    np.abs(
+                        height -
+                        (bounds['maxY'] - bounds['minY']) * scale) < 1
+                      )
 
 
 def test_importTransformChangesClient(render, teststack):
