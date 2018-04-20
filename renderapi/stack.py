@@ -447,8 +447,8 @@ def create_stack(stack, cycleNumber=None, cycleStepNumber=None,
 
 @renderaccess
 def rename_stack(stack, to_stack, to_project=None, to_owner=None,
-    host=None, port=None, owner=None, project=None, session=requests.session(),
-    render=None, **kwargs):
+                 host=None, port=None, owner=None, project=None,
+                 session=requests.session(), render=None, **kwargs):
     """
      :func:`renderapi.render.renderaccess` decorated function
 
@@ -471,15 +471,17 @@ def rename_stack(stack, to_stack, to_project=None, to_owner=None,
     -------
     requests.session.response
         server response
-    """
+    """  # noqa: E501
 
-    request_url = format_preamble(host,port,owner,project,stack)+"/stackId"
+    request_url = format_preamble(
+        host, port, owner, project, stack) + "/stackId"
     d = {
         "owner": owner if to_owner is None else to_owner,
         "project": project if to_project is None else to_project,
         "stack": stack if to_stack is None else to_stack
-    }   
-    return put_json(session,request_url,d)
+    }
+    return put_json(session, request_url, d)
+
 
 @renderaccess
 def clone_stack(inputstack, outputstack, skipTransforms=False, toProject=None,
