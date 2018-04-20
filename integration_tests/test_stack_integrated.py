@@ -458,3 +458,20 @@ def test_put_tilespecs_fail(render):
     with pytest.raises(renderapi.errors.RenderError):
         r=renderapi.resolvedtiles.put_tilespecs('fail_stack',render=render)
         
+def test_bad_delete(render):
+    with pytest.raises(renderapi.errors.RenderError):
+        renderapi.stack.delete_stack('not_a_stack',render=render)
+
+def test_bad_get(render):
+    with pytest.raises(renderapi.errors.RenderError):
+        renderapi.stack.get_stack_metadata('not_a_stack',render=render)
+
+def test_bad_post(render):
+    sv = renderapi.stack.StackVersion()
+    with pytest.raises(renderapi.errors.RenderError):
+        renderapi.stack.set_stack_metadata('not_a_stack',sv,render=render)
+
+def test_bad_put(render):
+    with pytest.raises(renderapi.errors.RenderError):
+        renderapi.stack.clone_stack('not_a_stack','not_getting_here',render=render)
+        
