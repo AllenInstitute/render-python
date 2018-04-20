@@ -3,7 +3,7 @@
 coordinate mapping functions for render api
 '''
 from .render import format_preamble, renderaccess
-from .utils import NullHandler, renderdumps, renderdump
+from .utils import NullHandler, renderdumps, renderdump, get_json
 from .client import coordinateClient
 from .errors import RenderError
 import requests
@@ -58,12 +58,7 @@ def world_to_local_coordinates(stack, z, x, y, host=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/z/%d/world-to-local-coordinates/%f,%f" % (z, x, y)
-    r = session.get(request_url)
-    try:
-        return r.json()
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
+    return get_json(session,request_url)
 
 
 @renderaccess
@@ -108,12 +103,8 @@ def local_to_world_coordinates(stack, tileId, x, y,
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/tile/%s/local-to-world-coordinates/%f,%f" % (tileId, x, y)
-    r = session.get(request_url)
-    try:
-        return r.json()
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
+    return get_json(session,request_url)
+
 
 
 @renderaccess

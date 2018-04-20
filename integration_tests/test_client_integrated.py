@@ -6,10 +6,8 @@ import logging
 import sys
 import json
 import numpy as np
-import dill
 from test_data import (render_host, render_port,
                        client_script_location, tilespec_file, tform_file, test_pool_size)
-from pathos.multiprocessing import ProcessingPool as Pool
 import PIL
 
 root = logging.getLogger()
@@ -88,29 +86,52 @@ def test_failed_jsonfiles_validate_client(
             stack, ['not_a_file'], render=render,
             subprocess_mode=call_mode)
 
+@pytest.mark.parametrize('use_rest,stack',
+                        [(True,'test_import_jsonfiles_parallel'),
+                         (False,'test_import_jsonfiles_parallel_rest')])                                
 def test_import_jsonfiles_parallel(
-        render, render_example_tilespec_and_transforms,
-        stack='test_import_jsonfiles_parallel', poolsize=test_pool_size):
+        render, render_example_tilespec_and_transforms, 
+        stack, use_rest,
+        poolsize=test_pool_size):
     renderapi.stack.create_stack(stack, render=render)
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     (tfiles, transformFile) = render_example_json_files(
         render_example_tilespec_and_transforms)
     renderapi.client.import_jsonfiles_parallel(
         stack, tfiles, transformFile=transformFile,
-        render=render, poolsize=poolsize)
+        render=render, poolsize=poolsize, use_rest=use_rest)
     validate_stack_import(render, stack, tilespecs)
     renderapi.stack.delete_stack(stack, render=render)
 
+def test_bbox_transformed(render, render_example_tilespec_and_transforms):
+    (tilespecs, tforms) = render_example_tilespec_and_transforms
+    ts = tilespecs[0]
+    xy = ts.bbox_transformed(ndiv_inner=0,tf_limit=0)
+    assert xy.shape == (5,2)
+    assert np.abs((xy[2,:]-np.array([ts.width,ts.height])).sum()) < 1e-10
+    xy = ts.bbox_transformed(ndiv_inner=1,tf_limit=0)
+    assert xy.shape == (9,2)
+    #xy = ts.bbox_transformed(ndiv_inner=1,tf_limit=4)
+    #assert xy.shape == (9,2)
+    #xy = ts.bbox_transformed(ndiv_inner=1,tf_limit=None)
+    #assert xy.shape == (9,2)
 
+
+def square(x):
+    return x**2
+#this test was added in order to validate that multiple WithPools would work
+#pathos was breaking when we did this before.  Should now be not relevant, 
+#but who ever deletes a test if you don't have to.
 def test_import_jsonfiles_parallel_multiple(
         render, render_example_tilespec_and_transforms, poolsize=test_pool_size):
     stacks = ['testmultiple1', 'testmultiple2', 'testmultiple3']
     mylist = range(10)
     for stack in stacks:
         with renderapi.client.WithPool(poolsize) as pool:
-            results = pool.map(lambda x: x**2, mylist)
+            results = pool.map(square, mylist)
         test_import_jsonfiles_parallel(
-            render, render_example_tilespec_and_transforms, stack, poolsize=poolsize)
+            render, render_example_tilespec_and_transforms, stack, 
+            use_rest=False,poolsize=poolsize)
 
 
 def test_import_tilespecs_parallel(render,
@@ -242,3 +263,34 @@ def test_transformSectionClient(render, teststack,
     assert all([ts.tforms[-1].to_dict() == tform.to_dict()
                 for ts in output_ts])
     renderapi.stack.delete_stack(deststack, render=render)
+
+def test_point_match_client(teststack, render,tmpdir):
+    collection = 'test_client_collection'
+    zvalues = np.array(renderapi.stack.get_z_values_for_stack(
+        teststack, render=render))
+    tilepairjson = renderapi.client.tilePairClient(
+        teststack, np.min(zvalues), np.max(zvalues), render=render)
+
+    tile_pairs = [(tp['p']['id'],tp['q']['id']) for tp in tilepairjson['neighborPairs'][0:1]]
+    sift_options = renderapi.client.SiftPointMatchOptions(renderScale=.25)
+    renderapi.client.pointMatchClient(teststack,
+                                      collection,
+                                      tile_pairs,
+                                      debugDirectory=tmpdir,
+                                      sift_options=sift_options,
+                                      render=render)
+    tp = tilepairjson['neighborPairs'][0]
+    pms = renderapi.pointmatch.get_matches_involving_tile(collection,tp['p']['groupId'],tp['p']['id'],render=render)
+    assert(len(pms)>0)
+
+
+def test_call_run_ws_client_renderclient(render, teststack):
+    # class for this test should be something relatively lightweight....
+    test_class = 'org.janelia.render.client.ValidateTilesClient'
+    zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
+    args = renderapi.stack.make_stack_params(
+        render.DEFAULT_HOST, render.DEFAULT_PORT, render.DEFAULT_OWNER,
+        render.DEFAULT_PROJECT, teststack) + [zvalues[0]]
+    assert not renderapi.client.call_run_ws_client(
+        test_class, add_args=args, subprocess_mode='call', renderclient=render)
+

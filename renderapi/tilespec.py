@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 import logging
 import requests
+import numpy as np
 from .render import format_preamble, renderaccess
-from .utils import NullHandler
+from .utils import NullHandler, get_json
 from .stack import get_z_values_for_stack
-from .transform import TransformList
+from .transform import TransformList,estimate_dstpts
 from .errors import RenderError
 from .image_pyramid import MipMapLevel, ImagePyramid
 from .layout import Layout
@@ -117,6 +118,44 @@ class TileSpec:
             logger.error(
                 'undefined bounding box for tile {}'.format(self.tileId))
         return box
+
+    def bbox_transformed(self,ndiv_inner=0,tf_limit=None, reference_tforms=None):
+        """method to return Nx2 transformed coordinates of bounding box
+        Paramters
+        ---------
+        ndiv_inner : starting with just corner points, add intermediate
+            points to the boundary, recursively, ndiv_inner times
+        tf_limit :
+            0 returns the raw bounding box
+            1 returns the bounding box with the first transform applied
+            ...
+            None all transforms are applied
+
+        Returns
+        -------
+        Nx2 array ready for input to shapely.Polygon()
+        """
+        #start with closed Nx2 array of corners
+        xy = np.zeros((5,2)).astype('float')
+        xy[0,:] = [0,0]
+        xy[1,:] = [0,self.height]
+        xy[2,:] = [self.width,self.height]
+        xy[3,:] = [self.width,0]
+        xy[4,:] = [0,0]
+    
+        #recursively add points to the boundary
+        while ndiv_inner>0:
+            sz = 2*xy.shape[0]-1
+            newxy = np.zeros((sz,2)).astype('float')
+            newxy[0::2,:] = xy[:,:]
+            newxy[1:sz:2,:] = 0.5*(newxy[0:(sz-2):2,:] + newxy[2:sz:2,:])
+            xy = newxy
+            ndiv_inner-=1
+
+        xy = estimate_dstpts(self.tforms[0:tf_limit], \
+                             src=xy, reference_tforms=reference_tforms)
+
+        return xy
 
     def to_dict(self):
         """method to produce a json tilespec for this tile
@@ -243,14 +282,8 @@ def get_tile_spec_renderparameters(stack, tile, host=None, port=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/tile/%s/render-parameters" % (tile)
-    r = session.get(request_url)
-    try:
-        tilespec_json = r.json()
-        return tilespec_json
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
+    return get_json(session,request_url)
+
 
 
 @renderaccess
@@ -317,14 +350,8 @@ def get_tile_spec_raw(stack, tile, host=None, port=None, owner=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/tile/%s/" % (tile)
-    r = session.get(request_url)
-    try:
-        tilespec_json = r.json()
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
-    return TileSpec(json=tilespec_json)
+    return TileSpec(json=get_json(session,request_url))
+
 
 
 @renderaccess
@@ -417,13 +444,7 @@ def get_tile_specs_from_box(stack, z, x, y, width, height,
         "/z/%d/box/%d,%d,%d,%d,%3.2f/render-parameters" % (
         z, x, y, width, height, scale)
     logger.debug(request_url)
-    r = session.get(request_url)
-    try:
-        tilespecs_json = r.json()
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
+    tilespecs_json = get_json(session,request_url)
     return [TileSpec(json=tilespec_json)
             for tilespec_json in tilespecs_json['tileSpecs']]
 
@@ -455,13 +476,7 @@ def get_tile_specs_from_z(stack, z, host=None, port=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + '/z/%f/tile-specs' % (z)
     logger.debug(request_url)
-    r = session.get(request_url)
-    try:
-        tilespecs_json = r.json()
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
+    tilespecs_json = get_json(session,request_url)
 
     if len(tilespecs_json) == 0:
         return None

@@ -1,9 +1,6 @@
 requests
 numpy
 pillow
-dill>=0.2.6
-pathos
 sphinxcontrib-napoleon
 decorator
-tifffile
-boto3
+six

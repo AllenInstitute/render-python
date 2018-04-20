@@ -8,27 +8,85 @@ from functools import partial
 import logging
 import subprocess
 import tempfile
+from decorator import decorator
 from .errors import ClientScriptError
-from .utils import NullHandler, renderdump_temp
-from .render import RenderClient, renderaccess
+from .utils import NullHandler, renderdump_temp, fitargspec
+from .render import RenderClient, renderaccess, Render, format_preamble, format_baseurl
 from .stack import set_stack_state, make_stack_params
-from pathos.multiprocessing import ProcessingPool as Pool
+from .resolvedtiles import put_tilespecs
+from multiprocessing.pool import Pool
 
 # setup logger
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
 
 
+@decorator
+def renderclientaccess(f, *args, **kwargs):
+    """Decorator allowing functions asking for host, port, owner, project,
+    client_script to default to a connection defined by :class:`RenderClient`
+    object using its :func:`RenderClient.make_kwargs` method.
+    Will also attempt to derive a :class:`RenderClient` from an input
+    :class:`Render` object and fail if client scripts cannot be reached.
+
+    Parameters
+    ----------
+    f : func
+        function to decorate
+    Returns
+    -------
+    obj
+        output of decorated function
+    """
+    args, kwargs = fitargspec(f, args, kwargs)
+    render = kwargs.get('render')
+    if render is not None:
+        if not isinstance(render, RenderClient):
+            if isinstance(render, Render):
+                render = RenderClient(**render.make_kwargs(**kwargs))
+            else:
+                raise ValueError(
+                    'invalid RenderClient object type {} specified!'.format(
+                        type(render)))
+        return f(*args, **render.make_kwargs(**kwargs))
+    else:
+        try:
+            client_script = kwargs.get('client_script')
+            cs_valid = os.path.isfile(client_script)
+        except TypeError as e:
+            try:
+                client_scripts = kwargs.get('client_scripts')
+                if os.path.isdir(client_scripts):
+                    client_script = os.path.join(client_scripts,
+                                                 'run_ws_client.sh')
+                    cs_valid = os.path.isfile(client_script)
+                else:
+                    raise ClientScriptError(
+                        'invalid client_scripts directory {}'.format(
+                            client_scripts))
+            except TypeError as e:
+                raise ClientScriptError(
+                    'No client script information specified: '
+                    'client_scripts={} client_script={}'.format(
+                        kwargs.get('client_scripts'),
+                        kwargs.get('client_script')))
+        if not cs_valid:
+            # TODO should also check for executability
+            raise ClientScriptError(
+                'invalid client script: {} not a file'.format(client_script))
+    return f(*args, **kwargs)
+
+
 class WithPool(Pool):
-    """pathos ProcessingPool with functioning __exit__ call
+    """Multiprocessing.pool.Pool with functioning __exit__ call
 
     Parameters
     ----------
     *args
         variable length argument list matching input
-        to pathos.multiprocessing.Pool
+        to multiprocessing.pool.Pool
     **kwargs
-        keyword argument input matching pathos.multiprocessing.Pool
+        keyword argument input matching multiprocessing.pool.Pool
 
     Examples
     --------
@@ -39,11 +97,15 @@ class WithPool(Pool):
     def __init__(self, *args, **kwargs):
         super(WithPool, self).__init__(*args, **kwargs)
 
+    def __enter__(self):
+        return self
+
     def __exit__(self, *args, **kwargs):
-        super(WithPool, self)._clear()
+        self.close()
+        self.join()
 
 
-@renderaccess
+@renderclientaccess
 def import_single_json_file(stack, jsonfile, transformFile=None,
                             subprocess_mode=None,
                             client_script=None, memGB=None, host=None, port=None,
@@ -70,12 +132,13 @@ def import_single_json_file(stack, jsonfile, transformFile=None,
         host, port, owner, project, stack)
     call_run_ws_client('org.janelia.render.client.ImportJsonClient',
                        stack_params + transform_params + [jsonfile],
-                       client_script=client_script, memGB=memGB, subprocess_mode=subprocess_mode)
+                       client_script=client_script, memGB=memGB,
+                       subprocess_mode=subprocess_mode, **kwargs)
 
 
-@renderaccess
+@renderclientaccess
 def import_jsonfiles_and_transforms_parallel_by_z(
-        stack, jsonfiles, transformfiles, poolsize=20,
+        stack, jsonfiles, transformfiles, poolsize=20, mpPool=WithPool,
         client_scripts=None, host=None, port=None, owner=None,
         project=None, close_stack=True, render=None, **kwargs):
     """imports json files and transform files in parallel
@@ -106,16 +169,16 @@ def import_jsonfiles_and_transforms_parallel_by_z(
     partial_import = partial(import_single_json_file, stack, render=render,
                              client_scripts=client_scripts, host=host,
                              port=port, owner=owner, project=project)
-    with WithPool(poolsize) as pool:
+    with mpPool(poolsize) as pool:
         pool.map(partial_import, jsonfiles, transformfiles)
 
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
 
-@renderaccess
+@renderclientaccess
 def import_jsonfiles_parallel(
-        stack, jsonfiles, poolsize=20, transformFile=None,
+        stack, jsonfiles, poolsize=20, transformFile=None, mpPool=WithPool,
         client_scripts=None, host=None, port=None, owner=None,
         project=None, close_stack=True, render=None, **kwargs):
     """import jsons using client script in parallel
@@ -145,8 +208,8 @@ def import_jsonfiles_parallel(
                              transformFile=transformFile,
                              client_scripts=client_scripts,
                              host=host, port=port, owner=owner,
-                             project=project)
-    with WithPool(poolsize) as pool:
+                             project=project, **kwargs)
+    with mpPool(poolsize) as pool:
         pool.map(partial_import, jsonfiles)
 
     if close_stack:
@@ -183,12 +246,13 @@ def import_jsonfiles(stack, jsonfiles, transformFile=None, subprocess_mode=None,
         host, port, owner, project, stack)
     call_run_ws_client('org.janelia.render.client.ImportJsonClient',
                        stack_params + transform_params + jsonfiles,
-                       client_script=client_script, memGB=memGB, subprocess_mode=subprocess_mode)
+                       client_script=client_script, memGB=memGB,
+                       subprocess_mode=subprocess_mode, **kwargs)
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
 
-@renderaccess
+@renderclientaccess
 def import_jsonfiles_validate_client(stack, jsonfiles,
                                      transformFile=None, client_script=None,
                                      host=None, port=None, owner=None,
@@ -230,14 +294,16 @@ def import_jsonfiles_validate_client(stack, jsonfiles,
                        validator_params +
                        transform_params +
                        jsonfiles, client_script=client_script,
-                       memGB=memGB, subprocess_mode=subprocess_mode)
+                       memGB=memGB, subprocess_mode=subprocess_mode,
+                       **kwargs)
 
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
 
-@renderaccess
+@renderclientaccess
 def import_tilespecs(stack, tilespecs, sharedTransforms=None,
+                     use_rest=False,deriveData=True,
                      subprocess_mode=None, host=None, port=None,
                      owner=None, project=None, client_script=None,
                      memGB=None, render=None, **kwargs):
@@ -252,29 +318,41 @@ def import_tilespecs(stack, tilespecs, sharedTransforms=None,
         list of tilespecs to import
     sharedTransforms : :obj:`list` of :class:`renderapi.transform.Transform` or :class:`renderapi.transform.TransformList` or :class:`renderapi.transform.InterpolatedTransform`, optional
         list of shared referenced transforms to be ingested
+    use_rest: bool
+        whether to import the tilespecs using the post method directly with deriveData=True
+    deriveData: bool
+        if doing use_rest, will determine whether to have the server calculate bounds (default=True)
     render : renderapi.render.Render
         render connect object
 
     """
-    tsjson = renderdump_temp(tilespecs)
+    if use_rest:
+        put_tilespecs(stack,
+                      deriveData=deriveData,
+                      tilespecs=tilespecs,
+                      shared_transforms=sharedTransforms,
+                      host=host,port=port,owner=owner,project=project,**kwargs)
+    else:
+        tsjson = renderdump_temp(tilespecs)
 
-    if sharedTransforms is not None:
-        trjson = renderdump_temp(sharedTransforms)
+        if sharedTransforms is not None:
+            trjson = renderdump_temp(sharedTransforms)
 
-    importJsonClient(stack, tileFiles=[tsjson], transformFile=(
-        trjson if sharedTransforms is not None else None),
-        subprocess_mode=subprocess_mode, host=host, port=port,
-        owner=owner, project=project,
-        client_script=client_script, memGB=memGB)
+        importJsonClient(stack, tileFiles=[tsjson], transformFile=(
+            trjson if sharedTransforms is not None else None),
+            subprocess_mode=subprocess_mode, host=host, port=port,
+            owner=owner, project=project,
+            client_script=client_script, memGB=memGB, **kwargs)
 
-    os.remove(tsjson)
-    if sharedTransforms is not None:
-        os.remove(trjson)
+        os.remove(tsjson)
+        if sharedTransforms is not None:
+            os.remove(trjson)
 
 
-@renderaccess
+@renderclientaccess
 def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
                               subprocess_mode=None, poolsize=20,
+                              mpPool=WithPool,
                               close_stack=True, host=None, port=None,
                               owner=None, project=None,
                               client_script=None, memGB=None, render=None,
@@ -299,6 +377,7 @@ def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
         mark render stack as COMPLETE after successful import
     render : :class:renderapi.render.Render
         render connect object
+    kwargs: dict .. all other kwargs to pass on to renderapi.client.import_tilespecs
     """
     set_stack_state(stack, 'LOADING', host, port, owner, project)
     partial_import = partial(
@@ -308,15 +387,16 @@ def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
         memGB=memGB, **kwargs)
 
     # TODO this is a weird way to do splits.... is that okay?
-    tilespec_groups = [tilespecs[i::poolsize] for i in range(poolsize)]
-    with WithPool(poolsize) as pool:
+    tilespec_groups = [g for g in
+                       (tilespecs[i::poolsize] for i in range(poolsize)) if g]
+    with mpPool(poolsize) as pool:
         pool.map(partial_import, tilespec_groups)
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
 
 # TODO handle fromJson and toJson persistence in these calls
-@renderaccess
+@renderclientaccess
 def local_to_world_array(stack, points, tileId, subprocess_mode=None,
                          host=None, port=None, owner=None, project=None,
                          client_script=None, memGB=None,
@@ -342,7 +422,7 @@ def local_to_world_array(stack, points, tileId, subprocess_mode=None,
     raise NotImplementedError('Whoops')
 
 
-@renderaccess
+@renderclientaccess
 def world_to_local_array(stack, points, subprocess_mode=None,
                          host=None, port=None, owner=None, project=None,
                          client_script=None, memGB=None,
@@ -369,8 +449,27 @@ def world_to_local_array(stack, points, subprocess_mode=None,
     raise NotImplementedError('Whoops.')
 
 
+def run_subprocess_mode(args, subprocess_mode=None, **kwargs):
+    subprocess_options = ['bufsize', 'executable', 'stdin', 'stdout',
+                          'stderr', 'preexec_fn', 'close_fds', 'shell',
+                          'cwd', 'env', 'universal_newlines', 'startupinfo',
+                          'creationflags']
+    subprocess_kwargs = {k: v for k, v in kwargs.items()
+                         if k in subprocess_options}
+    subprocess_modes = {'call': subprocess.call,
+                        'check_call': subprocess.check_call,
+                        'check_output': subprocess.check_output,
+                        None: subprocess.check_call}
+    if subprocess_mode not in subprocess_modes:
+        logger.warning(
+            'Unknown subprocess mode {} specified -- '
+            'using default subprocess.check_call'.format(subprocess_mode))
+    sub_mode = subprocess_modes.get(subprocess_mode, subprocess.check_call)
+    return sub_mode(args, **subprocess_kwargs)
+
+
 def call_run_ws_client(className, add_args=[], renderclient=None,
-                       memGB=None, client_script=None, subprocess_mode=None,
+                       memGB=None, client_script=None,
                        **kwargs):
     """simple call for run_ws_client.sh -- all arguments set in add_args
 
@@ -405,38 +504,28 @@ def call_run_ws_client(className, add_args=[], renderclient=None,
     if renderclient is not None:
         if isinstance(renderclient, RenderClient):
             return call_run_ws_client(className, add_args=add_args,
-                                      subprocess_mode=subprocess_mode,
                                       **renderclient.make_kwargs(
                                           memGB=memGB,
-                                          client_script=client_script))
+                                          client_script=client_script,
+                                          **kwargs))
     if memGB is None:
         logger.warning('call_run_ws_client requires memory specification -- '
                        'defaulting to 1G')
         memGB = '1G'
-
-    subprocess_modes = {'call': subprocess.call,
-                        'check_call': subprocess.check_call,
-                        'check_output': subprocess.check_output}
-    if subprocess_mode not in subprocess_modes:
-        logger.warning(
-            'Unknown subprocess mode {} specified -- '
-            'using default subprocess.call'.format(subprocess_mode))
     args = map(str, [client_script, memGB, className] + add_args)
-    sub_mode = subprocess_modes.get(subprocess_mode, subprocess.check_call)
     try:
-        ret_val = sub_mode(args)
+        ret_val = run_subprocess_mode(args, **kwargs)
     except subprocess.CalledProcessError as e:
         raise ClientScriptError('client_script call {} failed'.format(args))
 
     return ret_val
 
 
-
 def get_param(var, flag):
     return ([flag, var] if var is not None else [])
 
 
-@renderaccess
+@renderclientaccess
 def importJsonClient(stack, tileFiles=None, transformFile=None,
                      subprocess_mode=None,
                      host=None, port=None, owner=None, project=None,
@@ -463,10 +552,10 @@ def importJsonClient(stack, tileFiles=None, transformFile=None,
               else [tileFiles]))
     call_run_ws_client('org.janelia.render.client.ImportJsonClient',
                        add_args=argvs, subprocess_mode=subprocess_mode,
-                       client_script=client_script, memGB=memGB)
+                       client_script=client_script, memGB=memGB, **kwargs)
 
 
-@renderaccess
+@renderclientaccess
 def tilePairClient(stack, minz, maxz, outjson=None, delete_json=False,
                    baseowner=None, baseproject=None, basestack=None,
                    xyNeighborFactor=None, zNeighborDistance=None,
@@ -567,7 +656,7 @@ def tilePairClient(stack, minz, maxz, outjson=None, delete_json=False,
     call_run_ws_client('org.janelia.render.client.TilePairClient',
                        memGB=memGB, client_script=client_script,
                        subprocess_mode=subprocess_mode,
-                       add_args=argvs)
+                       add_args=argvs, **kwargs)
 
     with open(outjson, 'r') as f:
         jsondata = json.load(f)
@@ -577,7 +666,7 @@ def tilePairClient(stack, minz, maxz, outjson=None, delete_json=False,
     return jsondata
 
 
-@renderaccess
+@renderclientaccess
 def importTransformChangesClient(stack, targetStack, transformFile,
                                  targetOwner=None, targetProject=None,
                                  changeMode=None, close_stack=True,
@@ -630,12 +719,12 @@ def importTransformChangesClient(stack, targetStack, transformFile,
     call_run_ws_client(
         'org.janelia.render.client.ImportTransformChangesClient', memGB=memGB,
         client_script=client_script, subprocess_mode=subprocess_mode,
-        add_args=argvs)
+        add_args=argvs, **kwargs)
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
 
-@renderaccess
+@renderclientaccess
 def coordinateClient(stack, z, fromJson=None, toJson=None, localToWorld=None,
                      numberOfThreads=None, subprocess_mode=None,
                      host=None, port=None, owner=None,
@@ -673,7 +762,8 @@ def coordinateClient(stack, z, fromJson=None, toJson=None, localToWorld=None,
              get_param(numberOfThreads, '--numberOfThreads'))
     call_run_ws_client('org.janelia.render.client.CoordinateClient',
                        memGB=memGB, client_script=client_script,
-                       subprocess_mode=subprocess_mode, add_args=argvs)
+                       subprocess_mode=subprocess_mode, add_args=argvs,
+                       **kwargs)
 
     with open(toJson, 'r') as f:
         jsondata = json.load(f)
@@ -681,11 +771,12 @@ def coordinateClient(stack, z, fromJson=None, toJson=None, localToWorld=None,
     return jsondata
 
 
-@renderaccess
+@renderclientaccess
 def renderSectionClient(stack, rootDirectory, zs, scale=None,
                         maxIntensity=None, minIntensity=None, bounds=None,
-                        format=None,
-                        doFilter=None, fillWithNoise=None,
+                        format=None, channel=None, customOutputFolder=None,
+                        customSubFolder=None,padFileNamesWithZeros=None,
+                        doFilter=None, fillWithNoise=None, imageType=None,
                         subprocess_mode=None, host=None, port=None, owner=None,
                         project=None, client_script=None, memGB=None,
                         render=None, **kwargs):
@@ -710,6 +801,16 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
         dictionary with keys of minX maxX minY maxY
     format : str
         output image format in 'PNG', 'TIFF', 'JPEG'
+    channel : str
+        channel to render out (use on multichannel stack)
+    customOutputFolder : str
+        folder to save all images in (overrides default of sections_at_%scale)
+    customSubFolder : str
+        folder to save all images in under outputFolder (overrides default of none)
+    padFileNamesWithZeros: bool
+        whether to pad file names with zeros to make sortable
+    imageType: int
+        8,16,24 to specify what kind of image type to save
     doFilter : str
         string representing java boolean for whether to render image
         with default filter (varies with render version)
@@ -742,13 +843,19 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
              get_param(minIntensity, '--minIntensity') +
              get_param(maxIntensity, '--maxIntensity') +
              get_param(fillWithNoise, '--fillWithNoise') +
+             get_param(customOutputFolder, '--customOutputFolder')+
+             get_param(imageType,'--imageType')+
+             get_param(channel,'--channels')+
+             get_param(customSubFolder,'--customSubFolder')+
+             get_param(padFileNamesWithZeros,'--padFileNamesWithZeros')+
              bound_param + zs)
     call_run_ws_client('org.janelia.render.client.RenderSectionClient',
                        memGB=memGB, client_script=client_script,
-                       subprocess_mode=subprocess_mode, add_args=argvs)
+                       subprocess_mode=subprocess_mode, add_args=argvs,
+                       **kwargs)
 
 
-@renderaccess
+@renderclientaccess
 def transformSectionClient(stack, transformId, transformClass, transformData,
                            zValues, targetProject=None, targetStack=None,
                            replaceLast=None, subprocess_mode=None,
@@ -786,4 +893,241 @@ def transformSectionClient(stack, transformId, transformClass, transformData,
               '--transformData', transformData] + zValues)
     call_run_ws_client('org.janelia.render.client.TransformSectionClient',
                        memGB=memGB, client_script=client_script,
-                       subprocess_mode=subprocess_mode, add_args=argvs)
+                       subprocess_mode=subprocess_mode, add_args=argvs,
+                       **kwargs)
+
+
+@renderclientaccess
+def get_canvas_url_template(
+        stack, filter=False, renderWithoutMask=False,
+        normalizeForMatching=True, excludeTransformsAfterLast=None,
+        excludeFirstTransformAndAllAfter=None, excludeAllTransforms=False,
+        host=None, port=None, owner=None, project=None, client_script=None,
+        render=None, **kwargs):
+    """function for making a render-parameters url template for point matching
+
+    Parameters
+    ----------
+    stack: str
+        render stack name
+    filter: bool
+        whether to apply default filtering to tile (default=False)
+    renderWithoutMask: bool
+        whether to exclude the mask when rendering tile (default=False)
+    normalizeForMatching: bool
+        whether to apply traditional 'normalizeForMatching' transform manipulation to image
+        this removes the last transform from the transformList, then if there are more than 3 transforms
+        continues to remove transforms until there are exactly 3.  Then assumes the image will be near 0,0
+        with a width/height that is about equal to the raw image width/height.  This is true for Janelia's
+        conventions for transformation alignment, but use at your own risk. (default=True)
+    excludeTransformsAfterLast: str or None
+        alternative to normalizeForMatching, which uses transformLabels.  Will remove all transformations
+        after the last transformation with this transform label.  i.e. if all lens corrections have a 'lens'
+        label.  Then this will remove all non-lens transformations from the list.
+        This is more general than normalizeForMatching=true, but requires you have transform labels applied.
+        default = None
+    excludeFirstTransformAndAllAfter: str
+        alternative to normalizeForMatching which finds the first transform in the list with a given label
+        and then removes that transform and all transforms that follow it. i.e. if you had a compound list
+        of transformations, and you had labelled the first non-local transform 'montage' then setting
+        excludeFirstTransformAndAllAfter='montage' would remove that montage transform and any other
+        transforms that you had applied after it. default= None.
+    excludeAllTransforms: bool
+        alternative to normalizeForMatching which simply removes all transforms from the list.
+        default=False
+    """
+    request_url = format_preamble(host, port, owner, project, stack)
+    tile_base_url = request_url+"/tile"
+    url_suffix = "render-parameters"
+    if filter:
+        url_suffix += '?filter=true'
+    else:
+        url_suffix += '?filter=false'
+
+    if normalizeForMatching:
+        url_suffix += '&normalizeForMatching=true'
+    else:
+        url_suffix += '&normalizeForMatching=false'
+
+    if renderWithoutMask:
+        url_suffix += '&renderWithoutMask=true'
+    else:
+        url_suffix += '&renderWithoutMask=false'
+
+    if excludeTransformsAfterLast is not None:
+        url_suffix += '&excludeTransformsAfterLast={}'.format(
+            excludeTransformsAfterLast)
+    if excludeFirstTransformAndAllAfter is not None:
+        url_suffix += '&excludeFirstTransformAndAllAfter={}'.format(
+            excludeFirstTransformAndAllAfter)
+    if excludeAllTransforms:
+        url_suffix += '&excludeAllTransforms=true'
+
+    canvas_url_template = "%s/{}/%s" % (tile_base_url,
+                                        url_suffix)
+    return canvas_url_template
+
+
+class ArgumentParameters(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    @staticmethod
+    def sanitize_cmd(cmd):
+        def jbool_str(c):
+            return str(c) if type(c) is not bool else "true" if c else "false"
+        if any([i is None for i in cmd]):
+            raise ClientScriptError(
+                'missing argument in command "{}"'.format(map(str, cmd)))
+        return map(jbool_str, cmd)
+
+    @staticmethod
+    def get_cmd_opt(v, flag=None):
+        return [] if v is None else [v] if flag is None else [flag, v]
+
+    @staticmethod
+    def get_flag_cmd(v, flag=None):
+        # for arity 0
+        return [flag] if v else []
+
+    def to_java_args(self):
+        args = []
+        for key, value in self.__dict__.items():
+            if (value is not None) and not (key == 'kwargs'):
+                args += self.get_cmd_opt(value, "--{}".format(key))
+        return self.sanitize_cmd(args)
+
+
+class FeatureExtractionParameters(ArgumentParameters):
+    def __init__(self, SIFTfdSize=None, SIFTmaxScale=None,
+                 SIFTminScale=None, SIFTsteps=None, **kwargs):
+        super(FeatureExtractionParameters, self).__init__(**kwargs)
+        self.SIFTfdSize = SIFTfdSize
+        self.SIFTmaxScale = SIFTmaxScale
+        self.SIFTminScale = SIFTminScale
+        self.SIFTsteps = SIFTsteps
+
+
+class MatchDerivationParameters(ArgumentParameters):
+    def __init__(self, matchIterations=None,
+                 matchMaxEpsilon=None, matchMaxNumInliers=None,
+                 matchMaxTrust=None,  matchMinInlierRatio=None,
+                 matchMinNumInliers=None,
+                 matchModelType=None, matchRod=None, **kwargs):
+        super(MatchDerivationParameters, self).__init__(**kwargs)
+        self.matchIterations = matchIterations
+        self.matchMaxEpsilon = matchMaxEpsilon
+        self.matchMaxNumInliers = matchMaxNumInliers
+        self.matchMaxTrust = matchMaxTrust
+        self.matchMinInlierRatio = matchMinInlierRatio
+        self.matchMinNumInliers = matchMinNumInliers
+        self.matchMinNumInliers = matchMinNumInliers
+        self.matchModelType = matchModelType
+        self.matchRod = matchRod
+
+
+class SiftPointMatchOptions(MatchDerivationParameters,
+                            FeatureExtractionParameters):
+    def __init__(self, renderScale=None, fillWithNoise=None, **kwargs):
+        # TODO add missing parameters
+        super(SiftPointMatchOptions, self).__init__(**kwargs)
+        self.renderScale = renderScale
+        self.fillWithNoise = fillWithNoise
+
+
+@renderclientaccess
+def pointMatchClient(stack, collection, tile_pairs,
+                     sift_options=None,
+                     pointMatchRender=None,
+                     debugDirectory=None,
+                     filter=False,
+                     renderWithoutMask=False, normalizeForMatching=True,
+                     excludeTransformsAfterLast=None,
+                     excludeAllTransforms=None,
+                     excludeFirstTransformAndAllAfter=None,
+                     subprocess_mode=None,
+                     host=None, port=None,
+                     owner=None, project=None, client_script=None,
+                     memGB=None, render=None, **kwargs):
+    """run SiftPointMatchClient.java
+
+    Parameters
+    ----------
+    stack : str
+        stack containing the tiles
+    collection : str
+        point match collection to save results into
+    tile_pairs : iterable
+        list of iterables of length 2 containing tileIds to calculate point matches between
+    sift_options: SiftOptions
+        options for running point matching
+    pointMatchRender : renderapi.render.renderaccess
+        renderaccess object specifying the render server to store point matches in
+        defaults to values specified by render and its keyword argument overrides
+    debugDirectory : str
+        directory to store debug results (optional)
+    filter: bool
+        whether to apply default filtering to tile (default=False)
+    renderWithoutMask: bool
+        whether to exclude the mask when rendering tile (default=False)
+    normalizeForMatching: bool
+        whether to apply traditional 'normalizeForMatching' transform manipulation to image
+        this removes the last transform from the transformList, then if there are more than 3 transforms
+        continues to remove transforms until there are exactly 3.  Then assumes the image will be near 0,0
+        with a width/height that is about equal to the raw image width/height.  This is true for Janelia's
+        conventions for transformation alignment, but use at your own risk. (default=True)
+    excludeTransformsAfterLast: str or None
+        alternative to normalizeForMatching, which uses transformLabels.  Will remove all transformations
+        after the last transformation with this transform label.  i.e. if all lens corrections have a 'lens'
+        label.  Then this will remove all non-lens transformations from the list.
+        This is more general than normalizeForMatching=true, but requires you have transform labels applied.
+        default = None
+    excludeFirstTransformAndAllAfter: str
+        alternative to normalizeForMatching which finds the first transform in the list with a given label
+        and then removes that transform and all transforms that follow it. i.e. if you had a compound list
+        of transformations, and you had labelled the first non-local transform 'montage' then setting
+        excludeFirstTransformAndAllAfter='montage' would remove that montage transform and any other
+        transforms that you had applied after it. default= None.
+    excludeAllTransforms: bool
+        alternative to normalizeForMatching which simply removes all transforms from the list.
+        default=False
+
+    """
+    sift_options = (SiftPointMatchOptions(**kwargs) if sift_options is None
+                    else sift_options)
+
+    if pointMatchRender is None:
+        pointMatchRender = Render(host, port, owner, project, client_script)
+
+    baseDataUrl = format_baseurl(pointMatchRender.DEFAULT_KWARGS['host'],
+                                 pointMatchRender.DEFAULT_KWARGS['port'])
+    argvs = []
+    argvs += ['--baseDataUrl', baseDataUrl]
+    argvs += ['--owner', pointMatchRender.DEFAULT_KWARGS['owner']]
+    argvs += ['--collection', collection]
+    if debugDirectory is not None:
+        argvs += ['--debugDirectory', debugDirectory]
+    argvs += sift_options.to_java_args()
+
+    canvas_url_template = get_canvas_url_template(
+                            stack,
+                            filter,
+                            renderWithoutMask,
+                            normalizeForMatching,
+                            excludeTransformsAfterLast,
+                            excludeFirstTransformAndAllAfter,
+                            excludeAllTransforms,
+                            host=host,
+                            port=port,
+                            owner=owner,
+                            project=project,
+                            client_script=client_script)
+
+    for tile1, tile2 in tile_pairs:
+        argvs += [canvas_url_template.format(tile1),
+                  canvas_url_template.format(tile2)]
+
+    call_run_ws_client('org.janelia.render.client.PointMatchClient',
+                       memGB=memGB, client_script=client_script,
+                       subprocess_mode=subprocess_mode, add_args=argvs,
+                       **kwargs)

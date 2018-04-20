@@ -2,9 +2,10 @@
 import logging
 import os
 import requests
-from .utils import defaultifNone, NullHandler, fitargspec
+from .utils import defaultifNone, NullHandler, fitargspec, get_json
 from .errors import ClientScriptError, RenderError
 from decorator import decorator
+from six.moves import input as raw_input
 
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -33,7 +34,7 @@ class Render(object):
     """
 
     def __init__(self, host=None, port=None, owner=None, project=None,
-                 client_scripts=None):
+                 client_scripts=None, **kwargs):
         self.DEFAULT_HOST = host
         self.DEFAULT_PORT = port
         self.DEFAULT_PROJECT = project
@@ -151,6 +152,8 @@ class RenderClient(Render):
         java clients (default '1G' for 1 GB)
     """
 
+    client_script_wrapper = 'run_ws_client.sh'
+
     def __init__(self, client_script=None, memGB=None, validate_client=True,
                  *args, **kwargs):
         """Initialize RenderClient object extending Render to
@@ -175,11 +178,20 @@ class RenderClient(Render):
         super(RenderClient, self).__init__(**kwargs)
         if validate_client:
             if client_script is None:
-                raise ClientScriptError('No RenderClient script specified!')
-            elif not os.path.isfile(client_script):
+                if self.DEFAULT_CLIENT_SCRIPTS is None:
+                    raise ClientScriptError(
+                        'No RenderClient script specified!')
+                else:
+                    logger.debug("Attempting to derive client script "
+                                 "from client_scripts variable {}".format(
+                                     self.DEFAULT_CLIENT_SCRIPTS))
+                    client_script = self.clientscript_from_clientscripts(
+                        self.DEFAULT_CLIENT_SCRIPTS)
+
+            if not os.path.isfile(client_script):
                 raise ClientScriptError('Client script {} not found!'.format(
                     client_script))
-        if 'run_ws_client.sh' not in os.path.basename(client_script):
+        if self.client_script_wrapper not in os.path.basename(client_script):
             logger.warning(
                 'Unrecognized client script {}!'.format(client_script))
         self.client_script = client_script
@@ -189,6 +201,10 @@ class RenderClient(Render):
                 'No default Java heap specified -- defaulting to 1G')
             memGB = '1G'
         self.memGB = memGB
+
+    @classmethod
+    def clientscript_from_clientscripts(cls, client_scripts):
+        return os.path.join(client_scripts, cls.client_script_wrapper)
 
     def make_kwargs(self, *args, **kwargs):
         """method to fill in default properties of RenderClient object
@@ -329,7 +345,8 @@ def connect(host=None, port=None, owner=None, project=None,
     if client_script is None:
         if 'RENDER_CLIENT_SCRIPT' not in os.environ:
             # client_script = str(raw_input("Enter Render Client Script: "))
-            client_script = os.path.join(client_scripts, 'run_ws_client.sh')
+            client_script = RenderClient.clientscript_from_clientscripts(
+                client_scripts)
         else:
             client_script = str(os.environ['RENDER_CLIENT_SCRIPT'])
 
@@ -466,13 +483,8 @@ def get_owners(host=None, port=None, session=requests.session(),
 
     """
     request_url = "%s/owners/" % format_baseurl(host, port)
-    r = session.get(request_url)
-    try:
-        return r.json()
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
+    return get_json(session,request_url)
+
 
 
 @renderaccess
@@ -501,13 +513,8 @@ def get_stack_metadata_by_owner(owner=None, host=None, port=None,
     request_url = "%s/owner/%s/stacks/" % (
         format_baseurl(host, port), owner)
     logger.debug(request_url)
-    r = session.get(request_url)
-    try:
-        return r.json()
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
-        raise RenderError(r.text)
+    return get_json(session,request_url)
+
 
 
 @renderaccess

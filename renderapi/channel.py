@@ -11,7 +11,7 @@ class Channel:
             name of channel
         maxIntensity: int
             maximum intensity to display (optional)
-        minIntesnity: int
+        minIntensity: int
             minimum default intensity to display (optional)
         ip: ImagePyramid
             set of mipmaplevel images for this channel
@@ -51,4 +51,5 @@ class Channel:
         self.maxIntensity=d['maxIntensity']
         self.ip = ImagePyramid({l:MipMapLevel(
                 int(l), imageUrl=v.get('imageUrl'), maskUrl=v.get('maskUrl'))
-            for l, v in d['mipmapLevels'].items()})
+            for l, v in d['mipmapLevels'].items()])
+    
