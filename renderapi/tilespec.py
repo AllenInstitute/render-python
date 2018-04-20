@@ -5,7 +5,7 @@ import numpy as np
 from .render import format_preamble, renderaccess
 from .utils import NullHandler, get_json
 from .stack import get_z_values_for_stack
-from .transform import TransformList
+from .transform import TransformList,estimate_dstpts
 from .errors import RenderError
 from .image_pyramid import MipMapLevel, ImagePyramid
 from .layout import Layout
@@ -119,7 +119,7 @@ class TileSpec:
                 'undefined bounding box for tile {}'.format(self.tileId))
         return box
 
-    def bbox_transformed(self,ndiv_inner=0,tf_limit=None):
+    def bbox_transformed(self,ndiv_inner=0,tf_limit=None, reference_tforms=None):
         """method to return Nx2 transformed coordinates of bounding box
         Paramters
         ---------
@@ -152,16 +152,9 @@ class TileSpec:
             xy = newxy
             ndiv_inner-=1
 
-        #set which transforms
-        tlist = self.tforms[0:tf_limit]
+        xy = estimate_dstpts(self.tforms[0:tf_limit], \
+                             src=xy, reference_tforms=reference_tforms)
 
-        #cycle through the tspec tforms and apply the transforms
-        for transform in tlist:
-            try:
-                xy = transform.tform(xy)
-            except (AttributeError,TypeError) as e:
-                raise RenderError('unacceptable transform instance: {}'.format(e))
-            
         return xy
 
     def to_dict(self):
