@@ -940,7 +940,7 @@ def get_canvas_url_template(
         default=False
     """  # noqa: E501
     request_url = format_preamble(host, port, owner, project, stack)
-    tile_base_url = request_url+"/tile"
+    tile_base_url = request_url + "/tile"
     url_suffix = "render-parameters"
     if filter:
         url_suffix += '?filter=true'
@@ -1014,7 +1014,7 @@ class FeatureExtractionParameters(ArgumentParameters):
 class MatchDerivationParameters(ArgumentParameters):
     def __init__(self, matchIterations=None,
                  matchMaxEpsilon=None, matchMaxNumInliers=None,
-                 matchMaxTrust=None,  matchMinInlierRatio=None,
+                 matchMaxTrust=None, matchMinInlierRatio=None,
                  matchMinNumInliers=None,
                  matchModelType=None, matchRod=None, **kwargs):
         super(MatchDerivationParameters, self).__init__(**kwargs)
@@ -1113,18 +1113,18 @@ def pointMatchClient(stack, collection, tile_pairs,
     argvs += sift_options.to_java_args()
 
     canvas_url_template = get_canvas_url_template(
-                            stack,
-                            filter,
-                            renderWithoutMask,
-                            normalizeForMatching,
-                            excludeTransformsAfterLast,
-                            excludeFirstTransformAndAllAfter,
-                            excludeAllTransforms,
-                            host=host,
-                            port=port,
-                            owner=owner,
-                            project=project,
-                            client_script=client_script)
+        stack,
+        filter,
+        renderWithoutMask,
+        normalizeForMatching,
+        excludeTransformsAfterLast,
+        excludeFirstTransformAndAllAfter,
+        excludeAllTransforms,
+        host=host,
+        port=port,
+        owner=owner,
+        project=project,
+        client_script=client_script)
 
     for tile1, tile2 in tile_pairs:
         argvs += [canvas_url_template.format(tile1),
