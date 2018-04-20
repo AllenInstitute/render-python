@@ -773,9 +773,13 @@ class TranslationModel(AffineModel):
 
     def _process_dataString(self, dataString):
         """expected dataString is 'tx ty'"""
-        tx, ty = map(float(dataString.split(' ')))
+        tx, ty = map(float,dataString.split(' '))
         self.B0 = tx
         self.B1 = ty
+        self.M00 = 1
+        self.M10 = 0
+        self.M01 = 0
+        self.M11 = 1
         self.load_M()
 
     @staticmethod
@@ -864,7 +868,7 @@ class RigidModel(AffineModel):
 
     def _process_dataString(self, dataString):
         """expected datastring is 'theta tx ty'"""
-        theta, tx, ty = map(float(dataString.split(' ')))
+        theta, tx, ty = map(float,dataString.split(' '))
         self.M00 = np.cos(theta)
         self.M01 = -np.sin(theta)
         self.M10 = np.sin(theta)
@@ -993,7 +997,7 @@ class SimilarityModel(RigidModel):
 
     def _process_dataString(self, dataString):
         """expected datastring is 's theta tx ty'"""
-        s, theta, tx, ty = map(float(dataString.split(' ')))
+        s, theta, tx, ty = map(float,dataString.split(' '))
         self.M00 = s * np.cos(theta)
         self.M01 = -s * np.sin(theta)
         self.M10 = s * np.sin(theta)
