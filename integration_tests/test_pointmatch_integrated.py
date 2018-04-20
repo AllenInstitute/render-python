@@ -186,7 +186,6 @@ def test_delete_point_matches_between_groups(render):
 
 def test_delete_collection(render):
     collection = 'test_delete_collection'
-    # owner = 'test'
     renderapi.pointmatch.import_matches(
         collection, test_matches, render=render)
 
