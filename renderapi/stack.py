@@ -447,6 +447,42 @@ def create_stack(stack, cycleNumber=None, cycleStepNumber=None,
 
 
 @renderaccess
+def rename_stack(stack, to_stack, to_project=None, to_owner=None,
+    host=None, port=None, owner=None, project=None, session=requests.session(),
+    render=None, **kwargs):
+    """
+     :func:`renderapi.render.renderaccess` decorated function
+
+    Parameters
+    ----------
+    inputstack : str
+        name of input stack to clone
+    to_stack : str
+        name of destination stack. if exists, must be LOADING
+    to_project : str
+        name of project to rename stack to (default = leave the same as inputstack)
+    outputOwner: str
+        name of owner to rename stack to (default = leave the same as inputstack)
+    render : renderapi.render.Render
+        render connect object
+    session : requests.sessions.Session
+        session object (default start a new one)
+
+    Returns
+    -------
+    requests.session.response
+        server response
+    """
+
+    request_url = format_preamble(host,port,owner,project,stack)+"/stackId"
+    d = {
+        "owner": owner if to_owner is None else to_owner,
+        "project": project if to_project is None else to_project,
+        "stack": stack if to_stack is None else to_stack
+    }   
+    return put_json(session,request_url,d)
+
+@renderaccess
 def clone_stack(inputstack, outputstack, skipTransforms=False, toProject=None,
                 zs=None, close_stack=True, host=None, port=None,
                 owner=None, project=None, session=None, render=None, **kwargs):
