@@ -96,8 +96,8 @@ def post_json(session, request_url, d, params=None):
                      headers=headers)
     if r.status_code not in [200,201,204]:
         raise RenderError(
-            'cannot post {} to {} with params {} returned status_code {}'.format(
-                d, request_url, params,r.status_code))
+            'cannot post {} to {} with params {} returned status_code {} with message {}'\
+            .format(d, request_url, params,r.status_code,r.text))
     return r
     
 def rest_delete(session,request_url,params=None):
@@ -116,7 +116,8 @@ def rest_delete(session,request_url,params=None):
     """
     r = session.delete(request_url)
     if r.status_code not in [200,202,204]:
-        raise RenderError("delete of {} returned {}".format(r.url,r.status_code))
+        raise RenderError("delete of {} returned {} with message {}"\
+                .format(r.url, r.status_code,r.text))
     return r
 
 
@@ -155,8 +156,8 @@ def put_json(session, request_url, d, params=None):
                     headers=headers)
     if r.status_code not in [200,201,204]:
         raise RenderError(
-            'put {} to {} returned status code {}'.format(
-                d, r.url,r.status_code))
+            'put {} to {} returned status code {} with message {}'.format(
+                d, r.url,r.status_code,r.text))
     return r
    
 
