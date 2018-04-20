@@ -7,7 +7,9 @@ Currently only implemented to facilitate Affine and Polynomial2D
 import json
 import logging
 from collections import Iterable
+
 import numpy as np
+
 from .errors import ConversionError, EstimationError, RenderError
 from .utils import NullHandler
 
