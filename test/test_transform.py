@@ -52,7 +52,7 @@ def test_fail_bad_tform():
     d = {'type': 'leaf',
          'className': 'mpicpg.not_supported_transform'}
     with pytest.raises(renderapi.errors.RenderError):
-        tform = renderapi.transform.load_transform_json(d)
+        tform = renderapi.transform.load_transform_json(d)  # noqa: F841
 
 
 def test_affine_rot_90():
