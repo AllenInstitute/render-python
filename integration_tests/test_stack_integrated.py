@@ -475,3 +475,26 @@ def test_bad_put(render):
     with pytest.raises(renderapi.errors.RenderError):
         renderapi.stack.clone_stack('not_a_stack','not_getting_here',render=render)
         
+def test_rename_stack(render):
+    from_stack = 'from'
+    from_owner = 'from_owner'
+    from_project = 'from_project'
+    to_stack = 'to'
+    to_owner = 'to_owner'
+    to_project = 'to_project'
+
+    renderapi.stack.create_stack(from_stack,owner=from_owner,
+                                 project=from_project, render=render)
+    renderapi.stack.rename_stack(from_stack,to_stack,to_owner=to_owner,
+                                 to_project=to_project,owner=from_owner,
+                                 project=from_project,render=render)
+    stacks_out = renderapi.render.get_stacks_by_owner_project(project=to_project,
+                                                          owner=to_owner, render=render)
+    stacks_in = renderapi.render.get_stacks_by_owner_project(project=from_project,
+                                                          owner=from_owner, render=render)
+
+    assert(to_stack in stacks_out)
+    assert(from_stack not in stacks_in)
+
+    renderapi.stack.delete_stack(to_stack, owner=to_owner, project=to_owner,
+                                 render=render)
