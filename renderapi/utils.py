@@ -9,6 +9,7 @@ import copy
 import json
 from .errors import RenderError
 import numpy
+import requests
 
 class NullHandler(logging.Handler):
     """handler to avoid logging errors for, e.g., missing logger setup"""
@@ -93,14 +94,30 @@ def post_json(session, request_url, d, params=None):
         headers['Accept'] = "application/json"
     r = session.post(request_url, data=payload, params=params,
                      headers=headers)
-    try:
-        return r
-    except Exception as e:
-        logger.error(e)
-        logger.error(r.text)
+    if r.status_code not in [200,201,204]:
         raise RenderError(
-            'cannot post {} to {} with params {}'.format(
-                d, request_url, params))
+            'cannot post {} to {} with params {} returned status_code {}'.format(
+                d, request_url, params,r.status_code))
+    return r
+    
+def rest_delete(session,request_url,params=None):
+    """DELETE requests with RenderError handling
+
+    Parameters
+    ----------
+    session : requests.session.Session
+        requests session
+    request_url : str
+        url
+    Returns
+    -------
+    requests.response
+        server response
+    """
+    r = session.delete(request_url)
+    if r.status_code not in [200,202,204]:
+        raise RenderError("delete of {} returned {}".format(r.url,r.status_code))
+    return r
 
 
 def put_json(session, request_url, d, params=None):
@@ -130,21 +147,56 @@ def put_json(session, request_url, d, params=None):
 
     headers = {"content-type": "application/json"}
     if d is not None:
-        payload = json.dumps(d)
+        payload = renderdumps(d)
     else:
         payload = None
         headers['Accept'] = "application/json"
     r = session.put(request_url, data=payload, params=params,
                     headers=headers)
+    if r.status_code not in [200,201,204]:
+        raise RenderError(
+            'put {} to {} returned status code {}'.format(
+                d, r.url,r.status_code))
+    return r
+   
+
+def get_json(session,request_url,params=None,stream=False,**kwargs):
+    """get_json wrapper for requests to handle errors
+
+    Parameters
+    ----------
+    session : requests.session.Session
+        requests session
+    request_url : str
+        url
+    params : dict
+        requests parameters
+    stream: bool
+        requests whether to stream
+    kwargs: dict
+        kwargs to shout into the dark
+    Returns
+    -------
+    dict
+        json response from server
+
+    Raises
+    ------
+    RenderError
+        if cannot get json successfully
+    """
+   
+    r = session.get(request_url,params=params,stream=stream)
+    if r.status_code != 200:
+        message = "request to {} returned error code {} with message {}"
+        raise RenderError(message.format(r.url,r.status_code,r.text))
     try:
-        return r
+        return r.json()
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
-        raise RenderError(
-            'cannot put {} to {} with params {}'.format(
-                d, request_url, params))
-
+        raise RenderError(r.text)
+    
 
 def renderdumps(obj, *args, **kwargs):
     """json.dumps using the RenderEncode

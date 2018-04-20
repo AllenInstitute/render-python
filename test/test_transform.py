@@ -4,12 +4,14 @@ import numpy as np
 import scipy.linalg
 import rendersettings
 import importlib
+import pytest
 
 def cross_py23_reload(module):
     try:
         reload(module)
     except NameError as e:
         importlib.reload(module)
+
 
 def test_affine_rot_90():
     am = renderapi.transform.AffineModel()
@@ -416,3 +418,68 @@ def test_non_linear_transform():
     dv = xyp-xy
     mean_disp= np.mean(np.sqrt(np.sum(dv**2,axis=1)))
     assert((mean_disp-0.7570507)<.01)
+
+
+@pytest.mark.parametrize("transform_class,transform_json", [
+    (renderapi.transform.Transform, {
+        'className': 'some_class',
+        'dataString': '1234_some_data',
+        'id': 'myTransform',
+        'metaData': {'labels': ['my_first_label', 'my_second_label']}}),
+    (renderapi.transform.AffineModel, {
+        'className': 'mpicbg.trakem2.transform.AffineModel2D',
+        'dataString': (
+            "-0.6433267575 0.7655917209 -0.7655917209 "
+            "-0.6433267575 115071.0014383696 23073.7167961992"),
+        'id': 'myAffineModel',
+        'metaData': {'labels': ['my_first_label', 'my_second_label']}}),
+    (renderapi.transform.Polynomial2DTransform, {
+        'className': 'mpicbg.trakem2.transform.PolynomialTransform2D',
+        'dataString': (
+            '67572.7356991 0.972637082773 -0.0266434803369 '
+            '-3.08962731867E-06 3.52672451824E-06 1.36924119761E-07 '
+            '5446.85340052 0.0224047626583 0.961202608454 '
+            '-3.36753624487E-07 -8.97219078255E-07 -5.49854010072E-06'),
+        'id': 'myPolynomialModel',
+        'metaData': {'labels': ['my_first_label', 'my_second_label']}}),
+    (renderapi.transform.NonLinearCoordinateTransform,
+     dict(rendersettings.NONLINEAR_TRANSFORM_KWARGS, **{
+         'id': 'myNLCTransform',
+         'metaData': {'labels': ['my_first_label', 'my_second_label']}}))])
+def test_load_json_transforms(transform_class, transform_json):
+    tform = transform_class(json=transform_json)
+    tform_d = tform.to_dict()
+
+    # avoid comparing datastrings as strings because of rounding
+    assert (tform.transformId == tform_d['id'] == transform_json['id'])
+    assert (tform.labels == tform_d['metaData']['labels'] ==
+            transform_json['metaData']['labels'])
+    assert (tform.className == tform_d['className'] ==
+            transform_json['className'])
+
+@pytest.fixture(scope='module')
+def referenced_tilespecs_and_transforms():
+    with open(rendersettings.REFERENCE_TRANSFORM_TILESPECS,'r') as fp:
+        ds = json.load(fp)
+        tilespecs = [renderapi.tilespec.TileSpec(json=d) for d in ds]
+
+    with open(rendersettings.REFERENCE_TRANSFORM_SPECS,'r') as fp:
+        ds = json.load(fp)
+        transforms = [renderapi.transform.load_transform_json(tf) for tf in ds]
+    return tilespecs,transforms
+
+def test_estimate_dstpoints_reference(referenced_tilespecs_and_transforms):
+    tilespecs,transforms = referenced_tilespecs_and_transforms
+
+    ticks = np.arange(0,2048,64,np.float)
+    xx,yy = np.meshgrid(ticks,ticks)
+    x = np.ravel(xx).T
+    y = np.ravel(yy).T
+    xy = np.vstack((x,y)).T
+
+    xyt=renderapi.transform.estimate_dstpts(tilespecs[0].tforms,xy,transforms)
+    assert(xy.shape==xyt.shape)
+    with pytest.raises(renderapi.errors.RenderError):
+        renderapi.transform.estimate_dstpts(tilespecs[0].tforms,xy)
+    with pytest.raises(renderapi.errors.RenderError):
+        renderapi.transform.estimate_dstpts(tilespecs[0].tforms,xy,[transforms[2]])
