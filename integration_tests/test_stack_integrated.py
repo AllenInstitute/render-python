@@ -483,8 +483,7 @@ def test_bad_get(render):
 
 def test_bad_post(render):
     with pytest.raises(renderapi.errors.RenderError):
-        renderapi.stack.set_stack_state(
-            'not_a_stack', 'LOADING', render=render)
+        renderapi.stack.create_stack('not_a___stack', render=render)
 
 
 def test_bad_put(render):

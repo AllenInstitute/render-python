@@ -6,12 +6,53 @@ import rendersettings
 import importlib
 import pytest
 
+EPSILON = 0.0000000001
+
 
 def cross_py23_reload(module):
     try:
         reload(module)
     except NameError:
         importlib.reload(module)
+
+
+def test_TransformList_init():
+    tlist = renderapi.transform.TransformList()  # noqa: F841
+
+
+def test_simple_TransformList_init():
+    aff = renderapi.transform.AffineModel()
+    tlist = renderapi.transform.TransformList(tforms=[aff])  # noqa: F841
+
+
+def test_fail_TransformList_init():
+    with pytest.raises(renderapi.errors.RenderError):
+        aff = renderapi.transform.AffineModel()
+        tlist = renderapi.transform.TransformList(tforms=aff)   # noqa: F841
+
+
+def test_fail_loadtransform_json():
+    d = {'type': 'not_a_type',
+         'dataString': 'junkstring',
+         'transformId': 'badtform'}
+    with pytest.raises(renderapi.errors.RenderError):
+        renderapi.transform.load_transform_json(d)
+    with pytest.raises(renderapi.errors.RenderError):
+        renderapi.transform.load_leaf_json(d)
+
+
+def test_load_unknown_tform():
+    d = {'className': 'mpicpg.not_supported_transform',
+         'dataString': 'crazy_parameters'}
+    tform = renderapi.transform.load_transform_json(d)
+    assert(isinstance(tform, renderapi.transform.Transform))
+
+
+def test_fail_bad_tform():
+    d = {'type': 'leaf',
+         'className': 'mpicpg.not_supported_transform'}
+    with pytest.raises(renderapi.errors.RenderError):
+        tform = renderapi.transform.load_transform_json(d)
 
 
 def test_affine_rot_90():
@@ -248,6 +289,7 @@ def test_reference_transform():
 
     assert (dict(ref_args) == ref_args.to_dict() == dict(ref_ts) ==
             ref_ts.to_dict() == dict(ref_dd) == ref_dd.to_dict())
+    print(ref_dd)
 
 
 def test_transform_hash_eq():
@@ -487,3 +529,38 @@ def test_estimate_dstpoints_reference(referenced_tilespecs_and_transforms):
     with pytest.raises(renderapi.errors.RenderError):
         renderapi.transform.estimate_dstpts(
             tilespecs[0].tforms, xy, [transforms[2]])
+
+
+def test_fail_convert_points():
+    points_in = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], np.float)
+    with pytest.raises(renderapi.errors.ConversionError):
+        renderapi.transform.AffineModel.convert_to_point_vector(points_in.T)
+
+
+def test_translation_transform_init():
+    d = {'type': 'leaf',
+         'className': 'mpicbg.trakem2.transform.TranslationModel2D',
+         'dataString': '10 0'}
+    tform = renderapi.transform.load_transform_json(d)
+    assert(isinstance(tform, renderapi.transform.TranslationModel))
+    assert(tform.M[0, 2] == 10)
+
+
+def test_rigid_init():
+    d = {'type': 'leaf',
+         'className': 'mpicbg.trakem2.transform.RigidModel2D',
+         'dataString': '{} 10 5'.format(np.pi/2)}
+    tform = renderapi.transform.load_transform_json(d)
+    assert(isinstance(tform, renderapi.transform.RigidModel))
+    assert(tform.M[0, 2] == 10)
+    assert(tform.M[0, 0] < EPSILON)
+
+
+def test_similarity_init():
+    d = {'type': 'leaf',
+         'className': 'mpicbg.trakem2.transform.SimilarityModel2D',
+         'dataString': '2.0 0.0 10 5'}
+    tform = renderapi.transform.load_transform_json(d)
+    assert(isinstance(tform, renderapi.transform.SimilarityModel))
+    assert(np.abs(tform.M[0, 0]-2) < EPSILON)
+    assert(tform.M[0, 2] == 10)
