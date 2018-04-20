@@ -216,7 +216,7 @@ def teststack(request, render, render_example_tilespec_and_transforms):
     r = render.run(renderapi.stack.create_stack, stack, force_resolution=True)
     render.run(renderapi.client.import_tilespecs, stack, tilespecs,
                sharedTransforms=tforms)
-    r = render.run(  # noqa: 841
+    r = render.run(  # noqa: F841
         renderapi.stack.set_stack_state, stack, 'COMPLETE')
     yield stack
     render.run(renderapi.stack.delete_stack, stack)
@@ -305,7 +305,6 @@ def test_bb_image(render, teststack, **kwargs):
         data = render.run(renderapi.image.get_bb_image,
                           teststack, z, x, y, width, height,
                           scale=.25, img_format=fmt, **kwargs)
-        dr = data.ravel()  # noqa: 841
         assert data.shape[0] == (np.floor(height*.25))
         assert data.shape[1] == (np.floor(width*.25))
         if len(data.shape) > 2:
@@ -321,7 +320,6 @@ def test_bb_image_options(render, teststack):
 def test_tile_image(render, teststack, render_example_tilespec_and_transforms,
                     **kwargs):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
-    # fmt = 'png'
     data = render.run(renderapi.image.get_tile_image_data,
                       teststack, tilespecs[0].tileId, **kwargs)
     if kwargs.get('scale') is None:
@@ -447,7 +445,7 @@ def test_put_resolved_tiles_scratch(
     renderapi.stack.create_stack(out_stack, render=render)
     resolved_tilespecs = renderapi.resolvedtiles.ResolvedTiles(
         tilespecs, tforms)
-    r = renderapi.resolvedtiles.put_tilespecs(  # noqa: 841
+    r = renderapi.resolvedtiles.put_tilespecs(  # noqa: F841
         out_stack, resolved_tilespecs, render=render)
     tilespecs_out = renderapi.tilespec.get_tile_specs_from_stack(
         out_stack, render=render)
@@ -484,7 +482,6 @@ def test_bad_get(render):
 
 
 def test_bad_post(render):
-    # sv = renderapi.stack.StackVersion()
     with pytest.raises(renderapi.errors.RenderError):
         renderapi.stack.set_stack_state(
             'not_a_stack', 'LOADING', render=render)

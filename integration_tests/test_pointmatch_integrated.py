@@ -176,11 +176,8 @@ def test_get_match_groupIds_to_only(render, test_pm_collection):
 
 def test_delete_point_matches_between_groups(render):
     collection = 'test_delete'
-    # owner = 'test'
     renderapi.pointmatch.import_matches(
         collection, test_matches, render=render)
-    # group1 = '0'
-    # group2 = '1'
     renderapi.pointmatch.delete_point_matches_between_groups(
         collection, '0', '1', render=render)
     groups = renderapi.pointmatch.get_match_groupIds(collection, render=render)
