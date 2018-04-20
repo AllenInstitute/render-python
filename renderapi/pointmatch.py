@@ -5,9 +5,7 @@ Point Match APIs
 import requests
 import logging
 from .render import format_baseurl, renderaccess
-from .errors import RenderError
 from .utils import NullHandler, get_json, put_json, rest_delete
-import json
 
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -41,8 +39,7 @@ def get_matchcollection_owners(host=None, port=None,
     """
     request_url = format_baseurl(host, port) + \
         "/matchCollectionOwners"
-    return get_json(session,request_url)
-
+    return get_json(session, request_url)
 
 
 @renderaccess
@@ -74,8 +71,7 @@ def get_matchcollections(owner=None, host=None, port=None,
     """
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollections" % owner
-    return get_json(session,request_url)
-
+    return get_json(session, request_url)
 
 
 @renderaccess
@@ -110,8 +106,7 @@ def get_match_groupIds(matchCollection, owner=None, host=None,
     """
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/groupIds" % (owner, matchCollection)
-    return get_json(session,request_url)
-
+    return get_json(session, request_url)
 
 
 @renderaccess
@@ -158,7 +153,7 @@ def get_matches_outside_group(matchCollection, groupId, mergeCollections=None,
             owner, matchCollection, groupId)
     request_url = add_merge_collections(request_url, mergeCollections)
 
-    return get_json(session,request_url,stream=stream)
+    return get_json(session, request_url, stream=stream)
 
 
 @renderaccess
@@ -206,7 +201,7 @@ def get_matches_within_group(matchCollection, groupId, mergeCollections=None,
             owner, matchCollection, groupId)
     request_url = add_merge_collections(request_url, mergeCollections)
 
-    return get_json(session,request_url,stream=stream)
+    return get_json(session, request_url, stream=stream)
 
 
 @renderaccess
@@ -258,8 +253,7 @@ def get_matches_from_group_to_group(matchCollection, pgroup, qgroup,
             owner, matchCollection, pgroup, qgroup)
     request_url = add_merge_collections(request_url, mergeCollections)
 
-    return get_json(session,request_url,stream=stream)
-
+    return get_json(session, request_url, stream=stream)
 
 
 def add_merge_collections(request_url, mcs):
@@ -336,8 +330,7 @@ def get_matches_from_tile_to_tile(matchCollection, pgroup, pid,
              owner, matchCollection, pgroup, pid, qgroup, qid))
     request_url = add_merge_collections(request_url, mergeCollections)
 
-    return get_json(session,request_url)
-
+    return get_json(session, request_url)
 
 
 @renderaccess
@@ -384,8 +377,7 @@ def get_matches_with_group(matchCollection, pgroup, mergeCollections=None,
             owner, matchCollection, pgroup)
     request_url = add_merge_collections(request_url, mergeCollections)
 
-    return get_json(session,request_url,stream=stream)
-
+    return get_json(session, request_url, stream=stream)
 
 
 @renderaccess
@@ -423,8 +415,7 @@ def get_match_groupIds_from_only(matchCollection, mergeCollections=None,
         "/owner/%s/matchCollection/%s/pGroupIds" % (owner, matchCollection)
     request_url = add_merge_collections(request_url, mergeCollections)
 
-    return get_json(session,request_url)
-
+    return get_json(session, request_url)
 
 
 @renderaccess
@@ -463,8 +454,7 @@ def get_match_groupIds_to_only(matchCollection, mergeCollections=None,
         "/owner/%s/matchCollection/%s/qGroupIds" % (owner, matchCollection)
     request_url = add_merge_collections(request_url, mergeCollections)
 
-    return get_json(session,request_url)
-
+    return get_json(session, request_url)
 
 
 @renderaccess
@@ -513,8 +503,7 @@ def get_matches_involving_tile(matchCollection, groupId, id,
             owner, matchCollection, groupId, id)
     request_url = add_merge_collections(request_url, mergeCollections)
 
-    return get_json(session,request_url,stream=stream)
-
+    return get_json(session, request_url, stream=stream)
 
 
 @renderaccess
@@ -560,8 +549,7 @@ def delete_point_matches_between_groups(matchCollection, pGroupId, qGroupId,
     request_url = format_baseurl(host, port) + \
         "/owner/{}/matchCollection/{}/group/{}/matchesWith/{}".format(
             owner, matchCollection, pGroupId, qGroupId)
-    r = rest_delete(session,request_url)
-
+    r = rest_delete(session, request_url)  # noqa: F841
 
 
 @renderaccess
@@ -594,12 +582,12 @@ def import_matches(matchCollection, data, owner=None, host=None, port=None,
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s/matches" % (owner, matchCollection)
     logger.debug(request_url)
-    return put_json(session,request_url,data)
+    return put_json(session, request_url, data)
 
 
 @renderaccess
 def delete_collection(matchCollection, owner=None, host=None, port=None,
-                   session=requests.session(), render=None, **kwargs):
+                      session=requests.session(), render=None, **kwargs):
     """delete match collection from render database
 
     :func:`renderapi.render.renderaccess` decorated function
@@ -630,5 +618,4 @@ def delete_collection(matchCollection, owner=None, host=None, port=None,
     request_url = format_baseurl(host, port) + \
         "/owner/%s/matchCollection/%s" % (owner, matchCollection)
     logger.debug(request_url)
-    r = rest_delete(session,request_url)
-
+    r = rest_delete(session, request_url)  # noqa: F841
