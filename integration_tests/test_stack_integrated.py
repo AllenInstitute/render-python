@@ -460,7 +460,7 @@ def test_put_tilespecs_fail(render):
         
 def test_bad_delete(render):
     with pytest.raises(renderapi.errors.RenderError):
-        renderapi.stack.delete_stack('not_a_stack',render=render)
+        renderapi.stack.delete_section('not_a_stack',0.0,render=render)
 
 def test_bad_get(render):
     with pytest.raises(renderapi.errors.RenderError):
@@ -469,7 +469,7 @@ def test_bad_get(render):
 def test_bad_post(render):
     sv = renderapi.stack.StackVersion()
     with pytest.raises(renderapi.errors.RenderError):
-        renderapi.stack.set_stack_metadata('not_a_stack',sv,render=render)
+        renderapi.stack.set_stack_state('not_a_stack','LOADING',render=render)
 
 def test_bad_put(render):
     with pytest.raises(renderapi.errors.RenderError):
