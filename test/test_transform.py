@@ -6,11 +6,31 @@ import rendersettings
 import importlib
 import pytest
 
+
 def cross_py23_reload(module):
     try:
         reload(module)
     except NameError as e:
         importlib.reload(module)
+
+def test_TransformList_init():
+    tlist = renderapi.transform.TransformList()
+
+def test_simple_TransformList_init():
+    aff = renderapi.transform.AffineModel()
+    tlist = renderapi.transform.TransformList(tforms=[aff])
+
+def test_fail_TransformList_init():
+    with pytest.raises(renderapi.errors.RenderError):
+       aff = renderapi.transform.AffineModel()
+       tlist = renderapi.transform.TransformList(tforms=aff) 
+
+def test_fail_loadtransform_json():
+    with pytest.raises(renderapi.errors.RenderError):
+        d={'type':'not_a_type',
+           'dataString':'junkstring',
+           'transformId':'badtform'}
+        renderapi.transform.load_transform_json(d)
 
 
 def test_affine_rot_90():
