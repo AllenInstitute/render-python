@@ -103,7 +103,7 @@ class TransformList:
                 self.tforms.append(load_transform_json(td))
         return self.tforms
 
-        
+
 def load_transform_json(d, default_type='leaf'):
     """function to get the proper deserialization function
 
@@ -193,7 +193,7 @@ class InterpolatedTransform:
     lambda_ : float
         value in interval [0.,1.] which defines evaluation of the
         linear interpolation between a (at 0) and b (at 1)
-    """
+    """  # noqa: E501
 
     def __init__(self, a=None, b=None, lambda_=None, json=None):
         """Initialize InterpolatedTransform
@@ -1384,19 +1384,24 @@ def estimate_dstpts(transformlist, src=None, reference_tforms=None):
     dstpts = src
     for tform in transformlist:
         if isinstance(tform, list):
-            dstpts = estimate_dstpts(tform, dstpts,reference_tforms)
-        elif isinstance(tform,TransformList):
-            dstpts = estimate_dstpts(tform.tforms,dstpts,reference_tforms)
-        elif isinstance(tform,ReferenceTransform):       
+            dstpts = estimate_dstpts(tform, dstpts, reference_tforms)
+        elif isinstance(tform, TransformList):
+            dstpts = estimate_dstpts(tform.tforms, dstpts, reference_tforms)
+        elif isinstance(tform, ReferenceTransform):
             try:
-                tform_deref= next(tf for tf in reference_tforms if tf.transformId==tform.refId)
+                tform_deref = next((tf for tf in reference_tforms
+                                    if tf.transformId == tform.refId))
             except TypeError:
-                raise RenderError("you supplied a set of tranforms that includes a reference transform,\
-                                   but didn't supply a set of reference transforms to enable dereferencing")
+                raise RenderError(
+                    "you supplied a set of tranforms that includes a "
+                    "reference transform, but didn't supply a set of "
+                    "reference transforms to enable dereferencing")
             except StopIteration:
-                raise RenderError("the list of transforms you provided references transorm {} but that transform\
-                                    could not be found in the list of reference transforms".format(tform.refId))
-            dstpts=estimate_dstpts([tform_deref],dstpts,reference_tforms)
+                raise RenderError(
+                    "the list of transforms you provided references "
+                    "transorm {} but that transform could not be found "
+                    "in the list of reference transforms".format(tform.refId))
+            dstpts = estimate_dstpts([tform_deref], dstpts, reference_tforms)
         else:
             dstpts = tform.tform(dstpts)
     return dstpts
@@ -1436,7 +1441,8 @@ class NonLinearCoordinateTransform(Transform):
             if labels is not None:
                 self.labels = labels
             self.transformId = transformId
-            self.className = 'mpicbg.trakem2.transform.NonLinearCoordinateTransform'
+            self.className = (
+                'mpicbg.trakem2.transform.NonLinearCoordinateTransform')
 
     def _process_dataString(self, dataString):
 
@@ -1580,7 +1586,7 @@ def estimate_transformsum(transformlist, src=None, order=2):
             if isinstance(i, Iterable):
                 try:
                     notstring = isinstance(i, basestring)
-                except NameError as e:
+                except NameError:
                     notstring = isinstance(i, str)
                 if notstring:
                     for sub in flatten(i):
