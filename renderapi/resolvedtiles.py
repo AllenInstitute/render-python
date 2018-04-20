@@ -43,20 +43,21 @@ class ResolvedTiles:
             tform_json['transformId'] = transformId
             self.transforms.append(load_transform_json(tform_json))
 
-    #def get_tilespecs():
+    # def get_tilespecs():
     """return a set of TileSpecs that include resolved tilespecs
 
     Returns
     -------
     List(renderapi.tilespec.TileSpec)
         A list of tilespecs stored in this ResolvedTiles with the transformations dereferenced
-    """
+    """  # noqa: E501
+
 
 @renderaccess
-def put_tilespecs(stack,resolved_tiles=None,deriveData=True,
-    tilespecs=None,shared_transforms=None,
-    host=None,port=None,owner=None,project=None,
-    session=requests.session(),render=None,**kwargs):
+def put_tilespecs(stack, resolved_tiles=None, deriveData=True,
+                  tilespecs=None, shared_transforms=None,
+                  host=None, port=None, owner=None, project=None,
+                  session=requests.session(), render=None, **kwargs):
     """upload resolved tiles to the server
 
     :func:`renderapi.render.renderaccess` decorated function
@@ -75,7 +76,7 @@ def put_tilespecs(stack,resolved_tiles=None,deriveData=True,
         list of shared transforms to upload
     render: renderapi.render.Render
         render connect object
-    
+
     Returns
     -------
     requests.response.Reponse
@@ -86,13 +87,14 @@ def put_tilespecs(stack,resolved_tiles=None,deriveData=True,
     qparams = {} if deriveData is None else {'deriveData': jbool(deriveData)}
     logger.debug(request_url)
     if resolved_tiles is None:
-        if (tilespecs is  None):
+        if (tilespecs is None):
             raise RenderError("need to pass resolved_tiles or tilespecs")
         resolved_tiles = ResolvedTiles(tilespecs=tilespecs,
                                        transformList=shared_transforms)
-    r=put_json(session,request_url,resolved_tiles,qparams)
+    r = put_json(session, request_url, resolved_tiles, qparams)
     logger.debug(r)
     return r
+
 
 @renderaccess
 def get_resolved_tiles_from_z(stack, z, host=None, port=None,
@@ -123,5 +125,5 @@ def get_resolved_tiles_from_z(stack, z, host=None, port=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + '/z/%f/resolvedTiles' % (z)
     logger.debug(request_url)
-    d= get_json(session,request_url)
+    d = get_json(session, request_url)
     return ResolvedTiles(json=d)
