@@ -1,14 +1,12 @@
 import renderapi
 import pytest
-import tempfile
-import os
 import logging
 import sys
 import json
 import numpy as np
 from test_data import (render_host, render_port,
-                       client_script_location, tilespec_file, 
-                       tform_file, test_2_channels_d)
+                       client_script_location, tilespec_file,
+                       tform_file)
 
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)
@@ -202,8 +200,8 @@ def test_remove_section(render, simpletilespec, tmpdir):
     assert simpletilespec.z in stack_zs_before
     r = render.run(renderapi.stack.set_stack_state,
                    'test_insert', 'LOADING')
-    r = renderapi.stack.delete_section('test_insert',
-                                       simpletilespec.z, render=render)
+    r = renderapi.stack.delete_section(  # noqa: F841
+        'test_insert', simpletilespec.z, render=render)
     stack_zs_after = render.run(renderapi.stack.get_z_values_for_stack,
                                 'test_insert')
     assert len(stack_zs_after) == (len(stack_zs_before) - 1)
@@ -218,7 +216,8 @@ def teststack(request, render, render_example_tilespec_and_transforms):
     r = render.run(renderapi.stack.create_stack, stack, force_resolution=True)
     render.run(renderapi.client.import_tilespecs, stack, tilespecs,
                sharedTransforms=tforms)
-    r = render.run(renderapi.stack.set_stack_state, stack, 'COMPLETE')
+    r = render.run(  # noqa: 841
+        renderapi.stack.set_stack_state, stack, 'COMPLETE')
     yield stack
     render.run(renderapi.stack.delete_stack, stack)
 
@@ -306,10 +305,10 @@ def test_bb_image(render, teststack, **kwargs):
         data = render.run(renderapi.image.get_bb_image,
                           teststack, z, x, y, width, height,
                           scale=.25, img_format=fmt, **kwargs)
-        dr = data.ravel()
+        dr = data.ravel()  # noqa: 841
         assert data.shape[0] == (np.floor(height*.25))
         assert data.shape[1] == (np.floor(width*.25))
-        if len(data.shape)>2:
+        if len(data.shape) > 2:
             assert data.shape[2] >= 3
 
 
@@ -322,7 +321,7 @@ def test_bb_image_options(render, teststack):
 def test_tile_image(render, teststack, render_example_tilespec_and_transforms,
                     **kwargs):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
-    fmt = 'png'
+    # fmt = 'png'
     data = render.run(renderapi.image.get_tile_image_data,
                       teststack, tilespecs[0].tileId, **kwargs)
     if kwargs.get('scale') is None:
@@ -361,7 +360,7 @@ def test_section_image(render, teststack, **kwargs):
 
 def test_section_image_options(render, teststack):
     test_section_image(render, teststack, filter=True,
-                             maxTileSpecsToRender=50)
+                       maxTileSpecsToRender=50)
 
 
 def fail_image_get(render, teststack, render_example_tilespec_and_transforms):
@@ -378,11 +377,14 @@ def test_get_tilespecs_from_z(render, teststack,
     tsz = [ts for ts in tilespecs if ts.z == tilespecs[0].z]
     assert len(tiles) == len(tsz)
 
+
 def test_get_tilespec_raw(
         render, teststack, render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
-    ts = renderapi.tilespec.get_tile_spec_raw(teststack, tilespecs[0].tileId, render=render)
+    ts = renderapi.tilespec.get_tile_spec_raw(
+        teststack, tilespecs[0].tileId, render=render)
     assert ts.to_dict() == tilespecs[0].to_dict()
+
 
 def test_get_tile_specs_from_minmax_box(
         render, teststack, render_example_tilespec_and_transforms):
@@ -417,61 +419,78 @@ def test_get_tile_specs_from_stack(render, teststack,
     ts = renderapi.tilespec.get_tile_specs_from_stack(teststack, render=render)
     assert len(ts) == len(tilespecs)
 
-def test_get_sectionId_for_z(render, teststack, render_example_tilespec_and_transforms):
+
+def test_get_sectionId_for_z(render, teststack,
+                             render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
-    sectionId = render.run(renderapi.stack.get_sectionId_for_z, teststack, tilespecs[0].z)
+    sectionId = render.run(
+        renderapi.stack.get_sectionId_for_z, teststack, tilespecs[0].z)
     assert (sectionId == tilespecs[0].layout.sectionId)
+
 
 def test_get_resolvedtiles_from_z(render, teststack,
                                   render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
-    resolved_tiles = renderapi.resolvedtiles.get_resolved_tiles_from_z(teststack,
-                                                                       tilespecs[0].z,
-                                                                       render=render)
+    resolved_tiles = renderapi.resolvedtiles.get_resolved_tiles_from_z(
+        teststack, tilespecs[0].z, render=render)
     tsz = [ts for ts in tilespecs if ts.z == tilespecs[0].z]
-    assert(len(tsz)==len(resolved_tiles.tilespecs))
-    matching_ts = next(ts for ts in resolved_tiles.tilespecs if ts.tileId == tsz[0].tileId)
-    assert (len(matching_ts.tforms)==len(tsz[0].tforms))
+    assert(len(tsz) == len(resolved_tiles.tilespecs))
+    matching_ts = next(ts for ts in resolved_tiles.tilespecs
+                       if ts.tileId == tsz[0].tileId)
+    assert (len(matching_ts.tforms) == len(tsz[0].tforms))
 
-def test_put_resolved_tiles_scratch(render,render_example_tilespec_and_transforms):
+
+def test_put_resolved_tiles_scratch(
+        render, render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     out_stack = 'resolved_test_stack'
-    renderapi.stack.create_stack(out_stack,render=render)
-    resolved_tilespecs = renderapi.resolvedtiles.ResolvedTiles(tilespecs,tforms)
-    r=renderapi.resolvedtiles.put_tilespecs(out_stack,resolved_tilespecs,
-        render=render)
-    tilespecs_out = renderapi.tilespec.get_tile_specs_from_stack(out_stack,
-                                                                   render=render)
-    assert(len(tilespecs_out)==len(resolved_tilespecs.tilespecs))
+    renderapi.stack.create_stack(out_stack, render=render)
+    resolved_tilespecs = renderapi.resolvedtiles.ResolvedTiles(
+        tilespecs, tforms)
+    r = renderapi.resolvedtiles.put_tilespecs(  # noqa: 841
+        out_stack, resolved_tilespecs, render=render)
+    tilespecs_out = renderapi.tilespec.get_tile_specs_from_stack(
+        out_stack, render=render)
+    assert(len(tilespecs_out) == len(resolved_tilespecs.tilespecs))
 
-def test_put_tilespecs_and_tforms(render,render_example_tilespec_and_transforms):
+
+def test_put_tilespecs_and_tforms(
+        render, render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     out_stack = 'resolved_test_stack2'
-    renderapi.stack.create_stack(out_stack,render=render)
-    r=renderapi.resolvedtiles.put_tilespecs(out_stack,tilespecs=tilespecs,
-        shared_transforms=tforms,render=render)
-    tilespecs_out = renderapi.tilespec.get_tile_specs_from_stack(out_stack,
-                                                                   render=render)
-    assert(len(tilespecs_out)==len(tilespecs))
+    renderapi.stack.create_stack(out_stack, render=render)
+    r = renderapi.resolvedtiles.put_tilespecs(  # noqa: F841
+        out_stack, tilespecs=tilespecs,
+        shared_transforms=tforms, render=render)
+    tilespecs_out = renderapi.tilespec.get_tile_specs_from_stack(
+        out_stack, render=render)
+    assert(len(tilespecs_out) == len(tilespecs))
+
 
 def test_put_tilespecs_fail(render):
     with pytest.raises(renderapi.errors.RenderError):
-        r=renderapi.resolvedtiles.put_tilespecs('fail_stack',render=render)
-        
+        r = renderapi.resolvedtiles.put_tilespecs(  # noqa: F841
+            'fail_stack', render=render)
+
+
 def test_bad_delete(render):
     with pytest.raises(renderapi.errors.RenderError):
-        renderapi.stack.delete_section('not_a_stack',0.0,render=render)
+        renderapi.stack.delete_section('not_a_stack', 0.0, render=render)
+
 
 def test_bad_get(render):
     with pytest.raises(renderapi.errors.RenderError):
-        renderapi.stack.get_stack_metadata('not_a_stack',render=render)
+        renderapi.stack.get_stack_metadata('not_a_stack', render=render)
+
 
 def test_bad_post(render):
-    sv = renderapi.stack.StackVersion()
+    # sv = renderapi.stack.StackVersion()
     with pytest.raises(renderapi.errors.RenderError):
-        renderapi.stack.set_stack_state('not_a_stack','LOADING',render=render)
+        renderapi.stack.set_stack_state(
+            'not_a_stack', 'LOADING', render=render)
+
 
 def test_bad_put(render):
     with pytest.raises(renderapi.errors.RenderError):
-        renderapi.stack.clone_stack('not_a_stack','not_getting_here',render=render)
-        
+        renderapi.stack.clone_stack(
+            'not_a_stack', 'not_getting_here', render=render)

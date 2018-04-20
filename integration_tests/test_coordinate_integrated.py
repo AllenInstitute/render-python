@@ -1,7 +1,5 @@
 import renderapi
 import pytest
-import tempfile
-import os
 import logging
 import sys
 import json

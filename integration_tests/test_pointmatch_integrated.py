@@ -1,13 +1,8 @@
 import renderapi
 import pytest
-import tempfile
-import os
 import logging
 import sys
-import json
-import numpy as np
-from test_data import render_host, render_port, \
-    client_script_location, tilespec_file, tform_file
+from test_data import render_host, render_port, client_script_location
 
 
 logger = logging.getLogger()
@@ -43,7 +38,7 @@ test_matches = [
       "w": [1, 1, 1, 1]
     }
   },
-    {
+  {
     "pGroupId": "0",
     "pId": "0-1",
     "qGroupId": "2",
@@ -181,22 +176,23 @@ def test_get_match_groupIds_to_only(render, test_pm_collection):
 
 def test_delete_point_matches_between_groups(render):
     collection = 'test_delete'
-    owner = 'test'
+    # owner = 'test'
     renderapi.pointmatch.import_matches(
         collection, test_matches, render=render)
-    group1 = '0'
-    group2 = '1'
+    # group1 = '0'
+    # group2 = '1'
     renderapi.pointmatch.delete_point_matches_between_groups(
         collection, '0', '1', render=render)
     groups = renderapi.pointmatch.get_match_groupIds(collection, render=render)
     assert len(groups) == 2
 
+
 def test_delete_collection(render):
     collection = 'test_delete_collection'
-    owner = 'test'
+    # owner = 'test'
     renderapi.pointmatch.import_matches(
         collection, test_matches, render=render)
 
-    renderapi.pointmatch.delete_collection(collection,render=render)
+    renderapi.pointmatch.delete_collection(collection, render=render)
     collections = renderapi.pointmatch.get_matchcollections(render=render)
     assert(collection not in collections)

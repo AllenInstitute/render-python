@@ -7,7 +7,8 @@ import sys
 import json
 import numpy as np
 from test_data import (render_host, render_port,
-                       client_script_location, tilespec_file, tform_file, test_pool_size)
+                       client_script_location, tilespec_file, tform_file,
+                       test_pool_size)
 import PIL
 
 root = logging.getLogger()
@@ -62,9 +63,11 @@ def validate_stack_import(render, stack, tilespecs):
     ts = renderapi.tilespec.get_tile_specs_from_stack(stack, render=render)
     assert len(ts) == len(tilespecs)
 
-@pytest.mark.parametrize('call_mode',('call','check_call','check_output'))
+
+@pytest.mark.parametrize('call_mode', (
+    'call', 'check_call', 'check_output'))
 def test_import_jsonfiles_validate_client(
-        render, render_example_tilespec_and_transforms,call_mode):
+        render, render_example_tilespec_and_transforms, call_mode):
     stack = 'test_import_jsonfiles_validate_client'
     renderapi.stack.create_stack(stack, render=render)
     (tilespecs, tforms) = render_example_tilespec_and_transforms
@@ -76,9 +79,10 @@ def test_import_jsonfiles_validate_client(
     validate_stack_import(render, stack, tilespecs)
     renderapi.stack.delete_stack(stack, render=render)
 
-@pytest.mark.parametrize('call_mode',('check_call','check_output'))
+
+@pytest.mark.parametrize('call_mode', ('check_call', 'check_output'))
 def test_failed_jsonfiles_validate_client(
-    render, render_example_tilespec_and_transforms,call_mode):
+        render, render_example_tilespec_and_transforms, call_mode):
     stack = 'test_failed_import_jsonfiles_validate_client'
     renderapi.stack.create_stack(stack, render=render)
     with pytest.raises(renderapi.errors.ClientScriptError):
@@ -86,11 +90,12 @@ def test_failed_jsonfiles_validate_client(
             stack, ['not_a_file'], render=render,
             subprocess_mode=call_mode)
 
+
 @pytest.mark.parametrize('use_rest,stack',
-                        [(True,'test_import_jsonfiles_parallel'),
-                         (False,'test_import_jsonfiles_parallel_rest')])                                
+                         [(True, 'test_import_jsonfiles_parallel'),
+                          (False, 'test_import_jsonfiles_parallel_rest')])
 def test_import_jsonfiles_parallel(
-        render, render_example_tilespec_and_transforms, 
+        render, render_example_tilespec_and_transforms,
         stack, use_rest,
         poolsize=test_pool_size):
     renderapi.stack.create_stack(stack, render=render)
@@ -103,35 +108,39 @@ def test_import_jsonfiles_parallel(
     validate_stack_import(render, stack, tilespecs)
     renderapi.stack.delete_stack(stack, render=render)
 
+
 def test_bbox_transformed(render, render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     ts = tilespecs[0]
-    xy = ts.bbox_transformed(ndiv_inner=0,tf_limit=0)
-    assert xy.shape == (5,2)
-    assert np.abs((xy[2,:]-np.array([ts.width,ts.height])).sum()) < 1e-10
-    xy = ts.bbox_transformed(ndiv_inner=1,tf_limit=0)
-    assert xy.shape == (9,2)
-    #xy = ts.bbox_transformed(ndiv_inner=1,tf_limit=4)
-    #assert xy.shape == (9,2)
-    #xy = ts.bbox_transformed(ndiv_inner=1,tf_limit=None)
-    #assert xy.shape == (9,2)
+    xy = ts.bbox_transformed(ndiv_inner=0, tf_limit=0)
+    assert xy.shape == (5, 2)
+    assert np.abs((xy[2, :] - np.array([ts.width, ts.height])).sum()) < 1e-10
+    xy = ts.bbox_transformed(ndiv_inner=1, tf_limit=0)
+    assert xy.shape == (9, 2)
+    # xy = ts.bbox_transformed(ndiv_inner=1,tf_limit=4)
+    # assert xy.shape == (9,2)
+    # xy = ts.bbox_transformed(ndiv_inner=1,tf_limit=None)
+    # assert xy.shape == (9,2)
 
 
 def square(x):
     return x**2
-#this test was added in order to validate that multiple WithPools would work
-#pathos was breaking when we did this before.  Should now be not relevant, 
-#but who ever deletes a test if you don't have to.
+
+
+# this test was added in order to validate that multiple WithPools would work
+# pathos was breaking when we did this before.  Should now be not relevant,
+# but who ever deletes a test if you don't have to.
 def test_import_jsonfiles_parallel_multiple(
-        render, render_example_tilespec_and_transforms, poolsize=test_pool_size):
+        render, render_example_tilespec_and_transforms,
+        poolsize=test_pool_size):
     stacks = ['testmultiple1', 'testmultiple2', 'testmultiple3']
     mylist = range(10)
     for stack in stacks:
         with renderapi.client.WithPool(poolsize) as pool:
-            results = pool.map(square, mylist)
+            results = pool.map(square, mylist)  # noqa: F841
         test_import_jsonfiles_parallel(
-            render, render_example_tilespec_and_transforms, stack, 
-            use_rest=False,poolsize=poolsize)
+            render, render_example_tilespec_and_transforms, stack,
+            use_rest=False, poolsize=poolsize)
 
 
 def test_import_tilespecs_parallel(render,
@@ -153,7 +162,8 @@ def test_import_jsonfiles(render, render_example_tilespec_and_transforms,
         render_example_tilespec_and_transforms)
 
     renderapi.client.import_jsonfiles(
-        stack, tfiles, transformFile=transformFile, poolsize=test_pool_size, render=render)
+        stack, tfiles, transformFile=transformFile, poolsize=test_pool_size,
+        render=render)
     validate_stack_import(render, stack, tilespecs)
 
 
@@ -184,13 +194,13 @@ def test_tile_pair_client(render, teststack, **kwargs):
     ({'maxX': 2000, 'minX': 1000, 'minY': 1000, 'maxY': 2000}, False),
     (None, False)
 ])
-def test_renderSectionClient(render,teststack, bounds, raises, scale=.05):
+def test_renderSectionClient(render, teststack, bounds, raises, scale=.05):
     root_directory = tempfile.mkdtemp()
     root.debug('section_directory:{}'.format(root_directory))
     zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
 
     if raises:
-        with pytest.raises(renderapi.client.ClientScriptError) as e:
+        with pytest.raises(renderapi.client.ClientScriptError):
             renderapi.client.renderSectionClient(teststack,
                                                  root_directory,
                                                  zvalues,
@@ -208,16 +218,19 @@ def test_renderSectionClient(render,teststack, bounds, raises, scale=.05):
                                              format='png')
         pngfiles = []
         for (dirpath, dirname, filenames) in os.walk(root_directory):
-            pngfiles += [os.path.join(dirpath,f) for f in filenames if f.endswith('png')]
+            pngfiles += [os.path.join(dirpath, f) for f in filenames
+                         if f.endswith('png')]
         assert len(pngfiles) == len(zvalues)
         if bounds is not None:
             for f in pngfiles:
                 img = PIL.Image.open(f)
                 width, height = img.size
                 assert(
-                    np.abs(width - (bounds['maxX'] - bounds['minX']) * scale) < 1)
+                    np.abs(width - (bounds['maxX'] - bounds['minX']) * scale)
+                    < 1)
                 assert(
-                    np.abs(height - (bounds['maxY'] - bounds['minY']) * scale) < 1)
+                    np.abs(height - (bounds['maxY'] - bounds['minY']) * scale)
+                    < 1)
 
 
 def test_importTransformChangesClient(render, teststack):
@@ -264,14 +277,16 @@ def test_transformSectionClient(render, teststack,
                 for ts in output_ts])
     renderapi.stack.delete_stack(deststack, render=render)
 
-def test_point_match_client(teststack, render,tmpdir):
+
+def test_point_match_client(teststack, render, tmpdir):
     collection = 'test_client_collection'
     zvalues = np.array(renderapi.stack.get_z_values_for_stack(
         teststack, render=render))
     tilepairjson = renderapi.client.tilePairClient(
         teststack, np.min(zvalues), np.max(zvalues), render=render)
 
-    tile_pairs = [(tp['p']['id'],tp['q']['id']) for tp in tilepairjson['neighborPairs'][0:1]]
+    tile_pairs = [(tp['p']['id'], tp['q']['id']) for tp
+                  in tilepairjson['neighborPairs'][0:1]]
     sift_options = renderapi.client.SiftPointMatchOptions(renderScale=.25)
     renderapi.client.pointMatchClient(teststack,
                                       collection,
@@ -280,8 +295,9 @@ def test_point_match_client(teststack, render,tmpdir):
                                       sift_options=sift_options,
                                       render=render)
     tp = tilepairjson['neighborPairs'][0]
-    pms = renderapi.pointmatch.get_matches_involving_tile(collection,tp['p']['groupId'],tp['p']['id'],render=render)
-    assert(len(pms)>0)
+    pms = renderapi.pointmatch.get_matches_involving_tile(
+        collection, tp['p']['groupId'], tp['p']['id'], render=render)
+    assert(len(pms) > 0)
 
 
 def test_call_run_ws_client_renderclient(render, teststack):
@@ -293,4 +309,3 @@ def test_call_run_ws_client_renderclient(render, teststack):
         render.DEFAULT_PROJECT, teststack) + [zvalues[0]]
     assert not renderapi.client.call_run_ws_client(
         test_class, add_args=args, subprocess_mode='call', renderclient=render)
-
