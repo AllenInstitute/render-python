@@ -1,5 +1,6 @@
 import renderapi
 import pytest
+import numpy as np
 
 
 def test_jbool():
@@ -19,4 +20,5 @@ def test_renderdumps_simple():
 
 def test_renderdumps_fails():
     with pytest.raises(AttributeError):
-        renderapi.utils.renderdumps(pytest)
+        renderapi.utils.renderdumps(np.zeros(3))
+
