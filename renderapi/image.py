@@ -21,7 +21,7 @@ IMAGE_FORMATS = {'png': 'png-image',
                  'tif': 'tiff-image',
                  '.tif': 'tiff-image',
                  'tiff': 'tiff-image',
-                 'tiff16':'tiff16-image',
+                 'tiff16': 'tiff16-image',
                  None: 'png-image'}  # Default to png
 
 
@@ -75,7 +75,7 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
     Raises
     ------
     RenderError
-    """
+    """  # noqa: E501
     try:
         image_ext = IMAGE_FORMATS[img_format]
     except KeyError as e:  # pragma: no cover
@@ -97,7 +97,7 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
     if maxTileSpecsToRender is not None:
         qparams['maxTileSpecsToRender'] = maxTileSpecsToRender
     if channel is not None:
-        qparams.update({'channels':channel})
+        qparams.update({'channels': channel})
 
     r = session.get(request_url, params=qparams)
     try:
@@ -110,7 +110,7 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
 
 
 @renderaccess
-def get_tile_image_data(stack, tileId, channel=None,normalizeForMatching=True,
+def get_tile_image_data(stack, tileId, channel=None, normalizeForMatching=True,
                         excludeAllTransforms=False, scale=None,
                         filter=None, host=None, port=None, owner=None,
                         project=None, img_format=None,
@@ -157,7 +157,7 @@ def get_tile_image_data(stack, tileId, channel=None,normalizeForMatching=True,
     ------
     RenderError
 
-    """
+    """  # noqa: E501
     try:
         image_ext = IMAGE_FORMATS[img_format]
     except KeyError as e:  # pragma: no cover
@@ -177,7 +177,7 @@ def get_tile_image_data(stack, tileId, channel=None,normalizeForMatching=True,
     if excludeAllTransforms is not None:
         qparams['excludeAllTransforms'] = jbool(excludeAllTransforms)
     if channel is not None:
-        qparams.update({'channels':channel})
+        qparams.update({'channels': channel})
     logger.debug(request_url)
 
     r = session.get(request_url, params=qparams)
@@ -234,12 +234,12 @@ def get_section_image(stack, z, scale=1.0, channel=None,
     Examples
     --------
     ::
-        
+
         >>> import renderapi
         >>> render = renderapi.render.connect('server',8080,'me','myproject')
         >>> img = render.run(renderapi.stack.get_section_image,'mystack',3.0)
 
-    """
+    """  # noqa: E501
     try:
         image_ext = IMAGE_FORMATS[img_format]
     except KeyError as e:  # pragma: no cover
@@ -251,7 +251,7 @@ def get_section_image(stack, z, scale=1.0, channel=None,
     if maxTileSpecsToRender is not None:
         qparams.update({'maxTileSpecsToRender': maxTileSpecsToRender})
     if channel is not None:
-        qparams.update({'channels':channel})
+        qparams.update({'channels': channel})
 
     r = session.get(request_url, params=qparams)
     return np.asarray(Image.open(io.BytesIO(r.content)))

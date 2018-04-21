@@ -8,13 +8,14 @@ from functools import partial
 import logging
 import subprocess
 import tempfile
+from multiprocessing.pool import Pool
 from decorator import decorator
 from .errors import ClientScriptError
 from .utils import NullHandler, renderdump_temp, fitargspec
-from .render import RenderClient, renderaccess, Render, format_preamble, format_baseurl
+from .render import (RenderClient, renderaccess, Render,
+                     format_preamble, format_baseurl)
 from .stack import set_stack_state, make_stack_params
 from .resolvedtiles import put_tilespecs
-from multiprocessing.pool import Pool
 
 # setup logger
 logger = logging.getLogger(__name__)
@@ -53,7 +54,7 @@ def renderclientaccess(f, *args, **kwargs):
         try:
             client_script = kwargs.get('client_script')
             cs_valid = os.path.isfile(client_script)
-        except TypeError as e:
+        except TypeError:
             try:
                 client_scripts = kwargs.get('client_scripts')
                 if os.path.isdir(client_scripts):
@@ -64,7 +65,7 @@ def renderclientaccess(f, *args, **kwargs):
                     raise ClientScriptError(
                         'invalid client_scripts directory {}'.format(
                             client_scripts))
-            except TypeError as e:
+            except TypeError:
                 raise ClientScriptError(
                     'No client script information specified: '
                     'client_scripts={} client_script={}'.format(
@@ -107,8 +108,8 @@ class WithPool(Pool):
 
 @renderclientaccess
 def import_single_json_file(stack, jsonfile, transformFile=None,
-                            subprocess_mode=None,
-                            client_script=None, memGB=None, host=None, port=None,
+                            subprocess_mode=None, client_script=None,
+                            memGB=None, host=None, port=None,
                             owner=None, project=None, render=None, **kwargs):
     """calls client script to import given jsonfile
 
@@ -217,10 +218,10 @@ def import_jsonfiles_parallel(
 
 
 @renderaccess
-def import_jsonfiles(stack, jsonfiles, transformFile=None, subprocess_mode=None,
-                     client_script=None, memGB=None, host=None, port=None,
-                     owner=None, project=None, close_stack=True,
-                     render=None, **kwargs):
+def import_jsonfiles(stack, jsonfiles, transformFile=None,
+                     subprocess_mode=None, client_script=None, memGB=None,
+                     host=None, port=None, owner=None, project=None,
+                     close_stack=True, render=None, **kwargs):
     """import jsons using client script serially
 
     Parameters
@@ -285,7 +286,6 @@ def import_jsonfiles_validate_client(stack, jsonfiles,
     else:
         raise NotImplementedError('No custom validation handling!')
 
-    my_env = os.environ.copy()
     stack_params = make_stack_params(host, port, owner, project, stack)
     set_stack_state(stack, 'LOADING', host, port, owner, project)
 
@@ -303,7 +303,7 @@ def import_jsonfiles_validate_client(stack, jsonfiles,
 
 @renderclientaccess
 def import_tilespecs(stack, tilespecs, sharedTransforms=None,
-                     use_rest=False,deriveData=True,
+                     use_rest=False, deriveData=True,
                      subprocess_mode=None, host=None, port=None,
                      owner=None, project=None, client_script=None,
                      memGB=None, render=None, **kwargs):
@@ -325,13 +325,14 @@ def import_tilespecs(stack, tilespecs, sharedTransforms=None,
     render : renderapi.render.Render
         render connect object
 
-    """
+    """  # noqa: E501
     if use_rest:
         put_tilespecs(stack,
                       deriveData=deriveData,
                       tilespecs=tilespecs,
                       shared_transforms=sharedTransforms,
-                      host=host,port=port,owner=owner,project=project,**kwargs)
+                      host=host, port=port, owner=owner,
+                      project=project, **kwargs)
     else:
         tsjson = renderdump_temp(tilespecs)
 
@@ -378,7 +379,7 @@ def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
     render : :class:renderapi.render.Render
         render connect object
     kwargs: dict .. all other kwargs to pass on to renderapi.client.import_tilespecs
-    """
+    """  # noqa: E501
     set_stack_state(stack, 'LOADING', host, port, owner, project)
     partial_import = partial(
         import_tilespecs, stack, sharedTransforms=sharedTransforms,
@@ -515,7 +516,7 @@ def call_run_ws_client(className, add_args=[], renderclient=None,
     args = map(str, [client_script, memGB, className] + add_args)
     try:
         ret_val = run_subprocess_mode(args, **kwargs)
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError:
         raise ClientScriptError('client_script call {} failed'.format(args))
 
     return ret_val
@@ -755,7 +756,7 @@ def coordinateClient(stack, z, fromJson=None, toJson=None, localToWorld=None,
     -------
     :obj:`list` of :obj:`dict` for local to world or :obj:`list` of :obj:`list` of :obj:`dict` for world to local
         list representing mapped coordinates
-    """
+    """  # noqa: E501
     argvs = (make_stack_params(host, port, owner, project, stack) +
              ['--z', z, '--fromJson', fromJson, '--toJson', toJson] +
              (['--localToWorld'] if localToWorld else []) +
@@ -775,7 +776,7 @@ def coordinateClient(stack, z, fromJson=None, toJson=None, localToWorld=None,
 def renderSectionClient(stack, rootDirectory, zs, scale=None,
                         maxIntensity=None, minIntensity=None, bounds=None,
                         format=None, channel=None, customOutputFolder=None,
-                        customSubFolder=None,padFileNamesWithZeros=None,
+                        customSubFolder=None, padFileNamesWithZeros=None,
                         doFilter=None, fillWithNoise=None, imageType=None,
                         subprocess_mode=None, host=None, port=None, owner=None,
                         project=None, client_script=None, memGB=None,
@@ -818,7 +819,7 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
         string representing java boolean for whether to replace saturated
         image values with uniform noise
 
-    """
+    """  # noqa: E501
     if bounds is not None:
         try:
             if bounds['maxX'] < bounds['minX']:
@@ -828,11 +829,13 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
                 raise ClientScriptError('maxY:{} is less than minY:{}'.format(
                     bounds['maxY'], bounds['minY']))
             bound_list = ','.join(map(lambda x: str(int(x)),
-                                      [bounds['minX'], bounds['maxX'], bounds['minY'], bounds['maxY']]))
+                                      [bounds['minX'], bounds['maxX'],
+                                       bounds['minY'], bounds['maxY']]))
             bound_param = ['--bounds', bound_list]
         except KeyError as e:
             raise ClientScriptError(
-                'bounds does not contain correct keys {}'.format(bounds))
+                'bounds does not contain correct keys {}. Missing {}'.format(
+                    bounds, e))
     else:
         bound_param = []
 
@@ -843,11 +846,11 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
              get_param(minIntensity, '--minIntensity') +
              get_param(maxIntensity, '--maxIntensity') +
              get_param(fillWithNoise, '--fillWithNoise') +
-             get_param(customOutputFolder, '--customOutputFolder')+
-             get_param(imageType,'--imageType')+
-             get_param(channel,'--channels')+
-             get_param(customSubFolder,'--customSubFolder')+
-             get_param(padFileNamesWithZeros,'--padFileNamesWithZeros')+
+             get_param(customOutputFolder, '--customOutputFolder') +
+             get_param(imageType, '--imageType') +
+             get_param(channel, '--channels') +
+             get_param(customSubFolder, '--customSubFolder') +
+             get_param(padFileNamesWithZeros, '--padFileNamesWithZeros') +
              bound_param + zs)
     call_run_ws_client('org.janelia.render.client.RenderSectionClient',
                        memGB=memGB, client_script=client_script,
@@ -935,9 +938,9 @@ def get_canvas_url_template(
     excludeAllTransforms: bool
         alternative to normalizeForMatching which simply removes all transforms from the list.
         default=False
-    """
+    """  # noqa: E501
     request_url = format_preamble(host, port, owner, project, stack)
-    tile_base_url = request_url+"/tile"
+    tile_base_url = request_url + "/tile"
     url_suffix = "render-parameters"
     if filter:
         url_suffix += '?filter=true'
@@ -1011,7 +1014,7 @@ class FeatureExtractionParameters(ArgumentParameters):
 class MatchDerivationParameters(ArgumentParameters):
     def __init__(self, matchIterations=None,
                  matchMaxEpsilon=None, matchMaxNumInliers=None,
-                 matchMaxTrust=None,  matchMinInlierRatio=None,
+                 matchMaxTrust=None, matchMinInlierRatio=None,
                  matchMinNumInliers=None,
                  matchModelType=None, matchRod=None, **kwargs):
         super(MatchDerivationParameters, self).__init__(**kwargs)
@@ -1092,7 +1095,7 @@ def pointMatchClient(stack, collection, tile_pairs,
         alternative to normalizeForMatching which simply removes all transforms from the list.
         default=False
 
-    """
+    """  # noqa: E501
     sift_options = (SiftPointMatchOptions(**kwargs) if sift_options is None
                     else sift_options)
 
@@ -1110,18 +1113,18 @@ def pointMatchClient(stack, collection, tile_pairs,
     argvs += sift_options.to_java_args()
 
     canvas_url_template = get_canvas_url_template(
-                            stack,
-                            filter,
-                            renderWithoutMask,
-                            normalizeForMatching,
-                            excludeTransformsAfterLast,
-                            excludeFirstTransformAndAllAfter,
-                            excludeAllTransforms,
-                            host=host,
-                            port=port,
-                            owner=owner,
-                            project=project,
-                            client_script=client_script)
+        stack,
+        filter,
+        renderWithoutMask,
+        normalizeForMatching,
+        excludeTransformsAfterLast,
+        excludeFirstTransformAndAllAfter,
+        excludeAllTransforms,
+        host=host,
+        port=port,
+        owner=owner,
+        project=project,
+        client_script=client_script)
 
     for tile1, tile2 in tile_pairs:
         argvs += [canvas_url_template.format(tile1),

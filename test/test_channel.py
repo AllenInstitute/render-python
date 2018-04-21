@@ -1,18 +1,18 @@
 import renderapi
-import pytest
 import json
 
 d = {
-    "name":"DAPI",
-    "maxIntensity":255,
-    "minIntensity":0,
-    "mipmapLevels":{
-        "0":{
-            "imageUrl":"file:///not/a/path",
-            "maskUrl":"file:///not/a/mask"
+    "name": "DAPI",
+    "maxIntensity": 255,
+    "minIntensity": 0,
+    "mipmapLevels": {
+        "0": {
+            "imageUrl": "file:///not/a/path",
+            "maskUrl": "file:///not/a/mask"
         }
     }
 }
+
 
 def test_channel():
     mml = renderapi.image_pyramid.MipMapLevel(0,
@@ -24,6 +24,6 @@ def test_channel():
                                         minIntensity=0,
                                         ip=ip)
 
-    a=json.loads(renderapi.utils.renderdumps(channel))
-    b=json.loads(renderapi.utils.renderdumps(d))
-    assert(a==b)
+    a = json.loads(renderapi.utils.renderdumps(channel))
+    b = json.loads(renderapi.utils.renderdumps(d))
+    assert(a == b)

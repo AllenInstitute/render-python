@@ -1,4 +1,3 @@
-
 class Layout:
     """Layout class to describe acquisition settings
 

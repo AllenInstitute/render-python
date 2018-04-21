@@ -3,7 +3,7 @@ import logging
 import os
 import requests
 from .utils import defaultifNone, NullHandler, fitargspec, get_json
-from .errors import ClientScriptError, RenderError
+from .errors import ClientScriptError
 from decorator import decorator
 from six.moves import input as raw_input
 
@@ -121,7 +121,7 @@ class Render(object):
         >>> render = Render('server',8080)
         >>> metadata = render.run(renderapi.render.get_stack_metadata_by_owner, 'myowner')
 
-        """
+        """  # noqa: E501
         # FIXME WARNING I think renderaccess can default to
         # another render if defined in args (test/squash)
         kwargs['render'] = self
@@ -483,8 +483,7 @@ def get_owners(host=None, port=None, session=requests.session(),
 
     """
     request_url = "%s/owners/" % format_baseurl(host, port)
-    return get_json(session,request_url)
-
+    return get_json(session, request_url)
 
 
 @renderaccess
@@ -513,8 +512,7 @@ def get_stack_metadata_by_owner(owner=None, host=None, port=None,
     request_url = "%s/owner/%s/stacks/" % (
         format_baseurl(host, port), owner)
     logger.debug(request_url)
-    return get_json(session,request_url)
-
+    return get_json(session, request_url)
 
 
 @renderaccess

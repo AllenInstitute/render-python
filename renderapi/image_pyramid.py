@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+
 class MipMapLevel:
     """MipMapLevel class to represent a level of an image pyramid.
     Can be put in dictionary formatting using dict(mML)

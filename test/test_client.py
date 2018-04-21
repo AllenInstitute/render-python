@@ -13,7 +13,7 @@ args = {
 
 
 def test_render_client():
-    r = renderapi.render.connect(**args)
+    r = renderapi.render.connect(**args)  # noqa: F841
 
 
 def test_default_kwargs(rkwargs=rendersettings.DEFAULT_RENDER, **kwargs):
@@ -94,7 +94,7 @@ def test_renderaccess_decorator(tmpdir):
                     newargs['client_scripts']))
 
     with open(renderapi.render.RenderClient.clientscript_from_clientscripts(
-            str(tmpdir)), 'w') as f:
+            str(tmpdir)), 'w') as f:  # noqa: F841
         # test that renderclientaccess decorated funtion works with Render
         #     objects missing client_script
         assert checkexpected(expected, renderclientaccess_decorated(
@@ -124,11 +124,12 @@ def test_renderclientaccess_decorator_fail(tmpdir):
 
     with pytest.raises(renderapi.errors.ClientScriptError):
         _ = renderclientaccess_decorated(
-            5, render=renderapi.render.RenderClient(**newargs))
+            5, render=renderapi.render.RenderClient(**newargs))  # noqa: F841
 
     with pytest.raises(renderapi.errors.ClientScriptError):
-        _ = renderclientaccess_decorated(
-            5, render=renderapi.connect(force_http=False, **newargs))
+        _ = renderclientaccess_decorated(  # noqa: F841
+            5, render=renderapi.connect(
+                force_http=False, **newargs))
 
 
 def test_renderclientaccess_override(tmpdir):
@@ -147,7 +148,7 @@ def test_renderclientaccess_override(tmpdir):
                     newargs['client_scripts']))
 
     with open(renderapi.render.RenderClient.clientscript_from_clientscripts(
-            str(tmpdir)), 'w') as f:
+            str(tmpdir)), 'w') as f:  # noqa: F841
         # test that renderclientaccess decorated funtion works with Render
         #     objects missing client_script
         assert checkexpected(expected, renderclientaccess_decorated(
