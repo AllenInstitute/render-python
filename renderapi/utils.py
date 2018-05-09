@@ -7,8 +7,18 @@ import logging
 import inspect
 import copy
 import json
-from .errors import RenderError
+
 import numpy
+import requests
+
+from .errors import RenderError
+
+# use ujson if installed for faster json
+try:
+    import ujson as requests_json
+except ImportError:
+    import json as requests_json
+requests.models.complexjson = requests_json
 
 
 class NullHandler(logging.Handler):
