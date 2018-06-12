@@ -5,8 +5,7 @@ import numpy as np
 from .render import format_preamble, renderaccess
 from .utils import NullHandler, get_json
 from .stack import get_z_values_for_stack
-from .transform import TransformList,estimate_dstpts
-from .errors import RenderError
+from .transform import TransformList, estimate_dstpts
 from .image_pyramid import MipMapLevel, ImagePyramid
 from .layout import Layout
 from .channel import Channel
@@ -77,7 +76,8 @@ class TileSpec:
                  imageUrl=None, maskUrl=None,
                  minint=0, maxint=65535, layout=None, tforms=[],
                  inputfilters=[], scale3Url=None, scale2Url=None,
-                 scale1Url=None, json=None, channels=None,mipMapLevels=[], **kwargs):
+                 scale1Url=None, json=None, channels=None,
+                 mipMapLevels=[], **kwargs):
         if json is not None:
             self.from_dict(json)
         else:
@@ -92,7 +92,7 @@ class TileSpec:
             self.inputfilters = inputfilters
             self.layout = Layout(**kwargs) if layout is None else layout
 
-            self.ip = ImagePyramid({mml.level:mml for mml in mipMapLevels})
+            self.ip = ImagePyramid({mml.level: mml for mml in mipMapLevels})
             # legacy scaleXUrl
             self.maskUrl = maskUrl
             self.imageUrl = imageUrl
@@ -119,7 +119,8 @@ class TileSpec:
                 'undefined bounding box for tile {}'.format(self.tileId))
         return box
 
-    def bbox_transformed(self,ndiv_inner=0,tf_limit=None, reference_tforms=None):
+    def bbox_transformed(self, ndiv_inner=0,
+                         tf_limit=None, reference_tforms=None):
         """method to return Nx2 transformed coordinates of bounding box
         Paramters
         ---------
@@ -135,24 +136,24 @@ class TileSpec:
         -------
         Nx2 array ready for input to shapely.Polygon()
         """
-        #start with closed Nx2 array of corners
-        xy = np.zeros((5,2)).astype('float')
-        xy[0,:] = [0,0]
-        xy[1,:] = [0,self.height]
-        xy[2,:] = [self.width,self.height]
-        xy[3,:] = [self.width,0]
-        xy[4,:] = [0,0]
-    
-        #recursively add points to the boundary
-        while ndiv_inner>0:
-            sz = 2*xy.shape[0]-1
-            newxy = np.zeros((sz,2)).astype('float')
-            newxy[0::2,:] = xy[:,:]
-            newxy[1:sz:2,:] = 0.5*(newxy[0:(sz-2):2,:] + newxy[2:sz:2,:])
-            xy = newxy
-            ndiv_inner-=1
+        # start with closed Nx2 array of corners
+        xy = np.zeros((5, 2)).astype('float')
+        xy[0, :] = [0, 0]
+        xy[1, :] = [0, self.height]
+        xy[2, :] = [self.width, self.height]
+        xy[3, :] = [self.width, 0]
+        xy[4, :] = [0, 0]
 
-        xy = estimate_dstpts(self.tforms[0:tf_limit], \
+        # recursively add points to the boundary
+        while ndiv_inner > 0:
+            sz = 2*xy.shape[0]-1
+            newxy = np.zeros((sz, 2)).astype('float')
+            newxy[0::2, :] = xy[:, :]
+            newxy[1:sz:2, :] = 0.5*(newxy[0:(sz-2):2, :] + newxy[2:sz:2, :])
+            xy = newxy
+            ndiv_inner -= 1
+
+        xy = estimate_dstpts(self.tforms[0:tf_limit],
                              src=xy, reference_tforms=reference_tforms)
 
         return xy
@@ -181,7 +182,7 @@ class TileSpec:
         # thedict['transforms']['specList']=[t.to_dict() for t in self.tforms]
         thedict['transforms']['specList'] = []
         if self.channels is not None:
-            thedict['channels']=[ch.to_dict() for ch in self.channels]
+            thedict['channels'] = [ch.to_dict() for ch in self.channels]
         for t in self.tforms:
             strlist = {}
             # added by sharmi - if your speclist contains a speclist (can
@@ -226,14 +227,15 @@ class TileSpec:
         self.maxX = d.get('maxX', None)
         self.maxY = d.get('maxY', None)
         self.minY = d.get('minY', None)
-        mmld = d.get('mipmapLevels',{})
-        self.ip = ImagePyramid({l:MipMapLevel(
+        mmld = d.get('mipmapLevels', {})
+        self.ip = ImagePyramid(mipMapLevels=[
+            MipMapLevel(
                 int(l), imageUrl=v.get('imageUrl'), maskUrl=v.get('maskUrl'))
-            for l, v in mmld.items()})
+            for l, v in mmld.items()])
 
         tfl = TransformList(json=d['transforms'])
         self.tforms = tfl.tforms
-        chd = d.get('channels',None)
+        chd = d.get('channels', None)
         if chd is None:
             self.channels = None
         else:
@@ -282,8 +284,7 @@ def get_tile_spec_renderparameters(stack, tile, host=None, port=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/tile/%s/render-parameters" % (tile)
-    return get_json(session,request_url)
-
+    return get_json(session, request_url)
 
 
 @renderaccess
@@ -350,8 +351,7 @@ def get_tile_spec_raw(stack, tile, host=None, port=None, owner=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/tile/%s/" % (tile)
-    return TileSpec(json=get_json(session,request_url))
-
+    return TileSpec(json=get_json(session, request_url))
 
 
 @renderaccess
@@ -444,7 +444,7 @@ def get_tile_specs_from_box(stack, z, x, y, width, height,
         "/z/%d/box/%d,%d,%d,%d,%3.2f/render-parameters" % (
         z, x, y, width, height, scale)
     logger.debug(request_url)
-    tilespecs_json = get_json(session,request_url)
+    tilespecs_json = get_json(session, request_url)
     return [TileSpec(json=tilespec_json)
             for tilespec_json in tilespecs_json['tileSpecs']]
 
@@ -476,7 +476,7 @@ def get_tile_specs_from_z(stack, z, host=None, port=None,
     request_url = format_preamble(
         host, port, owner, project, stack) + '/z/%f/tile-specs' % (z)
     logger.debug(request_url)
-    tilespecs_json = get_json(session,request_url)
+    tilespecs_json = get_json(session, request_url)
 
     if len(tilespecs_json) == 0:
         return None

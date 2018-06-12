@@ -4,7 +4,8 @@ from .image_pyramid import ImagePyramid, MipMapLevel
 class Channel:
     '''class for storing channels of different mipmapsources'''
 
-    def __init__(self, name=None, maxIntensity=None, minIntensity=None, ip=None, json=None):
+    def __init__(self, name=None, maxIntensity=None, minIntensity=None,
+                 ip=None, json=None):
         '''
         Parameters
         ==========
@@ -29,18 +30,18 @@ class Channel:
             self.ip = ip
 
     def to_dict(self):
-        ''' method for serializing this class to a json compatible dictionary'''
+        '''method for serializing this class to a json compatible dictionary'''
         d = {}
         d['name'] = self.name
         if self.minIntensity is not None:
             d['minIntensity'] = self.minIntensity
         if self.maxIntensity is not None:
             d['maxIntensity'] = self.maxIntensity
-        d['mipmapLevels'] = dict(self.ip)
+        d['mipmapLevels'] = self.ip.to_ordered_dict()
         return d
 
     def from_dict(self, d):
-        ''' method for deserializing this class from a json compatible dictionary
+        '''method for deserializing this class from a json compatible dictionary
 
         Parameters
         ==========
@@ -50,6 +51,7 @@ class Channel:
         self.name = d['name']
         self.minIntensity = d['minIntensity']
         self.maxIntensity = d['maxIntensity']
-        self.ip = ImagePyramid({l: MipMapLevel(
-            int(l), imageUrl=v.get('imageUrl'), maskUrl=v.get('maskUrl'))
-            for l, v in d['mipmapLevels'].items()})
+        self.ip = ImagePyramid(mipMapLevels=[
+            MipMapLevel(
+                int(l), imageUrl=v.get('imageUrl'), maskUrl=v.get('maskUrl'))
+            for l, v in d['mipmapLevels'].items()])

@@ -7,9 +7,19 @@ import logging
 import inspect
 import copy
 import json
-from .errors import RenderError
+
 import numpy
 import requests
+
+from .errors import RenderError
+
+# use ujson if installed for faster json
+try:
+    import ujson as requests_json
+except ImportError:
+    import json as requests_json
+requests.models.complexjson = requests_json
+
 
 class NullHandler(logging.Handler):
     """handler to avoid logging errors for, e.g., missing logger setup"""
@@ -42,7 +52,8 @@ class RenderEncoder(json.JSONEncoder):
             json encodable datatype
 
         """
-        if isinstance(obj, numpy.integer): return int(obj)
+        if isinstance(obj, numpy.integer):
+            return int(obj)
         to_dict = getattr(obj, "to_dict", None)
         if callable(to_dict):
             return obj.to_dict()
@@ -94,13 +105,15 @@ def post_json(session, request_url, d, params=None):
         headers['Accept'] = "application/json"
     r = session.post(request_url, data=payload, params=params,
                      headers=headers)
-    if r.status_code not in [200,201,204]:
+    if r.status_code not in [200, 201, 204]:
         raise RenderError(
-            'cannot post {} to {} with params {} returned status_code {} with message {}'\
-            .format(d, request_url, params,r.status_code,r.text))
+            'cannot post {} to {} with params {} returned status_code '
+            '{} with message {}'.format(
+                d, request_url, params, r.status_code, r.text))
     return r
-    
-def rest_delete(session,request_url,params=None):
+
+
+def rest_delete(session, request_url, params=None):
     """DELETE requests with RenderError handling
 
     Parameters
@@ -115,9 +128,9 @@ def rest_delete(session,request_url,params=None):
         server response
     """
     r = session.delete(request_url)
-    if r.status_code not in [200,202,204]:
-        raise RenderError("delete of {} returned {} with message {}"\
-                .format(r.url, r.status_code,r.text))
+    if r.status_code not in [200, 202, 204]:
+        raise RenderError("delete of {} returned {} with message {}".format(
+            r.url, r.status_code, r.text))
     return r
 
 
@@ -154,14 +167,14 @@ def put_json(session, request_url, d, params=None):
         headers['Accept'] = "application/json"
     r = session.put(request_url, data=payload, params=params,
                     headers=headers)
-    if r.status_code not in [200,201,204]:
+    if r.status_code not in [200, 201, 204]:
         raise RenderError(
             'put {} to {} returned status code {} with message {}'.format(
-                d, r.url,r.status_code,r.text))
+                d, r.url, r.status_code, r.text))
     return r
-   
 
-def get_json(session,request_url,params=None,stream=False,**kwargs):
+
+def get_json(session, request_url, params=None, stream=False, **kwargs):
     """get_json wrapper for requests to handle errors
 
     Parameters
@@ -186,18 +199,18 @@ def get_json(session,request_url,params=None,stream=False,**kwargs):
     RenderError
         if cannot get json successfully
     """
-   
-    r = session.get(request_url,params=params,stream=stream)
+
+    r = session.get(request_url, params=params, stream=stream)
     if r.status_code != 200:
         message = "request to {} returned error code {} with message {}"
-        raise RenderError(message.format(r.url,r.status_code,r.text))
+        raise RenderError(message.format(r.url, r.status_code, r.text))
     try:
         return r.json()
     except Exception as e:
         logger.error(e)
         logger.error(r.text)
         raise RenderError(r.text)
-    
+
 
 def renderdumps(obj, *args, **kwargs):
     """json.dumps using the RenderEncode

@@ -1,6 +1,7 @@
 from collections import MutableMapping
 from .errors import RenderError
 
+
 class MipMapLevel:
     """MipMapLevel class to represent a level of an image pyramid.
     Can be put in dictionary formatting using dict(mML)
@@ -15,6 +16,7 @@ class MipMapLevel:
         uri corresponding to mask
 
     """
+
     def __init__(self, level, imageUrl=None, maskUrl=None):
         self.level = level
         self.imageUrl = imageUrl
@@ -37,22 +39,26 @@ class MipMapLevel:
             d.update({'maskUrl': self.maskUrl})
         return d
 
-    def __getitem__(self,key):
-        if key=='imageUrl':
+    def __getitem__(self, key):
+        if key == 'imageUrl':
             return self.imageUrl
-        if key=='maskUrl':
+        if key == 'maskUrl':
             return self.maskUrl
         else:
-            raise RenderError('{} is not a valid attribute of a mipmapLevel'.format(key))
+            raise RenderError(
+                '{} is not a valid attribute of a mipmapLevel'.format(key))
 
     def __iter__(self):
         return iter([(self.level, self._formatUrls())])
 
-    def __eq__(self,b):
+    def __eq__(self, b):
         try:
-            return all([self.imageUrl == b.imageUrl, self.maskUrl==b.maskUrl])
+            return all([self.imageUrl == b.imageUrl,
+                        self.maskUrl == b.maskUrl])
         except AttributeError as e:
-            return all([self.imageUrl == b.get('imageUrl'), self.maskUrl==b.get('maskUrl')])
+            return all([self.imageUrl == b.get('imageUrl'),
+                        self.maskUrl == b.get('maskUrl')])
+
 
 class TransformedDict(MutableMapping):
     """A dictionary that applies an arbitrary key-altering
@@ -80,6 +86,7 @@ class TransformedDict(MutableMapping):
     def __keytransform__(self, key):
         return key
 
+
 class ImagePyramid(TransformedDict):
     '''Image Pyramid class representing a set of MipMapLevels which correspond
     to mipmapped (continuously downsmapled by 2x) representations
@@ -87,20 +94,20 @@ class ImagePyramid(TransformedDict):
     Can be put into dictionary formatting using dict(ip) or OrderedDict(ip)
     '''
 
-    def __keytransform__(self,key):
+    def __keytransform__(self, key):
         try:
             level = int(key)
         except ValueError as e:
             raise RenderError("{} is not a valid mipmap level".format(key))
-        if level<0:
-            raise RenderError("{} is not a valid mipmap level (less than 0)".format(key))
+        if level < 0:
+            raise RenderError(
+                "{} is not a valid mipmap level (less than 0)".format(key))
         return "{}".format(level)
-    
+
     def __iter__(self):
         return iter(sorted(self.store))
-            
+
     @property
     def levels(self):
         """list of MipMapLevels in this ImagePyramid"""
         return [int(i.level) for i in self.__iter__()]
-

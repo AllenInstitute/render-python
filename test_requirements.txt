@@ -8,4 +8,5 @@ pytest-xdist>=1.14
 flake8>=3.0.4
 pylint>=1.5.4
 scipy
+ujson
 jinja2

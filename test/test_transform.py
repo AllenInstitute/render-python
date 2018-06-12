@@ -7,45 +7,53 @@ import importlib
 import pytest
 
 EPSILON = 0.0000000001
+
+
 def cross_py23_reload(module):
     try:
         reload(module)
-    except NameError as e:
+    except NameError:
         importlib.reload(module)
 
+
 def test_TransformList_init():
-    tlist = renderapi.transform.TransformList()
+    tlist = renderapi.transform.TransformList()  # noqa: F841
+
 
 def test_simple_TransformList_init():
     aff = renderapi.transform.AffineModel()
-    tlist = renderapi.transform.TransformList(tforms=[aff])
+    tlist = renderapi.transform.TransformList(tforms=[aff])  # noqa: F841
+
 
 def test_fail_TransformList_init():
     with pytest.raises(renderapi.errors.RenderError):
-       aff = renderapi.transform.AffineModel()
-       tlist = renderapi.transform.TransformList(tforms=aff) 
+        aff = renderapi.transform.AffineModel()
+        tlist = renderapi.transform.TransformList(tforms=aff)   # noqa: F841
+
 
 def test_fail_loadtransform_json():
-    d={'type':'not_a_type',
-           'dataString':'junkstring',
-           'transformId':'badtform'}
+    d = {'type': 'not_a_type',
+         'dataString': 'junkstring',
+         'transformId': 'badtform'}
     with pytest.raises(renderapi.errors.RenderError):
         renderapi.transform.load_transform_json(d)
     with pytest.raises(renderapi.errors.RenderError):
         renderapi.transform.load_leaf_json(d)
 
+
 def test_load_unknown_tform():
-    d={'className':'mpicpg.not_supported_transform',
-       'dataString':'crazy_parameters'}
+    d = {'className': 'mpicpg.not_supported_transform',
+         'dataString': 'crazy_parameters'}
     tform = renderapi.transform.load_transform_json(d)
-    assert(isinstance(tform,renderapi.transform.Transform))
+    assert(isinstance(tform, renderapi.transform.Transform))
+
 
 def test_fail_bad_tform():
-    d={'type':'leaf',
-       'className':'mpicpg.not_supported_transform'}
+    d = {'type': 'leaf',
+         'className': 'mpicpg.not_supported_transform'}
     with pytest.raises(renderapi.errors.RenderError):
-        tform = renderapi.transform.load_transform_json(d)
-           
+        tform = renderapi.transform.load_transform_json(d)  # noqa: F841
+
 
 def test_affine_rot_90():
     am = renderapi.transform.AffineModel()
@@ -281,7 +289,8 @@ def test_reference_transform():
 
     assert (dict(ref_args) == ref_args.to_dict() == dict(ref_ts) ==
             ref_ts.to_dict() == dict(ref_dd) == ref_dd.to_dict())
-    print(ref_dd)   
+    print(ref_dd)
+
 
 def test_transform_hash_eq():
     t1 = renderapi.transform.Transform(
@@ -401,57 +410,56 @@ def test_estimate_translation_transform():
 
 
 def test_non_linear_transform():
-    lens_tform = renderapi.transform.NonLinearTransform(dataString=\
-                                               ("6 28 535.9261337198133 -0.07156495284083819 "
-                                               "1.5429761616475304 482.5391851962856 -1.3964665434772456 "
-                                               "-6.442573400985017 -2.9852709783360574 4.123111145658342 "
-                                               "-11.540309826482599 5.014980246618293 13.616409494909078 "
-                                               "6.8938038217739255 -2.580163142352532 -5.848702515778433 "
-                                               "11.520166623181623 -0.26414636893418164 17.725654626324285 "
-                                               "-3.6910106603259862 -5.747999298096374 6.850067634843171 "
-                                               "16.792611164648633 7.81339608279572 -1.6748576247746882 "
-                                               "7.294185157592906 -8.213479728551924 -5.181177837004834 "
-                                               "-2.363460931085683 2.9307897710181123 -19.60977878575318 "
-                                               "-5.626357722731385 -3.8857454141075323 -15.21120604177655 "
-                                               "-21.23967741658828 -7.433492911261084 5.986054967656173 "
-                                               "-0.2472470831304605 -4.252500955671167 6.285397956497022 "
-                                               "-10.087631670227893 -2.936382384586807 13.850132289055523 "
-                                               "-1.6230114467674603 -6.137660325940608 12.358797331540874 "
-                                               "15.361852639613971 -7.395509537102164 -3.4680250777444144 "
-                                               "11.543534617091353 2.1153010560743724 -6.1108581863128535 "
-                                               "2.4532196427825284 -1.6047644982741716 5.190795110418094 "
-                                               "0.40139303958456196 11.96302944378589 12.660577579061767 "
-                                               "1196.3041637890071 1266.0596612286872 1719846.5445062846 "
-                                               "1485783.6202875 1838252.7229766874 2.714668570418218E9 "
-                                               "2.106666890772152E9 2.1421214796751451E9 2.8349699962925887E9 "
-                                               "4.528468416208078E12 3.2949497103892886E12 3.0161488655484473E12 "
-                                               "3.2930355498080786E12 4.550261299826646E12 7.824367950003595E15 "
-                                               "5.464560367850104E15 4.686502506566912E15 4.616510470870998E15 "
-                                               "5.276444951800235E15 7.530553575860649E15 1.3844135530148071E19 "
-                                               "9.408014352057864E18 7.7275759384866017E18 7.1369460697416591E18 "
-                                               "7.373674200122966E18 8.7221483757320745E18 1.277368891891578E19 "
-                                               "100.0 537.4423453941299 485.2431449404924 1253541.1543424227 "
-                                               "899439.7598253534 1082433.2436210443 2.5451681382231455E9 "
-                                               "1.814150348079708E9 1.6692374367919033E9 2.1769137889095693E9 "
-                                               "4.992425732284977E12 3.5258872445513765E12 3.074020072484778E12 "
-                                               "3.1163128442286265E12 4.266956980967905E12 9.700243843041522E15 "
-                                               "6.781968704541316E15 5.745611297869626E15 5.443791159762913E15 "
-                                               "5.856309886603154E15 8.280136088463922E15 1.8821205899653665E19 "
-                                               "1.3042150458228838E19 1.0829624014456685E19 9.899910593314652E18 "
-                                               "9.885988268659214E18 1.1051253229808925E19 1.6002173610912907E19 "
-                                               "0.0 2048 2048 "),
-                                               transformId="testing")
+    lens_tform = renderapi.transform.NonLinearTransform(dataString=(
+        "6 28 535.9261337198133 -0.07156495284083819 "
+        "1.5429761616475304 482.5391851962856 -1.3964665434772456 "
+        "-6.442573400985017 -2.9852709783360574 4.123111145658342 "
+        "-11.540309826482599 5.014980246618293 13.616409494909078 "
+        "6.8938038217739255 -2.580163142352532 -5.848702515778433 "
+        "11.520166623181623 -0.26414636893418164 17.725654626324285 "
+        "-3.6910106603259862 -5.747999298096374 6.850067634843171 "
+        "16.792611164648633 7.81339608279572 -1.6748576247746882 "
+        "7.294185157592906 -8.213479728551924 -5.181177837004834 "
+        "-2.363460931085683 2.9307897710181123 -19.60977878575318 "
+        "-5.626357722731385 -3.8857454141075323 -15.21120604177655 "
+        "-21.23967741658828 -7.433492911261084 5.986054967656173 "
+        "-0.2472470831304605 -4.252500955671167 6.285397956497022 "
+        "-10.087631670227893 -2.936382384586807 13.850132289055523 "
+        "-1.6230114467674603 -6.137660325940608 12.358797331540874 "
+        "15.361852639613971 -7.395509537102164 -3.4680250777444144 "
+        "11.543534617091353 2.1153010560743724 -6.1108581863128535 "
+        "2.4532196427825284 -1.6047644982741716 5.190795110418094 "
+        "0.40139303958456196 11.96302944378589 12.660577579061767 "
+        "1196.3041637890071 1266.0596612286872 1719846.5445062846 "
+        "1485783.6202875 1838252.7229766874 2.714668570418218E9 "
+        "2.106666890772152E9 2.1421214796751451E9 2.8349699962925887E9 "
+        "4.528468416208078E12 3.2949497103892886E12 3.0161488655484473E12 "
+        "3.2930355498080786E12 4.550261299826646E12 7.824367950003595E15 "
+        "5.464560367850104E15 4.686502506566912E15 4.616510470870998E15 "
+        "5.276444951800235E15 7.530553575860649E15 1.3844135530148071E19 "
+        "9.408014352057864E18 7.7275759384866017E18 7.1369460697416591E18 "
+        "7.373674200122966E18 8.7221483757320745E18 1.277368891891578E19 "
+        "100.0 537.4423453941299 485.2431449404924 1253541.1543424227 "
+        "899439.7598253534 1082433.2436210443 2.5451681382231455E9 "
+        "1.814150348079708E9 1.6692374367919033E9 2.1769137889095693E9 "
+        "4.992425732284977E12 3.5258872445513765E12 3.074020072484778E12 "
+        "3.1163128442286265E12 4.266956980967905E12 9.700243843041522E15 "
+        "6.781968704541316E15 5.745611297869626E15 5.443791159762913E15 "
+        "5.856309886603154E15 8.280136088463922E15 1.8821205899653665E19 "
+        "1.3042150458228838E19 1.0829624014456685E19 9.899910593314652E18 "
+        "9.885988268659214E18 1.1051253229808925E19 1.6002173610912907E19 "
+        "0.0 2048 2048 "), transformId="testing")
 
-    ticks = np.arange(0,2048,64,np.float)
-    xx,yy = np.meshgrid(ticks,ticks)
+    ticks = np.arange(0, 2048, 64, np.float)
+    xx, yy = np.meshgrid(ticks, ticks)
     x = np.ravel(xx).T
     y = np.ravel(yy).T
-    xy = np.vstack((x,y)).T
+    xy = np.vstack((x, y)).T
 
-    xyp=lens_tform.tform(xy)
+    xyp = lens_tform.tform(xy)
     dv = xyp-xy
-    mean_disp= np.mean(np.sqrt(np.sum(dv**2,axis=1)))
-    assert((mean_disp-0.7570507)<.01)
+    mean_disp = np.mean(np.sqrt(np.sum(dv**2, axis=1)))
+    assert((mean_disp-0.7570507) < .01)
 
 
 @pytest.mark.parametrize("transform_class,transform_json", [
@@ -491,60 +499,68 @@ def test_load_json_transforms(transform_class, transform_json):
     assert (tform.className == tform_d['className'] ==
             transform_json['className'])
 
+
 @pytest.fixture(scope='module')
 def referenced_tilespecs_and_transforms():
-    with open(rendersettings.REFERENCE_TRANSFORM_TILESPECS,'r') as fp:
+    with open(rendersettings.REFERENCE_TRANSFORM_TILESPECS, 'r') as fp:
         ds = json.load(fp)
         tilespecs = [renderapi.tilespec.TileSpec(json=d) for d in ds]
 
-    with open(rendersettings.REFERENCE_TRANSFORM_SPECS,'r') as fp:
+    with open(rendersettings.REFERENCE_TRANSFORM_SPECS, 'r') as fp:
         ds = json.load(fp)
         transforms = [renderapi.transform.load_transform_json(tf) for tf in ds]
-    return tilespecs,transforms
+    return tilespecs, transforms
+
 
 def test_estimate_dstpoints_reference(referenced_tilespecs_and_transforms):
-    tilespecs,transforms = referenced_tilespecs_and_transforms
+    tilespecs, transforms = referenced_tilespecs_and_transforms
 
-    ticks = np.arange(0,2048,64,np.float)
-    xx,yy = np.meshgrid(ticks,ticks)
+    ticks = np.arange(0, 2048, 64, np.float)
+    xx, yy = np.meshgrid(ticks, ticks)
     x = np.ravel(xx).T
     y = np.ravel(yy).T
-    xy = np.vstack((x,y)).T
+    xy = np.vstack((x, y)).T
 
-    xyt=renderapi.transform.estimate_dstpts(tilespecs[0].tforms,xy,transforms)
-    assert(xy.shape==xyt.shape)
+    xyt = renderapi.transform.estimate_dstpts(
+        tilespecs[0].tforms, xy, transforms)
+    assert(xy.shape == xyt.shape)
     with pytest.raises(renderapi.errors.RenderError):
-        renderapi.transform.estimate_dstpts(tilespecs[0].tforms,xy)
+        renderapi.transform.estimate_dstpts(tilespecs[0].tforms, xy)
     with pytest.raises(renderapi.errors.RenderError):
-        renderapi.transform.estimate_dstpts(tilespecs[0].tforms,xy,[transforms[2]])
+        renderapi.transform.estimate_dstpts(
+            tilespecs[0].tforms, xy, [transforms[2]])
+
 
 def test_fail_convert_points():
     points_in = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], np.float)
     with pytest.raises(renderapi.errors.ConversionError):
         renderapi.transform.AffineModel.convert_to_point_vector(points_in.T)
 
+
 def test_translation_transform_init():
-    d={'type':'leaf',
-       'className':'mpicbg.trakem2.transform.TranslationModel2D',
-       'dataString':'10 0'}
+    d = {'type': 'leaf',
+         'className': 'mpicbg.trakem2.transform.TranslationModel2D',
+         'dataString': '10 0'}
     tform = renderapi.transform.load_transform_json(d)
-    assert(isinstance(tform,renderapi.transform.TranslationModel))
-    assert(tform.M[0,2]==10)
+    assert(isinstance(tform, renderapi.transform.TranslationModel))
+    assert(tform.M[0, 2] == 10)
+
 
 def test_rigid_init():
-    d={'type':'leaf',
-       'className':'mpicbg.trakem2.transform.RigidModel2D',
-       'dataString':'{} 10 5'.format(np.pi/2)}
+    d = {'type': 'leaf',
+         'className': 'mpicbg.trakem2.transform.RigidModel2D',
+         'dataString': '{} 10 5'.format(np.pi/2)}
     tform = renderapi.transform.load_transform_json(d)
-    assert(isinstance(tform,renderapi.transform.RigidModel))
-    assert(tform.M[0,2]==10)
-    assert(tform.M[0,0]<EPSILON)
+    assert(isinstance(tform, renderapi.transform.RigidModel))
+    assert(tform.M[0, 2] == 10)
+    assert(tform.M[0, 0] < EPSILON)
+
 
 def test_similarity_init():
-    d={'type':'leaf',
-    'className':'mpicbg.trakem2.transform.SimilarityModel2D',
-    'dataString':'2.0 0.0 10 5'}
+    d = {'type': 'leaf',
+         'className': 'mpicbg.trakem2.transform.SimilarityModel2D',
+         'dataString': '2.0 0.0 10 5'}
     tform = renderapi.transform.load_transform_json(d)
-    assert(isinstance(tform,renderapi.transform.SimilarityModel))
-    assert(np.abs(tform.M[0,0]-2)<EPSILON)
-    assert(tform.M[0,2]==10)
+    assert(isinstance(tform, renderapi.transform.SimilarityModel))
+    assert(np.abs(tform.M[0, 0]-2) < EPSILON)
+    assert(tform.M[0, 2] == 10)
