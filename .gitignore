@@ -12,3 +12,4 @@ docs/_build/
 htmlcov/
 .cache
 .tox
+.pytest_cache
