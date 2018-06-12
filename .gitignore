@@ -13,3 +13,4 @@ htmlcov/
 .cache
 .tox
 .pytest_cache
+.vscode
