@@ -228,10 +228,9 @@ class TileSpec:
         self.maxY = d.get('maxY', None)
         self.minY = d.get('minY', None)
         mmld = d.get('mipmapLevels', {})
-        self.ip = ImagePyramid(mipMapLevels=[
-            MipMapLevel(
+        self.ip = ImagePyramid({l:MipMapLevel(
                 int(l), imageUrl=v.get('imageUrl'), maskUrl=v.get('maskUrl'))
-            for l, v in mmld.items()])
+            for l, v in mmld.items()})
 
         tfl = TransformList(json=d['transforms'])
         self.tforms = tfl.tforms
