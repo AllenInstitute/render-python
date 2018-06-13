@@ -146,10 +146,11 @@ class TileSpec:
 
         # recursively add points to the boundary
         while ndiv_inner > 0:
-            sz = 2*xy.shape[0]-1
+            sz = 2 * xy.shape[0] - 1
             newxy = np.zeros((sz, 2)).astype('float')
             newxy[0::2, :] = xy[:, :]
-            newxy[1:sz:2, :] = 0.5*(newxy[0:(sz-2):2, :] + newxy[2:sz:2, :])
+            newxy[1:sz:2, :] = 0.5 * \
+                (newxy[0:(sz - 2):2, :] + newxy[2:sz:2, :])
             xy = newxy
             ndiv_inner -= 1
 
@@ -228,8 +229,8 @@ class TileSpec:
         self.maxY = d.get('maxY', None)
         self.minY = d.get('minY', None)
         mmld = d.get('mipmapLevels', {})
-        self.ip = ImagePyramid({l:MipMapLevel(
-                int(l), imageUrl=v.get('imageUrl'), maskUrl=v.get('maskUrl'))
+        self.ip = ImagePyramid({l: MipMapLevel(
+            int(l), imageUrl=v.get('imageUrl'), maskUrl=v.get('maskUrl'))
             for l, v in mmld.items()})
 
         tfl = TransformList(json=d['transforms'])

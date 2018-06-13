@@ -104,6 +104,9 @@ class ImagePyramid(TransformedDict):
                 "{} is not a valid mipmap level (less than 0)".format(key))
         return "{}".format(level)
 
+    def __dict__(self):
+        return {k: v.to_dict() for k, v in self}
+
     def __iter__(self):
         return iter(sorted(self.store))
 
