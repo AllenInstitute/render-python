@@ -177,7 +177,7 @@ class TileSpec:
         thedict['maxIntensity'] = self.maxint
         if self.layout is not None:
             thedict['layout'] = self.layout.to_dict()
-        thedict['mipmapLevels'] = dict(self.ip)
+        thedict['mipmapLevels'] = self.ip.to_dict()
         thedict['transforms'] = {}
         thedict['transforms']['type'] = 'list'
         # thedict['transforms']['specList']=[t.to_dict() for t in self.tforms]
