@@ -1511,16 +1511,16 @@ class NonLinearCoordinateTransform(Transform):
                 pidx += 1
 
         if normMean is None:
-            normMean=self.normMean
+            normMean = self.normMean
         if normVar is None:
-            normVar=self.normVar
+            normVar = self.normVar
 
         expanded[:, :-1] = ((expanded[:, :-1] - normMean[:-1]) /
                             normVar[:-1])
         expanded[:, -1] = 100.0
         return expanded
 
-    def fit(self,A, B):
+    def fit(self, A, B):
         """function to fit this transform given the corresponding sets of points A & B
         Parameters
         ----------
@@ -1531,7 +1531,7 @@ class NonLinearCoordinateTransform(Transform):
 
         Returns
         -------
-        beta 
+        beta
             a self.lengthx2 matrix with polynomial factors
         normMean
             a self.length vector of expanded means
@@ -1545,22 +1545,21 @@ class NonLinearCoordinateTransform(Transform):
 
         normMean = np.zeros(self.length).astype('float')
         normVar = np.ones(self.length).astype('float')
-        src_exp = self.kernelExpand(A,normMean=normMean,normVar=normVar)
+        src_exp = self.kernelExpand(A, normMean=normMean, normVar=normVar)
         normMean = src_exp.mean(0)
-        normVar = src_exp.std(0) #poorly named variable
-        src_exp = self.kernelExpand(A,normMean=normMean,normVar=normVar)
+        normVar = src_exp.std(0)  # poorly named variable
+        src_exp = self.kernelExpand(A, normMean=normMean, normVar=normVar)
 
-        xcoeff,xresiduals,xrank,xs = np.linalg.lstsq(src_exp,B[:,0])
-        ycoeff,yresiduals,yrank,ys = np.linalg.lstsq(src_exp,B[:,1])
+        xcoeff, xresiduals, xrank, xs = np.linalg.lstsq(src_exp, B[:, 0])
+        ycoeff, yresiduals, yrank, ys = np.linalg.lstsq(src_exp, B[:, 1])
 
-        beta = np.zeros((self.length,2))
-        beta[:,0]=xcoeff
-        beta[:,1]=ycoeff
+        beta = np.zeros((self.length, 2))
+        beta[:, 0] = xcoeff
+        beta[:, 1] = ycoeff
 
-        return beta,normMean,normVar
+        return beta, normMean, normVar
 
-
-    def estimate(self, A, B, return_params=True, **kwargs):
+    def estimate(self, A, B, ndim=None, return_params=True, **kwargs):
         """method for setting this transformation with the best fit
         given the corresponding points A,B
 
@@ -1577,10 +1576,10 @@ class NonLinearCoordinateTransform(Transform):
 
         Returns
         -------
-        dataString 
+        dataString
         """
 
-        beta,normMean,normVar = self.fit(A,B) 
+        beta, normMean, normVar = self.fit(A, B)
         self.beta = beta
         self.normMean = normMean
         self.normVar = normVar

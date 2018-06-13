@@ -461,8 +461,10 @@ def test_non_linear_transform():
     mean_disp = np.mean(np.sqrt(np.sum(dv**2, axis=1)))
     assert((mean_disp-0.7570507) < .01)
 
+
 def test_estimate_non_linear_transform():
-    dataString=("5 21 1134.6315 27.041916 49.84044 1069.9268 8.754167 " 
+    dataString = (
+            "5 21 1134.6315 27.041916 49.84044 1069.9268 8.754167 "
             "-8.966886 -67.81902 -26.337778 -42.44015 47.329388 "
             "-57.457996 -19.826283 12.059551 16.236008 25.214308 "
             "-6.14843 13.517356 -69.09145 59.978294 9.0963745 2.8096974 "
@@ -482,20 +484,18 @@ def test_estimate_non_linear_transform():
             "2.0705793E+17 1.4025713E+17 1.2428827E+17 1.23013825E+17 "
             "1.3686534E+17 2.0921157E+17 0.0 3840 3840 ")
 
-    n=500
-    x=np.linspace(0,3840,n)
-    xp,yp = np.meshgrid(x,x)
-    src=np.transpose(np.vstack((xp.flatten(),yp.flatten())))
-   
-    tf=renderapi.transform.NonLinearCoordinateTransform(dataString=dataString)
-    dst=tf.tform(src)
+    n = 500
+    x = np.linspace(0, 3840, n)
+    xp, yp = np.meshgrid(x, x)
+    src = np.transpose(np.vstack((xp.flatten(), yp.flatten())))
 
-    tf.estimate(src,dst)
-    
-    fdst=tf.tform(src)
+    tf = renderapi.transform.NonLinearCoordinateTransform(
+            dataString=dataString)
+    dst = tf.tform(src)
+    tf.estimate(src, dst)
+    fdst = tf.tform(src)
 
-    assert(np.abs(fdst-dst).max()<1e-5)
-
+    assert(np.abs(fdst-dst).max() < 1e-5)
 
 
 @pytest.mark.parametrize("transform_class,transform_json", [
