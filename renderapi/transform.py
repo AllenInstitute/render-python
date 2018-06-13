@@ -1485,7 +1485,7 @@ class NonLinearCoordinateTransform(Transform):
                 "incorrect number of normVar coefficents "
                 "{} != {}".format(self.normVar.shape[0], self.length))
 
-    def kernelExpand(self, src):
+    def kernelExpand(self, src, normMean=None, normVar=None):
         """creates an expanded representation of the x,y
         src points in a polynomial form
 
@@ -1510,10 +1510,82 @@ class NonLinearCoordinateTransform(Transform):
                     np.power(x, j) * np.power(y, i - j))
                 pidx += 1
 
-        expanded[:, :-1] = ((expanded[:, :-1] - self.normMean[:-1]) /
-                            self.normVar[:-1])
+        if normMean is None:
+            normMean = self.normMean
+        if normVar is None:
+            normVar = self.normVar
+
+        expanded[:, :-1] = ((expanded[:, :-1] - normMean[:-1]) /
+                            normVar[:-1])
         expanded[:, -1] = 100.0
         return expanded
+
+    def fit(self, A, B):
+        """function to fit this transform given the corresponding sets of points A & B
+        Parameters
+        ----------
+        A : numpy.array
+            a Nx2 matrix of source points
+        B : numpy.array
+            a Nx2 matrix of destination points
+
+        Returns
+        -------
+        beta
+            a self.lengthx2 matrix with polynomial factors
+        normMean
+            a self.length vector of expanded means
+        normVar
+            a self.length vector of expanded standard deviations
+        """
+        if not all([A.shape[0] == B.shape[0], A.shape[1] == B.shape[1] == 2]):
+            raise EstimationError(
+                'shape mismatch! A shape: {}, B shape {}'.format(
+                    A.shape, B.shape))
+
+        normMean = np.zeros(self.length).astype('float')
+        normVar = np.ones(self.length).astype('float')
+        src_exp = self.kernelExpand(A, normMean=normMean, normVar=normVar)
+        normMean = src_exp.mean(0)
+        normVar = src_exp.std(0)  # poorly named variable
+        src_exp = self.kernelExpand(A, normMean=normMean, normVar=normVar)
+
+        xcoeff, xresiduals, xrank, xs = np.linalg.lstsq(src_exp, B[:, 0])
+        ycoeff, yresiduals, yrank, ys = np.linalg.lstsq(src_exp, B[:, 1])
+
+        beta = np.zeros((self.length, 2))
+        beta[:, 0] = xcoeff
+        beta[:, 1] = ycoeff
+
+        return beta, normMean, normVar
+
+    def estimate(self, A, B, ndim=None, return_params=True, **kwargs):
+        """method for setting this transformation with the best fit
+        given the corresponding points A,B
+
+        Parameters
+        ----------
+        A : numpy.array
+            a Nx2 matrix of source points
+        B : numpy.array
+            a Nx2 matrix of destination points
+        return_params : boolean
+            whether to return the dataString
+        **kwargs
+            keyword arguments to pass to self.fit
+
+        Returns
+        -------
+        dataString
+        """
+
+        beta, normMean, normVar = self.fit(A, B)
+        self.beta = beta
+        self.normMean = normMean
+        self.normVar = normVar
+
+        if return_params:
+            return self.dataString
 
     def tform(self, src):
         """transform a set of points through this transformation
