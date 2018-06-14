@@ -59,3 +59,28 @@ def test_pyramid_deserialize():
 
     with pytest.raises(RenderError):
         mm3['not_a_key']
+
+
+def test_mipmaplevel_deprecated():
+    mml = image_pyramid.MipMapLevel(0,
+                                    imageUrl=image_filename,
+                                    maskUrl=mask_filename)
+    assert(mml['imageUrl'] == image_filename)
+    assert(mml['maskUrl'] == mask_filename)
+    with pytest.raises(RenderError):
+        mml['not_a_key']
+
+    assert(mml == mml)
+
+    mml2 = image_pyramid.MipMapLevel(0,
+                                     imageUrl=image_filename)
+    assert(mml != mml2)
+    assert(len([k for k, v in mml]) == 2)
+
+
+def test_transformed_mapping():
+    d = image_pyramid.TransformedDict()
+    d[1] = 'a'
+    d[2] = 'b'
+    mylist = [k for k in d]
+    assert(len(mylist) == 2)

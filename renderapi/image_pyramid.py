@@ -104,7 +104,7 @@ class MipMapLevel:
         return iter(self.to_dict().items())
 
     def __eq__(self, b):
-        return self.mipmap == b
+        return self.mipmap == b.mipmap
 
 
 class TransformedDict(MutableMapping):
