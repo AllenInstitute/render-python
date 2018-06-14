@@ -6,7 +6,7 @@ from .render import format_preamble, renderaccess
 from .utils import NullHandler, get_json
 from .stack import get_z_values_for_stack
 from .transform import TransformList, estimate_dstpts
-from .image_pyramid import MipMapLevel, ImagePyramid
+from .image_pyramid import MipMap, ImagePyramid
 from .layout import Layout
 from .channel import Channel
 
@@ -57,27 +57,19 @@ class TileSpec:
         a list of filters to apply to this tile (not yet implemented)
     mipMapLevels :obj:`list` of :obj:`MipMapLevel`
         :class:`MipMapLevel` objects for this tile
+        (DEPRECATED, use imagePyramid instead)
+    imagePyramid :obj:`ImagePyramid`
+        :class:`ImagePyramid` for this tile
     json : dict or None
         dictionary to initialize this object with
         (if not None overrides and ignores all keyword arguments)
-    scale3Url : str
-        uri of a mipmap level 3 image of this tile
-        (DEPRECATED, use mipMapLevels, but will override)
-    scale2Url : str
-        uri of a mipmap level 2 image of this tile
-        (DEPRECATED, use mipMapLevels, but will override)
-    scale1Url : str
-        uri of a mipmap level 1 image of this tile
-        (DEPRECATED, use mipMapLevels, but will override)
-
     '''
 
     def __init__(self, tileId=None, z=None, width=None, height=None,
                  imageUrl=None, maskUrl=None,
                  minint=0, maxint=65535, layout=None, tforms=[],
-                 inputfilters=[], scale3Url=None, scale2Url=None,
-                 scale1Url=None, json=None, channels=None,
-                 mipMapLevels=[], **kwargs):
+                 inputfilters=[], json=None, channels=None,
+                 mipMapLevels=None, imagePyramid=None, **kwargs):
         if json is not None:
             self.from_dict(json)
         else:
@@ -92,23 +84,24 @@ class TileSpec:
             self.inputfilters = inputfilters
             self.layout = Layout(**kwargs) if layout is None else layout
 
-            self.ip = ImagePyramid({mml.level: mml for mml in mipMapLevels})
+            if imagePyramid is not None:
+                self.ip = imagePyramid
+            else:
+                if mipMapLevels is not None:
+                    self.ip = ImagePyramid({m.level: m.mipmap
+                                            for m in mipMapLevels})
+                else:
+                    self.ip = ImagePyramid()
+
             # legacy scaleXUrl
             self.maskUrl = maskUrl
             self.imageUrl = imageUrl
-            self.scale3Url = scale3Url
-            self.scale2Url = scale2Url
-            self.scale1Url = scale1Url
+
             self.channels = channels
             if imageUrl is not None:
-                self.ip.update(MipMapLevel(
-                    0, imageUrl=imageUrl, maskUrl=maskUrl))
-            if scale1Url is not None:
-                self.ip.update(MipMapLevel(1, imageUrl=scale1Url))
-            if scale2Url is not None:
-                self.ip.update(MipMapLevel(2, imageUrl=scale2Url))
-            if scale3Url is not None:
-                self.ip.update(MipMapLevel(3, imageUrl=scale3Url))
+                self.ip[0] = MipMap(
+                    imageUrl=imageUrl,
+                    maskUrl=maskUrl)
 
     @property
     def bbox(self):
@@ -229,8 +222,8 @@ class TileSpec:
         self.maxY = d.get('maxY', None)
         self.minY = d.get('minY', None)
         mmld = d.get('mipmapLevels', {})
-        self.ip = ImagePyramid({l: MipMapLevel(
-            int(l), imageUrl=v.get('imageUrl'), maskUrl=v.get('maskUrl'))
+        self.ip = ImagePyramid({l: MipMap(
+            imageUrl=v.get('imageUrl'), maskUrl=v.get('maskUrl'))
             for l, v in mmld.items()})
 
         tfl = TransformList(json=d['transforms'])

@@ -1,15 +1,17 @@
 from collections import MutableMapping
 from .errors import RenderError
+import logging
+from .utils import NullHandler
+
+logger = logging.getLogger(__name__)
+logger.addHandler(NullHandler())
 
 
-class MipMapLevel:
-    """MipMapLevel class to represent a level of an image pyramid.
-    Can be put in dictionary formatting using dict(mML)
+class MipMap:
+    """MipMap class to represent a image and its mask
 
     Attributes
     ----------
-    level : int
-        level of 2x downsampling represented by mipmaplevel
     imageUrl : str or None
         uri corresponding to image
     maskUrl : str or None
@@ -17,8 +19,7 @@ class MipMapLevel:
 
     """
 
-    def __init__(self, level, imageUrl=None, maskUrl=None):
-        self.level = level
+    def __init__(self, imageUrl=None, maskUrl=None):
         self.imageUrl = imageUrl
         self.maskUrl = maskUrl
 
@@ -29,7 +30,7 @@ class MipMapLevel:
         dict
             json compatible dictionary representaton
         """
-        return self._formatUrls()
+        return dict(self.__iter__())
 
     def _formatUrls(self):
         d = {}
@@ -49,7 +50,7 @@ class MipMapLevel:
                 '{} is not a valid attribute of a mipmapLevel'.format(key))
 
     def __iter__(self):
-        return iter([(self.level, self._formatUrls())])
+        return iter(self._formatUrls().items())
 
     def __eq__(self, b):
         try:
@@ -58,6 +59,52 @@ class MipMapLevel:
         except AttributeError as e:
             return all([self.imageUrl == b.get('imageUrl'),
                         self.maskUrl == b.get('maskUrl')])
+
+
+class MipMapLevel:
+    """MipMapLevel class to represent a level of an image pyramid.
+    Can be put in dictionary formatting using dict(mML)
+
+    Attributes
+    ----------
+    level : int
+        level of 2x downsampling represented by mipmaplevel
+    imageUrl : str or None
+        uri corresponding to image
+    maskUrl : str or None
+        uri corresponding to mask
+
+    """
+
+    def __init__(self, level, imageUrl=None, maskUrl=None):
+        logger.warning(
+            "use of mipmaplevels deprecated, use MipMap and ImagePyramid")
+        self.level = level
+        self.mipmap = MipMap(imageUrl, maskUrl)
+
+    def to_dict(self):
+        """
+        Returns
+        -------
+        dict
+            json compatible dictionary representaton
+        """
+        return dict(self.mipmap)
+
+    def __getitem__(self, key):
+        if key == 'imageUrl':
+            return self.mipmap.imageUrl
+        if key == 'maskUrl':
+            return self.mipmap.maskUrl
+        else:
+            raise RenderError(
+                '{} is not a valid attribute of a mipmapLevel'.format(key))
+
+    def __iter__(self):
+        return iter(self.to_dict().items())
+
+    def __eq__(self, b):
+        return self.mipmap == b
 
 
 class TransformedDict(MutableMapping):
@@ -107,10 +154,16 @@ class ImagePyramid(TransformedDict):
     def to_dict(self):
         return {k: v.to_dict() for k, v in self.items()}
 
+    @staticmethod
+    def from_dict(d):
+        return ImagePyramid({l: MipMap(v.get('imageUrl', None),
+                                       v.get('maskUrl', None))
+                             for l, v in d.items()})
+
     def __iter__(self):
         return iter(sorted(self.store))
 
     @property
     def levels(self):
         """list of MipMapLevels in this ImagePyramid"""
-        return [int(i.level) for i in self.__iter__()]
+        return self.store.keys()

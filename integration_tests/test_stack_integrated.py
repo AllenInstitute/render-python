@@ -32,7 +32,7 @@ def render():
 
 @pytest.fixture
 def simpletilespec():
-    mml = renderapi.tilespec.MipMapLevel(0, '/not/a/path.jpg')
+    mml = renderapi.image_pyramid.MipMapLevel(0, '/not/a/path.jpg')
     tform = renderapi.transform.AffineModel(labels=['simple'])
     layout = renderapi.tilespec.Layout(sectionId="section0",
                                        scopeId="testscope",
@@ -247,9 +247,6 @@ def test_z_bounds(render, teststack, render_example_tilespec_and_transforms):
 def test_get_section_z(render, teststack):
     # check getting section Z
     z = render.run(renderapi.stack.get_section_z_value,
-                   teststack, "3407.0")
-    assert z == 3407
-    z = render.run(renderapi.stack.get_z_value_for_section,
                    teststack, "3407.0")
     assert z == 3407
 

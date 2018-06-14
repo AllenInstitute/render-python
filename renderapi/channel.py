@@ -1,4 +1,4 @@
-from .image_pyramid import ImagePyramid, MipMapLevel
+from .image_pyramid import ImagePyramid
 
 
 class Channel:
@@ -51,8 +51,4 @@ class Channel:
         self.name = d['name']
         self.minIntensity = d['minIntensity']
         self.maxIntensity = d['maxIntensity']
-        self.ip = ImagePyramid({l: MipMapLevel(int(l),
-                                               imageUrl=v.get('imageUrl'),
-                                               maskUrl=v.get('maskUrl')
-                                               )
-                                for l, v in d['mipmapLevels'].items()})
+        self.ip = ImagePyramid.from_dict(d['mipmapLevels'])
