@@ -11,7 +11,7 @@ from collections import Iterable
 import numpy as np
 
 from .errors import ConversionError, EstimationError, RenderError
-from .utils import NullHandler
+from .utils import NullHandler, encodeBase64, decodeBase64
 
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -1624,6 +1624,66 @@ class NonLinearCoordinateTransform(Transform):
         dimstring = '{} {}'.format(self.height, self.width)
         return '{} {} {} {} {} '.format(
             shapestring, betastring, meanstring, varstring, dimstring)
+
+
+class ThinPlateSplineTransform(Transform):
+    """
+    render-python class that implements the
+    mpicbg.trakem2.transform.ThinPlateSplineTransform class
+    Parameters
+    ----------
+    dataString: str or None
+        data string of transformation
+    labels : list of str
+        list of labels to give this transform
+    json: dict or None
+        json compatible dictionary representation of the transformation
+    Returns
+    -------
+    :class:`ThinPlateSplineTransform`
+        a transform instance
+    """
+
+    className = 'mpicbg.trakem2.transform.ThinPlateSplineTransform'
+
+    def __init__(self, dataString=None, json=None, transformId=None,
+                 labels=None):
+        if json is not None:
+            self.from_dict(json)
+        else:
+            if dataString is not None:
+                self._process_dataString(dataString)
+            if labels is not None:
+                self.labels = labels
+            self.transformId = transformId
+            self.className = (
+                'mpicbg.trakem2.transform.ThinPlateSplineTransform')
+
+    def _process_dataString(self, dataString):
+
+        fields = dataString.split(" ")
+
+        self.ndims = int(fields[0])
+        self.nLm = int(fields[1])
+
+        values = decodeBase64(fields[2], self.ndims*self.ndims + self.ndims)
+        self.aMtx = values[0:self.ndims*self.ndims].reshape(
+                self.ndims, self.ndims)
+        self.bVec = values[self.ndims*self.ndims:]
+
+        values = decodeBase64(fields[3], 2*self.ndims*self.nLm)
+        self.srcPts = values[0:self.ndims*self.nLm].reshape(
+                self.ndims, self.nLm)
+        self.dMtxDat = values[self.ndims*self.nLm:]
+
+    @property
+    def dataString(self):
+        header = '{} {}'.format(self.ndims, self.nLm)
+        blk1 = np.concatenate((self.aMtx.flatten(), self.bVec))
+        b64_1 = encodeBase64(blk1)
+        blk2 = np.concatenate((self.srcPts.flatten(), self.dMtxDat))
+        b64_2 = encodeBase64(blk2)
+        return '{} {} {}'.format(header, b64_1, b64_2)
 
 
 class NonLinearTransform(NonLinearCoordinateTransform):
