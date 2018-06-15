@@ -1659,6 +1659,14 @@ class ThinPlateSplineTransform(Transform):
             self.className = (
                 'mpicbg.trakem2.transform.ThinPlateSplineTransform')
 
+    def from_dict(self,json):
+        self.ndims = json['ndims']
+        self.nLm = json['nLm']
+        self.aMtx = np.array(json['aMtx'])
+        self.bVec = np.array(json['bVec'])
+        self.srcPts = np.array(json['srcPts'])
+        self.dMtxDat = np.array(json['dMtxDat'])
+
     def _process_dataString(self, dataString):
 
         fields = dataString.split(" ")
