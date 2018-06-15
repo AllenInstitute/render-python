@@ -1682,14 +1682,15 @@ class ThinPlateSplineTransform(Transform):
         values = decodeBase64(fields[3], 2*self.ndims*self.nLm)
         self.srcPts = values[0:self.ndims*self.nLm].reshape(
                 self.ndims, self.nLm)
-        self.dMtxDat = values[self.ndims*self.nLm:]
+        self.dMtxDat = values[self.ndims*self.nLm:].reshape(
+                self.ndims, self.nLm)
 
     @property
     def dataString(self):
         header = '{} {}'.format(self.ndims, self.nLm)
         blk1 = np.concatenate((self.aMtx.flatten(), self.bVec))
         b64_1 = encodeBase64(blk1)
-        blk2 = np.concatenate((self.srcPts.flatten(), self.dMtxDat))
+        blk2 = np.concatenate((self.srcPts.flatten(), self.dMtxDat.flatten()))
         b64_2 = encodeBase64(blk2)
         return '{} {} {}'.format(header, b64_1, b64_2)
 
