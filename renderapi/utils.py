@@ -7,6 +7,9 @@ import logging
 import inspect
 import copy
 import json
+import base64
+import zlib
+import bitstring
 
 import numpy
 import requests
@@ -358,3 +361,75 @@ def fitargspec(f, oldargs, oldkwargs):
         logger.error('Cannot fit argspec for {}'.format(f))
         logger.error(e)
         return oldargs, oldkwargs
+
+
+def encodeBase64(src):
+    """encode an array or list of doubles
+    in Base64 binary-to-text encoding
+    same as in trakem2...ThinPlateSplineTransform.java
+
+    Parameters
+    ----------
+    src : array or list
+        floating point values to be encoded
+
+    Returns
+    -------
+    encoded: string
+    """
+    s = ''
+    for ix in src:
+        bits = bitstring.BitArray(float=ix, length=64).uint
+        s += chr(bits >> 56)
+        s += chr(bits >> 48 & 0xffL)
+        s += chr(bits >> 40 & 0xffL)
+        s += chr(bits >> 32 & 0xffL)
+        s += chr(bits >> 24 & 0xffL)
+        s += chr(bits >> 16 & 0xffL)
+        s += chr(bits >> 8 & 0xffL)
+        s += chr(bits & 0xffL)
+    zs = zlib.compress(s)
+    encoded = base64.b64encode(zs)
+    return encoded
+
+
+def decodeBase64(src, n):
+    """decode a string
+    encoded in base64 binary-to-text encoding
+    same as in trakem2...ThinPlateSplineTransform.java
+
+    Parameters
+    ----------
+    src : string
+        encoded string
+    n   : int
+        number of values to decode
+
+    Returns
+    -------
+    arr: list of double-precision floats
+    """
+    zipped = base64.b64decode(src)
+    bvalues = zlib.decompress(zipped)
+    arr = []
+    j = 0
+    for i in range(n):
+        bits = 0L
+        bits += (ord(bvalues[j]) & 0xffL) << 56
+        j += 1
+        bits += (ord(bvalues[j]) & 0xffL) << 48
+        j += 1
+        bits += (ord(bvalues[j]) & 0xffL) << 40
+        j += 1
+        bits += (ord(bvalues[j]) & 0xffL) << 32
+        j += 1
+        bits += (ord(bvalues[j]) & 0xffL) << 24
+        j += 1
+        bits += (ord(bvalues[j]) & 0xffL) << 16
+        j += 1
+        bits += (ord(bvalues[j]) & 0xffL) << 8
+        j += 1
+        bits += ord(bvalues[j]) & 0xffL
+        j += 1
+        arr.append(bitstring.BitArray(uint=bits, length=64).float)
+    return arr
