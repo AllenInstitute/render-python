@@ -4,3 +4,4 @@ pillow
 sphinxcontrib-napoleon
 decorator
 six
+bitstring
