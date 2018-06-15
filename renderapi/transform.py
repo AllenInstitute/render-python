@@ -1702,7 +1702,7 @@ class ThinPlateSplineTransform(Transform):
         b64_1 = encodeBase64(blk1)
         blk2 = np.concatenate((self.srcPts.flatten(), self.dMtxDat.flatten()))
         b64_2 = encodeBase64(blk2)
-        return ' {} {} {}'.format(header, b64_1, b64_2)
+        return 'ThinPlateSplineR2LogR {} {} {}'.format(header, b64_1, b64_2)
 
 
 class NonLinearTransform(NonLinearCoordinateTransform):
