@@ -370,7 +370,7 @@ def encodeBase64(src):
 
     Parameters
     ----------
-    src : array or list
+    src : 1D numpy array 
         floating point values to be encoded
 
     Returns
@@ -407,7 +407,7 @@ def decodeBase64(src, n):
 
     Returns
     -------
-    arr: list of double-precision floats
+    arr: length n numpy array of double-precision floats
     """
     zipped = base64.b64decode(src)
     bvalues = zlib.decompress(zipped)
@@ -432,4 +432,4 @@ def decodeBase64(src, n):
         bits += ord(bvalues[j]) & 0xffL
         j += 1
         arr.append(bitstring.BitArray(uint=bits, length=64).float)
-    return arr
+    return np.array(arr)
