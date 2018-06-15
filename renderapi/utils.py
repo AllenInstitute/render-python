@@ -432,4 +432,4 @@ def decodeBase64(src, n):
         bits += ord(bvalues[j]) & 0xffL
         j += 1
         arr.append(bitstring.BitArray(uint=bits, length=64).float)
-    return np.array(arr)
+    return numpy.array(arr)
