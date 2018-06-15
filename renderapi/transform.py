@@ -1667,15 +1667,15 @@ class ThinPlateSplineTransform(Transform):
         self.srcPts = np.array(json['srcPts'])
         self.dMtxDat = np.array(json['dMtxDat'])
 
-    def to_dict(self):
-        j = {}
-        j['ndims'] = self.ndims
-        j['nLm'] = self.nLm
-        j['aMtx'] = self.aMtx.tolist()
-        j['bVec'] = self.bVec.tolist()
-        j['srcPts'] = self.srcPts.tolist()
-        j['dMtxDat'] = self.dMtxDat.tolist()
-        return j
+    #def to_dict(self):
+    #    j = {}
+    #    j['ndims'] = self.ndims
+    #    j['nLm'] = self.nLm
+    #    j['aMtx'] = self.aMtx.tolist()
+    #    j['bVec'] = self.bVec.tolist()
+    #    j['srcPts'] = self.srcPts.tolist()
+    #    j['dMtxDat'] = self.dMtxDat.tolist()
+    #    return j
 
     def _process_dataString(self, dataString):
 
