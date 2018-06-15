@@ -370,7 +370,7 @@ def encodeBase64(src):
 
     Parameters
     ----------
-    src : 1D numpy array 
+    src : 1D numpy array
         floating point values to be encoded
 
     Returns

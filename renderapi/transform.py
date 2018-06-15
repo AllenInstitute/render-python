@@ -1659,7 +1659,7 @@ class ThinPlateSplineTransform(Transform):
             self.className = (
                 'mpicbg.trakem2.transform.ThinPlateSplineTransform')
 
-    def from_dict(self,json):
+    def from_dict(self, json):
         self.ndims = json['ndims']
         self.nLm = json['nLm']
         self.aMtx = np.array(json['aMtx'])
@@ -1668,7 +1668,7 @@ class ThinPlateSplineTransform(Transform):
         self.dMtxDat = np.array(json['dMtxDat'])
 
     def to_dict(self):
-        j={}
+        j = {}
         j['ndims'] = self.ndims
         j['nLm'] = self.nLm
         j['aMtx'] = self.aMtx.tolist()
