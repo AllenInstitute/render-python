@@ -1677,7 +1677,8 @@ class ThinPlateSplineTransform(Transform):
     #    j['dMtxDat'] = self.dMtxDat.tolist()
     #    return j
 
-    #def _process_dataString(self, dataString):
+    def _process_dataString(self, dataString):
+        self.dataString = datastring
 
     #    fields = dataString.split(" ")
 
