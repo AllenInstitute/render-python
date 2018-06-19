@@ -1665,7 +1665,8 @@ class ThinPlateSplineTransform(Transform):
         self.nLm = int(fields[2])
 
         if fields[3] != "null":
-            values = decodeBase64(fields[3], self.ndims*self.ndims + self.ndims)
+            values = decodeBase64(fields[3],
+                                  self.ndims*self.ndims + self.ndims)
             self.aMtx = values[0:self.ndims*self.ndims].reshape(
                                          self.ndims, self.ndims)
             self.bVec = values[self.ndims*self.ndims:]

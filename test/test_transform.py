@@ -604,5 +604,6 @@ def test_similarity_init():
 
 def test_thinplatespline():
     j = json.load(open(rendersettings.TEST_THINPLATESPLINE_FILE, 'r'))
-    t = renderapi.transform.ThinPlateSplineTransform(dataString=j['dataString'])
-    assert (t['dataString']==t.dataString)
+    t = renderapi.transform.ThinPlateSplineTransform(
+            dataString=j['dataString'])
+    assert (t['dataString'] == t.dataString)
