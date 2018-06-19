@@ -1659,14 +1659,12 @@ class ThinPlateSplineTransform(Transform):
                 'mpicbg.trakem2.transform.ThinPlateSplineTransform')
 
     def _process_dataString(self, dataString):
-        #self.dataString = dataString
-
         fields = dataString.split(" ")
 
         self.ndims = int(fields[1])
         self.nLm = int(fields[2])
 
-        if self.fields[3] != "null":
+        if fields[3] != "null":
             values = decodeBase64(fields[3], self.ndims*self.ndims + self.ndims)
             self.aMtx = values[0:self.ndims*self.ndims].reshape(
                                          self.ndims, self.ndims)
