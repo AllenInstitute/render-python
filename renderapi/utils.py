@@ -415,21 +415,21 @@ def decodeBase64(src, n):
     j = 0
     for i in range(n):
         bits = 0x00
-        bits += (ord(bvalues[j]) & 0xff) << 56
+        bits += (ord(bytes([bvalues[j]])) & 0xff) << 56
         j += 1
-        bits += (ord(bvalues[j]) & 0xff) << 48
+        bits += (ord(bytes([bvalues[j]])) & 0xff) << 48
         j += 1
-        bits += (ord(bvalues[j]) & 0xff) << 40
+        bits += (ord(bytes([bvalues[j]])) & 0xff) << 40
         j += 1
-        bits += (ord(bvalues[j]) & 0xff) << 32
+        bits += (ord(bytes([bvalues[j]])) & 0xff) << 32
         j += 1
-        bits += (ord(bvalues[j]) & 0xff) << 24
+        bits += (ord(bytes([bvalues[j]])) & 0xff) << 24
         j += 1
-        bits += (ord(bvalues[j]) & 0xff) << 16
+        bits += (ord(bytes([bvalues[j]])) & 0xff) << 16
         j += 1
-        bits += (ord(bvalues[j]) & 0xff) << 8
+        bits += (ord(bytes([bvalues[j]])) & 0xff) << 8
         j += 1
-        bits += ord(bvalues[j]) & 0xff
+        bits += ord(bytes([bvalues[j]])) & 0xff 
         j += 1
         arr.append(bitstring.BitArray(uint=bits, length=64).float)
     return numpy.array(arr)
