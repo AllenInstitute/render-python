@@ -1659,13 +1659,13 @@ class ThinPlateSplineTransform(Transform):
             self.className = (
                 'mpicbg.trakem2.transform.ThinPlateSplineTransform')
 
-    def from_dict(self, json):
-        self.ndims = json['ndims']
-        self.nLm = json['nLm']
-        self.aMtx = np.array(json['aMtx'])
-        self.bVec = np.array(json['bVec'])
-        self.srcPts = np.array(json['srcPts'])
-        self.dMtxDat = np.array(json['dMtxDat'])
+    #def from_dict(self, json):
+    #    self.ndims = json['ndims']
+    #    self.nLm = json['nLm']
+    #    self.aMtx = np.array(json['aMtx'])
+    #    self.bVec = np.array(json['bVec'])
+    #    self.srcPts = np.array(json['srcPts'])
+    #    self.dMtxDat = np.array(json['dMtxDat'])
 
     #def to_dict(self):
     #    j = {}
@@ -1696,14 +1696,14 @@ class ThinPlateSplineTransform(Transform):
     #    self.dMtxDat = values[self.ndims*self.nLm:].reshape(
     #            self.ndims, self.nLm)
 
-    @property
-    def dataString(self):
-        header = '{} {}'.format(self.ndims, self.nLm)
-        blk1 = np.concatenate((self.aMtx.flatten(), self.bVec))
-        b64_1 = encodeBase64(blk1)
-        blk2 = np.concatenate((self.srcPts.flatten(), self.dMtxDat.flatten()))
-        b64_2 = encodeBase64(blk2)
-        return 'ThinPlateSplineR2LogR {} {} {}'.format(header, b64_1, b64_2)
+    #@property
+    #def dataString(self):
+    #    header = '{} {}'.format(self.ndims, self.nLm)
+    #    blk1 = np.concatenate((self.aMtx.flatten(), self.bVec))
+    #    b64_1 = encodeBase64(blk1)
+    #    blk2 = np.concatenate((self.srcPts.flatten(), self.dMtxDat.flatten()))
+    #    b64_2 = encodeBase64(blk2)
+    #    return 'ThinPlateSplineR2LogR {} {} {}'.format(header, b64_1, b64_2)
 
 
 class NonLinearTransform(NonLinearCoordinateTransform):
