@@ -1628,8 +1628,8 @@ class NonLinearCoordinateTransform(Transform):
 
 class ThinPlateSplineTransform(Transform):
     """
-    render-python class that implements the
-    mpicbg.trakem2.transform.ThinPlateSplineTransform class
+    render-python class that can hold a dataString for
+    mpicbg.trakem2.transform.ThinPlateSplineTransform class.
     Parameters
     ----------
     dataString: str or None
@@ -1653,57 +1653,45 @@ class ThinPlateSplineTransform(Transform):
         else:
             if dataString is not None:
                 self._process_dataString(dataString)
-            if labels is not None:
-                self.labels = labels
+            self.labels = labels
             self.transformId = transformId
             self.className = (
                 'mpicbg.trakem2.transform.ThinPlateSplineTransform')
 
-    #def from_dict(self, json):
-    #    self.ndims = json['ndims']
-    #    self.nLm = json['nLm']
-    #    self.aMtx = np.array(json['aMtx'])
-    #    self.bVec = np.array(json['bVec'])
-    #    self.srcPts = np.array(json['srcPts'])
-    #    self.dMtxDat = np.array(json['dMtxDat'])
-
-    #def to_dict(self):
-    #    j = {}
-    #    j['ndims'] = self.ndims
-    #    j['nLm'] = self.nLm
-    #    j['aMtx'] = self.aMtx.tolist()
-    #    j['bVec'] = self.bVec.tolist()
-    #    j['srcPts'] = self.srcPts.tolist()
-    #    j['dMtxDat'] = self.dMtxDat.tolist()
-    #    return j
-
     def _process_dataString(self, dataString):
-        self.dataString = dataString
+        #self.dataString = dataString
 
-    #    fields = dataString.split(" ")
+        fields = dataString.split(" ")
 
-    #    self.ndims = int(fields[0])
-    #    self.nLm = int(fields[1])
+        self.ndims = int(fields[1])
+        self.nLm = int(fields[2])
 
-    #    values = decodeBase64(fields[2], self.ndims*self.ndims + self.ndims)
-    #    self.aMtx = values[0:self.ndims*self.ndims].reshape(
-    #            self.ndims, self.ndims)
-    #    self.bVec = values[self.ndims*self.ndims:]
+        if self.fields[3] != "null":
+            values = decodeBase64(fields[3], self.ndims*self.ndims + self.ndims)
+            self.aMtx = values[0:self.ndims*self.ndims].reshape(
+                                         self.ndims, self.ndims)
+            self.bVec = values[self.ndims*self.ndims:]
+        else:
+            self.aMtx = None
+            self.bVec = None
 
-    #    values = decodeBase64(fields[3], 2*self.ndims*self.nLm)
-    #    self.srcPts = values[0:self.ndims*self.nLm].reshape(
-    #            self.ndims, self.nLm)
-    #    self.dMtxDat = values[self.ndims*self.nLm:].reshape(
-    #            self.ndims, self.nLm)
+        values = decodeBase64(fields[4], 2*self.ndims*self.nLm)
+        self.srcPts = values[0:self.ndims*self.nLm].reshape(
+                                       self.ndims, self.nLm)
+        self.dMtxDat = values[self.ndims*self.nLm:].reshape(
+                                       self.ndims, self.nLm)
 
-    #@property
-    #def dataString(self):
-    #    header = '{} {}'.format(self.ndims, self.nLm)
-    #    blk1 = np.concatenate((self.aMtx.flatten(), self.bVec))
-    #    b64_1 = encodeBase64(blk1)
-    #    blk2 = np.concatenate((self.srcPts.flatten(), self.dMtxDat.flatten()))
-    #    b64_2 = encodeBase64(blk2)
-    #    return 'ThinPlateSplineR2LogR {} {} {}'.format(header, b64_1, b64_2)
+    @property
+    def dataString(self):
+        header = 'ThinPlateSplineR2LogR {} {}'.format(self.ndims, self.nLm)
+        if self.aMtx is not None:
+            blk1 = np.concatenate((self.aMtx.flatten(), self.bVec))
+            b64_1 = encodeBase64(blk1)
+        else:
+            b64_1 = "null"
+        blk2 = np.concatenate((self.srcPts.flatten(), self.dMtxDat.flatten()))
+        b64_2 = encodeBase64(blk2)
+        return '{} {} {}'.format(header, b64_1, b64_2)
 
 
 class NonLinearTransform(NonLinearCoordinateTransform):
