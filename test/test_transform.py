@@ -607,3 +607,8 @@ def test_thinplatespline():
     t = renderapi.transform.ThinPlateSplineTransform(
             dataString=j['dataString'])
     assert (j['dataString'] == t.dataString)
+    t.aMtx = np.zeros(4)
+    t.bVec = np.zeros(2)
+    t2 = renderapi.transform.ThinPlateSplineTransform(
+            dataString=t.dataString)
+    assert (t==t2)
