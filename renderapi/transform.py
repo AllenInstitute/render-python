@@ -1677,23 +1677,23 @@ class ThinPlateSplineTransform(Transform):
     #    j['dMtxDat'] = self.dMtxDat.tolist()
     #    return j
 
-    def _process_dataString(self, dataString):
+    #def _process_dataString(self, dataString):
 
-        fields = dataString.split(" ")
+    #    fields = dataString.split(" ")
 
-        self.ndims = int(fields[0])
-        self.nLm = int(fields[1])
+    #    self.ndims = int(fields[0])
+    #    self.nLm = int(fields[1])
 
-        values = decodeBase64(fields[2], self.ndims*self.ndims + self.ndims)
-        self.aMtx = values[0:self.ndims*self.ndims].reshape(
-                self.ndims, self.ndims)
-        self.bVec = values[self.ndims*self.ndims:]
+    #    values = decodeBase64(fields[2], self.ndims*self.ndims + self.ndims)
+    #    self.aMtx = values[0:self.ndims*self.ndims].reshape(
+    #            self.ndims, self.ndims)
+    #    self.bVec = values[self.ndims*self.ndims:]
 
-        values = decodeBase64(fields[3], 2*self.ndims*self.nLm)
-        self.srcPts = values[0:self.ndims*self.nLm].reshape(
-                self.ndims, self.nLm)
-        self.dMtxDat = values[self.ndims*self.nLm:].reshape(
-                self.ndims, self.nLm)
+    #    values = decodeBase64(fields[3], 2*self.ndims*self.nLm)
+    #    self.srcPts = values[0:self.ndims*self.nLm].reshape(
+    #            self.ndims, self.nLm)
+    #    self.dMtxDat = values[self.ndims*self.nLm:].reshape(
+    #            self.ndims, self.nLm)
 
     @property
     def dataString(self):
