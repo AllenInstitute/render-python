@@ -414,7 +414,7 @@ def decodeBase64(src, n):
     arr = []
     j = 0
     for i in range(n):
-        bits = 0
+        bits = 0x00
         bits += (ord(bvalues[j]) & 0xff) << 56
         j += 1
         bits += (ord(bvalues[j]) & 0xff) << 48
