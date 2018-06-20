@@ -377,18 +377,28 @@ def encodeBase64(src):
     -------
     encoded: string
     """
-    s = ''
+    s = []
     for ix in src:
         bits = bitstring.BitArray(float=ix, length=64).uint
-        s += chr(bits >> 56)
-        s += chr(bits >> 48 & 0xff)
-        s += chr(bits >> 40 & 0xff)
-        s += chr(bits >> 32 & 0xff)
-        s += chr(bits >> 24 & 0xff)
-        s += chr(bits >> 16 & 0xff)
-        s += chr(bits >> 8 & 0xff)
-        s += chr(bits & 0xff)
-    zs = zlib.compress(bytes(s,'utf-8'))
+        s.append(bits >> 56)
+        s.append(bits >> 48 & 0xff)
+        s.append(bits >> 40 & 0xff)
+        s.append(bits >> 32 & 0xff)
+        s.append(bits >> 24 & 0xff)
+        s.append(bits >> 16 & 0xff)
+        s.append(bits >> 8 & 0xff)
+        s.append(bits & 0xff)
+
+    try:
+        # python 3 case
+        zs = zlib.compress(bytearray(s))
+    except TypeError:
+        # python 2 case
+        ns = ""
+        for i in s:
+            ns += chr(i)
+        zs = zlib.compress(ns)
+
     encoded = base64.b64encode(zs)
     return encoded
 
@@ -412,24 +422,34 @@ def decodeBase64(src, n):
     zipped = base64.b64decode(src)
     bvalues = zlib.decompress(zipped)
     arr = []
+    if type(bvalues[0]) is str:
+        # python 2
+        tmp = []
+        for bv in bvalues:
+            tmp.append(ord(bv))
+        bvalues = tmp
+    else:
+        # python 3
+        pass
+
     j = 0
     for i in range(n):
         bits = 0x00
-        bits += (ord(bytes(bvalues[j])) & 0xff) << 56
+        bits += (bvalues[j] & 0xff) << 56
         j += 1
-        bits += (ord(bytes(bvalues[j])) & 0xff) << 48
+        bits += (bvalues[j] & 0xff) << 48
         j += 1
-        bits += (ord(bytes(bvalues[j])) & 0xff) << 40
+        bits += (bvalues[j] & 0xff) << 40
         j += 1
-        bits += (ord(bytes(bvalues[j])) & 0xff) << 32
+        bits += (bvalues[j] & 0xff) << 32
         j += 1
-        bits += (ord(bytes(bvalues[j])) & 0xff) << 24
+        bits += (bvalues[j] & 0xff) << 24
         j += 1
-        bits += (ord(bytes(bvalues[j])) & 0xff) << 16
+        bits += (bvalues[j] & 0xff) << 16
         j += 1
-        bits += (ord(bytes(bvalues[j])) & 0xff) << 8
+        bits += (bvalues[j] & 0xff) << 8
         j += 1
-        bits += ord(bytes(bvalues[j])) & 0xff 
+        bits += bvalues[j] & 0xff
         j += 1
         arr.append(bitstring.BitArray(uint=bits, length=64).float)
     return numpy.array(arr)
