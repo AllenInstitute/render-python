@@ -400,6 +400,7 @@ def encodeBase64(src):
         zs = zlib.compress(ns)
 
     encoded = base64.b64encode(zs)
+
     if type(encoded) is bytes:
         encoded = encoded.decode()
     return encoded
