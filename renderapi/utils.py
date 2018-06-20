@@ -378,6 +378,7 @@ def encodeBase64(src):
     encoded: string
     """
     s = []
+
     for ix in src:
         bits = bitstring.BitArray(float=ix, length=64).uint
         s.append(bits >> 56)
@@ -425,6 +426,7 @@ def decodeBase64(src, n):
     zipped = base64.b64decode(src)
     bvalues = zlib.decompress(zipped)
     arr = []
+
     if type(bvalues[0]) is str:
         # python 2
         tmp = []
