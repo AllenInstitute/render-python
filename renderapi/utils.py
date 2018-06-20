@@ -388,7 +388,7 @@ def encodeBase64(src):
         s += chr(bits >> 16 & 0xff)
         s += chr(bits >> 8 & 0xff)
         s += chr(bits & 0xff)
-    zs = zlib.compress(bytes(s))
+    zs = zlib.compress(bytes(s,'utf-8'))
     encoded = base64.b64encode(zs)
     return encoded
 
