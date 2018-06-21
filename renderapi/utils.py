@@ -423,8 +423,11 @@ def decodeBase64(src, n):
     -------
     arr: length n numpy array of double-precision floats
     """
-    zipped = base64.b64decode(src)
-    bvalues = zlib.decompress(zipped)
+    if src[0]=='@':
+        bvalues = base64.b64decode(src[1:])
+    else:
+        zipped = base64.b64decode(src)
+        bvalues = zlib.decompress(zipped)
     arr = []
 
     if type(bvalues[0]) is str:
