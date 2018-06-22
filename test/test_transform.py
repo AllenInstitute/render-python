@@ -612,6 +612,17 @@ def test_thinplatespline():
     t2 = renderapi.transform.ThinPlateSplineTransform(
             dataString=t.dataString)
     assert (t == t2)
+    # test incorrect lengths
+    with pytest.raises(renderapi.errors.RenderError):
+        s = t2.dataString.split(' ')
+        s[1] = str(int(s[1])+1)
+        t3 = renderapi.transform.ThinPlateSplineTransform(
+                dataString=" ".join(s))
+    with pytest.raises(renderapi.errors.RenderError):
+        s = t2.dataString.split(' ')
+        s[2] = str(int(s[2])-4)
+        t3 = renderapi.transform.ThinPlateSplineTransform(
+                dataString=" ".join(s))
 
 
 def test_encode64():
