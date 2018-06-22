@@ -9,7 +9,6 @@ import copy
 import json
 import base64
 import zlib
-import bitstring
 
 import numpy
 import requests
@@ -377,34 +376,7 @@ def encodeBase64(src):
     -------
     encoded: string
     """
-    s = []
-
-    for ix in src:
-        bits = bitstring.BitArray(float=ix, length=64).uint
-        s.append(bits >> 56)
-        s.append(bits >> 48 & 0xff)
-        s.append(bits >> 40 & 0xff)
-        s.append(bits >> 32 & 0xff)
-        s.append(bits >> 24 & 0xff)
-        s.append(bits >> 16 & 0xff)
-        s.append(bits >> 8 & 0xff)
-        s.append(bits & 0xff)
-
-    try:
-        # python 3 case
-        zs = zlib.compress(bytearray(s))
-    except TypeError:
-        # python 2 case
-        ns = ""
-        for i in s:
-            ns += chr(i)
-        zs = zlib.compress(ns)
-
-    encoded = base64.b64encode(zs)
-
-    if type(encoded) is bytes:
-        encoded = encoded.decode()
-    return encoded
+    return base64.b64encode(zlib.compress(src.byteswap().tobytes()))
 
 
 def decodeBase64(src, n):
@@ -423,42 +395,4 @@ def decodeBase64(src, n):
     -------
     arr: length n numpy array of double-precision floats
     """
-    if src[0]=='@':
-        bvalues = base64.b64decode(src[1:])
-    else:
-        zipped = base64.b64decode(src)
-        bvalues = zlib.decompress(zipped)
-    arr = []
-
-    if type(bvalues[0]) is str:
-        # python 2
-        tmp = []
-        for bv in bvalues:
-            tmp.append(ord(bv))
-        bvalues = tmp
-    else:
-        # python 3
-        pass
-
-    j = 0
-    for i in range(n):
-        bits = 0x00
-        bits += (bvalues[j] & 0xff) << 56
-        j += 1
-        bits += (bvalues[j] & 0xff) << 48
-        j += 1
-        bits += (bvalues[j] & 0xff) << 40
-        j += 1
-        bits += (bvalues[j] & 0xff) << 32
-        j += 1
-        bits += (bvalues[j] & 0xff) << 24
-        j += 1
-        bits += (bvalues[j] & 0xff) << 16
-        j += 1
-        bits += (bvalues[j] & 0xff) << 8
-        j += 1
-        bits += bvalues[j] & 0xff
-        j += 1
-        arr.append(bitstring.BitArray(uint=bits, length=64).float)
-
-    return numpy.array(arr)
+    return numpy.frombuffer(zlib.decompress(base64.b64decode(src))).byteswap()
