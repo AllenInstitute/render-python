@@ -1665,20 +1665,29 @@ class ThinPlateSplineTransform(Transform):
         self.nLm = int(fields[2])
 
         if fields[3] != "null":
-            values = decodeBase64(fields[3],
-                                  self.ndims*self.ndims + self.ndims)
-            self.aMtx = values[0:self.ndims*self.ndims].reshape(
-                                         self.ndims, self.ndims)
-            self.bVec = values[self.ndims*self.ndims:]
+            try:
+              values = decodeBase64(fields[3])
+              self.aMtx = values[0:self.ndims*self.ndims].reshape(
+                                           self.ndims, self.ndims)
+              self.bVec = values[self.ndims*self.ndims:]
+            except IndexError:
+                raise RenderError(
+                  "inconsistent sizes and array lengths,
+                  in ThinPlateSplineTransform dataString")
         else:
             self.aMtx = None
             self.bVec = None
 
-        values = decodeBase64(fields[4], 2*self.ndims*self.nLm)
-        self.srcPts = values[0:self.ndims*self.nLm].reshape(
-                                       self.ndims, self.nLm)
-        self.dMtxDat = values[self.ndims*self.nLm:].reshape(
-                                       self.ndims, self.nLm)
+        try:
+            values = decodeBase64(fields[4])
+            self.srcPts = values[0:self.ndims*self.nLm].reshape(
+                                           self.ndims, self.nLm)
+            self.dMtxDat = values[self.ndims*self.nLm:].reshape(
+                                           self.ndims, self.nLm)
+        except IndexError:
+            raise RenderError(
+              "inconsistent sizes and array lengths,
+              in ThinPlateSplineTransform dataString")
 
     @property
     def dataString(self):

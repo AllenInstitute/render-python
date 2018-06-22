@@ -382,7 +382,7 @@ def encodeBase64(src):
                             ).decode('utf-8')
 
 
-def decodeBase64(src, n):
+def decodeBase64(src):
     """decode a string
     encoded in base64 binary-to-text encoding
     same as in trakem2...ThinPlateSplineTransform.java
