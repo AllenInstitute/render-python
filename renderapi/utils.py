@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+usr/bin/env python
 '''
 utilities to make render/java/web/life interfacing easier
 '''
@@ -391,8 +391,6 @@ def decodeBase64(src):
     ----------
     src : string
         encoded string
-    n   : int
-        number of values to decode
 
     Returns
     -------
