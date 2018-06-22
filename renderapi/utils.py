@@ -376,7 +376,10 @@ def encodeBase64(src):
     -------
     encoded: string
     """
-    return base64.b64encode(zlib.compress(src.byteswap().tobytes())).decode('utf-8')
+    return base64.b64encode(
+            zlib.compress(
+                src.byteswap().tobytes())
+                            ).decode('utf-8')
 
 
 def decodeBase64(src, n):
@@ -395,4 +398,8 @@ def decodeBase64(src, n):
     -------
     arr: length n numpy array of double-precision floats
     """
-    return numpy.frombuffer(zlib.decompress(base64.b64decode(src))).byteswap()
+    if src[0] == '@':
+        b = base64.b64decode(src[1:])
+    else:
+        b = zlib.decompress(base64.b64decode(src))
+    return numpy.frombuffer(b).byteswap()

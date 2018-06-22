@@ -611,4 +611,17 @@ def test_thinplatespline():
     t.bVec = np.zeros(2)
     t2 = renderapi.transform.ThinPlateSplineTransform(
             dataString=t.dataString)
-    assert (t==t2)
+    assert (t == t2)
+
+
+def test_encode64():
+    # case for Stephan's '@' character
+    s = '@QAkh+fAbhm6/8AAAAAAAAA=='
+    x = renderapi.utils.decodeBase64(s, 2)
+    assert(x[0] == 3.14159)
+    assert(x[1] == -1.0)
+    # all other
+    x = np.array([1.0, 3.0, 3.14159, -4.0, 10.0])
+    s = renderapi.utils.encodeBase64(x)
+    y = renderapi.utils.decodeBase64(s, x.size)
+    assert(np.all(x == y))
