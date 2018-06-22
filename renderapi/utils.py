@@ -376,7 +376,7 @@ def encodeBase64(src):
     -------
     encoded: string
     """
-    return base64.b64encode(zlib.compress(src.byteswap().tobytes()))
+    return base64.b64encode(zlib.compress(src.byteswap().tobytes())).decode('utf-8')
 
 
 def decodeBase64(src, n):
