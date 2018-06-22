@@ -1672,7 +1672,7 @@ class ThinPlateSplineTransform(Transform):
               self.bVec = values[self.ndims*self.ndims:]
             except IndexError:
                 raise RenderError(
-                  "inconsistent sizes and array lengths,
+                  "inconsistent sizes and array lengths, \
                   in ThinPlateSplineTransform dataString")
         else:
             self.aMtx = None
@@ -1686,7 +1686,7 @@ class ThinPlateSplineTransform(Transform):
                                            self.ndims, self.nLm)
         except IndexError:
             raise RenderError(
-              "inconsistent sizes and array lengths,
+              "inconsistent sizes and array lengths, \
               in ThinPlateSplineTransform dataString")
 
     @property
