@@ -1,4 +1,4 @@
-usr/bin/env python
+#!/usr/bin/env python
 '''
 utilities to make render/java/web/life interfacing easier
 '''
