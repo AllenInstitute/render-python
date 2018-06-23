@@ -33,6 +33,9 @@ TEST_FILES_DIR = os.path.join(os.path.dirname(
 
 TEST_TILESPECS_FILE = os.path.join(TEST_FILES_DIR, 'tilespecs.json')
 
+TEST_THINPLATESPLINE_FILE = os.path.join(TEST_FILES_DIR,
+                                         'thin_plate_spline.json')
+
 INTERPOLATED_TRANSFORM_TILESPEC = os.path.join(
     TEST_FILES_DIR, 'tilespec_interpolated.json')
 

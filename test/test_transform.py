@@ -600,3 +600,40 @@ def test_similarity_init():
     assert(isinstance(tform, renderapi.transform.SimilarityModel))
     assert(np.abs(tform.M[0, 0]-2) < EPSILON)
     assert(tform.M[0, 2] == 10)
+
+
+def test_thinplatespline():
+    j = json.load(open(rendersettings.TEST_THINPLATESPLINE_FILE, 'r'))
+    t = renderapi.transform.ThinPlateSplineTransform(
+            dataString=j['dataString'])
+    assert (j['dataString'] == t.dataString)
+    t.aMtx = np.zeros(4)
+    t.bVec = np.zeros(2)
+    t2 = renderapi.transform.ThinPlateSplineTransform(
+            dataString=t.dataString)
+    assert (t == t2)
+    # test incorrect lengths
+    with pytest.raises(renderapi.errors.RenderError):
+        s = t2.dataString.split(' ')
+        s[1] = str(int(s[1])+1)
+        t3 = renderapi.transform.ThinPlateSplineTransform(
+                dataString=" ".join(s))
+    with pytest.raises(renderapi.errors.RenderError):
+        s = t2.dataString.split(' ')
+        s[2] = str(int(s[2])-4)
+        t3 = renderapi.transform.ThinPlateSplineTransform(
+                dataString=" ".join(s))
+
+
+def test_encode64():
+    # case for Stephan's '@' character
+    s = '@QAkh+fAbhm6/8AAAAAAAAA=='
+    x = renderapi.utils.decodeBase64(s)
+    assert(x.size == 2)
+    assert(x[0] == 3.14159)
+    assert(x[1] == -1.0)
+    # all other
+    x = np.array([1.0, 3.0, 3.14159, -4.0, 10.0])
+    s = renderapi.utils.encodeBase64(x)
+    y = renderapi.utils.decodeBase64(s)
+    assert(np.all(x == y))

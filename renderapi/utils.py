@@ -7,6 +7,8 @@ import logging
 import inspect
 import copy
 import json
+import base64
+import zlib
 
 import numpy
 import requests
@@ -358,3 +360,44 @@ def fitargspec(f, oldargs, oldkwargs):
         logger.error('Cannot fit argspec for {}'.format(f))
         logger.error(e)
         return oldargs, oldkwargs
+
+
+def encodeBase64(src):
+    """encode an array or list of doubles
+    in Base64 binary-to-text encoding
+    same as in trakem2...ThinPlateSplineTransform.java
+
+    Parameters
+    ----------
+    src : 1D numpy array
+        floating point values to be encoded
+
+    Returns
+    -------
+    encoded: string
+    """
+    return base64.b64encode(
+            zlib.compress(
+                src.byteswap().tobytes())
+                            ).decode('utf-8')
+
+
+def decodeBase64(src):
+    """decode a string
+    encoded in base64 binary-to-text encoding
+    same as in trakem2...ThinPlateSplineTransform.java
+
+    Parameters
+    ----------
+    src : string
+        encoded string
+
+    Returns
+    -------
+    arr: length n numpy array of double-precision floats
+    """
+    if src[0] == '@':
+        b = base64.b64decode(src[1:])
+    else:
+        b = zlib.decompress(base64.b64decode(src))
+    return numpy.frombuffer(b).byteswap()
