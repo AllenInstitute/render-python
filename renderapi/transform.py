@@ -1692,13 +1692,16 @@ class ThinPlateSplineTransform(Transform):
     @property
     def dataString(self):
         header = 'ThinPlateSplineR2LogR {} {}'.format(self.ndims, self.nLm)
+
         if self.aMtx is not None:
             blk1 = np.concatenate((self.aMtx.flatten(), self.bVec))
             b64_1 = encodeBase64(blk1)
         else:
             b64_1 = "null"
+
         blk2 = np.concatenate((self.srcPts.flatten(), self.dMtxDat.flatten()))
         b64_2 = encodeBase64(blk2)
+
         return '{} {} {}'.format(header, b64_1, b64_2)
 
 
