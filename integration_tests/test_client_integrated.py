@@ -171,6 +171,16 @@ def teststack(render, render_example_tilespec_and_transforms):
     yield stack
     renderapi.stack.delete_stack(stack, render=render)
 
+@pytest.fixture(scope="module")
+def teststack2(render, render_example_tilespec_and_transforms):
+    #copy of teststack for the purpose of testing pointmatchClient with two stacks
+    stack = 'teststack2'
+    test_import_jsonfiles(render, render_example_tilespec_and_transforms,
+                          stack=stack)
+    yield stack
+    renderapi.stack.delete_stack(stack, render=render)
+
+
 
 def test_tile_pair_client(render, teststack, **kwargs):
     zvalues = np.array(renderapi.stack.get_z_values_for_stack(
@@ -297,6 +307,27 @@ def test_point_match_client(teststack, render, tmpdir):
         collection, tp['p']['groupId'], tp['p']['id'], render=render)
     assert(len(pms) > 0)
 
+
+def test_point_match_client_2args(teststack, teststack2, render, tmpdir):
+    collection = 'test_client_collection'
+    zvalues = np.array(renderapi.stack.get_z_values_for_stack(
+        teststack, render=render))
+    tilepairjson = renderapi.client.tilePairClient(
+        teststack, np.min(zvalues), np.max(zvalues), render=render)
+
+    tile_pairs = [(tp['p']['id'], tp['q']['id']) for tp
+                  in tilepairjson['neighborPairs'][0:1]] # tile pairs are the same because the two stacks have the same information
+    sift_options = renderapi.client.SiftPointMatchOptions(renderScale=.25)
+    renderapi.client.pointMatchClient(teststack,
+                                      collection,
+                                      tile_pairs, stack2 = teststack2,
+                                      debugDirectory=tmpdir,
+                                      sift_options=sift_options,
+                                      render=render)
+    tp = tilepairjson['neighborPairs'][0]
+    pms = renderapi.pointmatch.get_matches_involving_tile(
+        collection, tp['p']['groupId'], tp['p']['id'], render=render)
+    assert(len(pms) > 0)
 
 def test_call_run_ws_client_renderclient(render, teststack):
     # class for this test should be something relatively lightweight....
