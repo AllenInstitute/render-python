@@ -1040,6 +1040,7 @@ class SiftPointMatchOptions(MatchDerivationParameters,
 
 @renderclientaccess
 def pointMatchClient(stack, collection, tile_pairs,
+                     stack2 = None,
                      sift_options=None,
                      pointMatchRender=None,
                      debugDirectory=None,
@@ -1058,6 +1059,8 @@ def pointMatchClient(stack, collection, tile_pairs,
     ----------
     stack : str
         stack containing the tiles
+    stack2 : str
+        second optional stack containing tiles (if stack2 is not none, then tile_pair['p'] comes from stack and tile_pair['q'] comes from stack2)
     collection : str
         point match collection to save results into
     tile_pairs : iterable
@@ -1126,9 +1129,26 @@ def pointMatchClient(stack, collection, tile_pairs,
         project=project,
         client_script=client_script)
 
+    if stack2 is not None:
+        canvas_url_template2 = get_canvas_url_template(
+            stack2,
+            filter,
+            renderWithoutMask,
+            normalizeForMatching,
+            excludeTransformsAfterLast,
+            excludeFirstTransformAndAllAfter,
+            excludeAllTransforms,
+            host=host,
+            port=port,
+            owner=owner,
+            project=project,
+            client_script=client_script)
+    else:
+        canvas_url_template2 = canvas_url_template
+
     for tile1, tile2 in tile_pairs:
         argvs += [canvas_url_template.format(tile1),
-                  canvas_url_template.format(tile2)]
+                  canvas_url_template2.format(tile2)]
 
     call_run_ws_client('org.janelia.render.client.PointMatchClient',
                        memGB=memGB, client_script=client_script,
