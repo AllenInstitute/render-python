@@ -8,7 +8,7 @@ from functools import partial
 import logging
 import subprocess
 import tempfile
-from multiprocessing.pool import Pool
+# from multiprocessing.pool import Pool
 from decorator import decorator
 from .errors import ClientScriptError
 from .utils import NullHandler, renderdump_temp, fitargspec
@@ -16,6 +16,7 @@ from .render import (RenderClient, renderaccess, Render,
                      format_preamble, format_baseurl)
 from .stack import set_stack_state, make_stack_params
 from .resolvedtiles import put_tilespecs
+from renderapi.external.processpools.stdlib_pool import WithMultiprocessingPool
 
 # setup logger
 logger = logging.getLogger(__name__)
@@ -78,32 +79,33 @@ def renderclientaccess(f, *args, **kwargs):
     return f(*args, **kwargs)
 
 
-class WithPool(Pool):
-    """Multiprocessing.pool.Pool with functioning __exit__ call
-
-    Parameters
-    ----------
-    *args
-        variable length argument list matching input
-        to multiprocessing.pool.Pool
-    **kwargs
-        keyword argument input matching multiprocessing.pool.Pool
-
-    Examples
-    --------
-    >>> with WithPool(number_processes) as pool:
-    >>>     pool.map(myfunc, myInput)
-    """
-
-    def __init__(self, *args, **kwargs):
-        super(WithPool, self).__init__(*args, **kwargs)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args, **kwargs):
-        self.close()
-        self.join()
+WithPool = WithMultiprocessingPool
+# class WithPool(Pool):
+#     """Multiprocessing.pool.Pool with functioning __exit__ call
+#
+#     Parameters
+#     ----------
+#     *args
+#         variable length argument list matching input
+#         to multiprocessing.pool.Pool
+#     **kwargs
+#         keyword argument input matching multiprocessing.pool.Pool
+#
+#     Examples
+#     --------
+#     >>> with WithPool(number_processes) as pool:
+#     >>>     pool.map(myfunc, myInput)
+#     """
+#
+#     def __init__(self, *args, **kwargs):
+#         super(WithPool, self).__init__(*args, **kwargs)
+#
+#     def __enter__(self):
+#         return self
+#
+#     def __exit__(self, *args, **kwargs):
+#         self.close()
+#         self.join()
 
 
 @renderclientaccess
