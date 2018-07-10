@@ -69,7 +69,7 @@ def test_pyramid_deserialize():
     assert(mm3['imageUrl'] == image_filename)
     assert(mm3['maskUrl'] is None)
 
-    with pytest.raises(RenderError):
+    with pytest.raises(KeyError):
         mm3['not_a_key']
 
 
