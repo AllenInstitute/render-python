@@ -10,6 +10,8 @@ from test_data import (render_host, render_port,
                        client_script_location, tilespec_file, tform_file,
                        test_pool_size)
 import PIL
+from renderapi.external.processpools.stdlib_pool import (
+    WithThreadPool, WithDummyMapPool, WithMultiprocessingPool)
 
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)
@@ -97,14 +99,14 @@ def test_failed_jsonfiles_validate_client(
 def test_import_jsonfiles_parallel(
         render, render_example_tilespec_and_transforms,
         stack, use_rest,
-        poolsize=test_pool_size):
+        poolsize=test_pool_size, **kwargs):
     renderapi.stack.create_stack(stack, render=render)
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     (tfiles, transformFile) = render_example_json_files(
         render_example_tilespec_and_transforms)
     renderapi.client.import_jsonfiles_parallel(
         stack, tfiles, transformFile=transformFile,
-        render=render, poolsize=poolsize, use_rest=use_rest)
+        render=render, poolsize=poolsize, use_rest=use_rest, **kwargs)
     validate_stack_import(render, stack, tilespecs)
     renderapi.stack.delete_stack(stack, render=render)
 
@@ -141,12 +143,13 @@ def test_import_jsonfiles_parallel_multiple(
 
 def test_import_tilespecs_parallel(render,
                                    render_example_tilespec_and_transforms,
-                                   stack='test_import_tilespecs_parallel'):
+                                   stack='test_import_tilespecs_parallel',
+                                   **kwargs):
     renderapi.stack.create_stack(stack, render=render)
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     renderapi.client.import_tilespecs_parallel(
         stack, tilespecs, sharedTransforms=tforms,
-        poolsize=test_pool_size, render=render)
+        poolsize=test_pool_size, render=render, **kwargs)
     validate_stack_import(render, stack, tilespecs)
 
 
@@ -329,6 +332,7 @@ def test_point_match_client_2args(teststack, teststack2, render, tmpdir):
         collection, tp['p']['groupId'], tp['p']['id'], render=render)
     assert(len(pms) > 0)
 
+
 def test_call_run_ws_client_renderclient(render, teststack):
     # class for this test should be something relatively lightweight....
     test_class = 'org.janelia.render.client.ValidateTilesClient'
@@ -338,3 +342,19 @@ def test_call_run_ws_client_renderclient(render, teststack):
         render.DEFAULT_PROJECT, teststack) + [zvalues[0]]
     assert not renderapi.client.call_run_ws_client(
         test_class, add_args=args, subprocess_mode='call', renderclient=render)
+
+
+@pytest.mark.parametrize("stackbase,poolclass", [
+    ("ThreadPooltest", WithThreadPool),
+    ("DummyMapPoolTest", WithDummyMapPool),
+    ("MultiprocessingPoolTest", WithMultiprocessingPool)])
+def test_processpools_parallelfuncs(
+        render, render_example_tilespec_and_transforms,
+        stackbase, poolclass, poolsize=test_pool_size):
+    test_import_tilespecs_parallel(
+        render, render_example_tilespec_and_transforms,
+        "{}_tilespecs".format(stackbase), mpPool=poolclass)
+    test_import_jsonfiles_parallel(
+        render, render_example_tilespec_and_transforms,
+        "{}_jsonfiles".format(stackbase), False, poolsize=poolsize,
+        mpPool=poolclass)
