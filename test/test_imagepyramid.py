@@ -79,7 +79,7 @@ def test_mipmaplevel_deprecated():
                                     maskUrl=mask_filename)
     assert(mml['imageUrl'] == image_filename)
     assert(mml['maskUrl'] == mask_filename)
-    with pytest.raises(RenderError):
+    with pytest.raises(KeyError):
         mml['not_a_key']
 
     assert(mml == mml)
