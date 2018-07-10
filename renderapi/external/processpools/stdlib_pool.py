@@ -18,7 +18,9 @@ class WithThreadPool(ThreadPool):
 
 
 class WithDummyMapPool:
-    map = map
+    @staticmethod
+    def map(*args, **kwargs):
+        return list(map(*args, **kwargs))
 
     def __init__(self, *args, **kwargs):
         pass
