@@ -35,6 +35,9 @@ def test_basic_pyramid():
     assert(ip[1].imageUrl == alt_image_filename)
     assert(ip[1].maskUrl == alt_mask_filename)
 
+    with pytest.raises(KeyError):
+        ip[1]['notvalid'] = 'test'
+
     assert(len(ip) == 2)
     ip.pop(1)
     assert(len(ip) == 1)

@@ -44,8 +44,10 @@ class MipMap:
     def __setitem__(self, key, value):
         if key == 'imageUrl':
             self.imageUrl = value
-        if key == 'maskUrl':
+        elif key == 'maskUrl':
             self.maskUrl = value
+        else:
+            raise KeyError('{} not a valid mipmap attribute'.format(key))
 
     def __getitem__(self, key):
         if key == 'imageUrl':
@@ -53,7 +55,7 @@ class MipMap:
         if key == 'maskUrl':
             return self.maskUrl
         else:
-            raise RenderError(
+            raise KeyError(
                 '{} is not a valid attribute of a mipmapLevel'.format(key))
 
     def __iter__(self):
@@ -105,7 +107,7 @@ class MipMapLevel:
         if key == 'maskUrl':
             return self.mipmap.maskUrl
         else:
-            raise RenderError(
+            raise KeyError(
                 '{} is not a valid attribute of a mipmapLevel'.format(key))
 
     def __iter__(self):
