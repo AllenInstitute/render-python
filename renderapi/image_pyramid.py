@@ -2,6 +2,7 @@ from collections import MutableMapping
 from .errors import RenderError
 import logging
 from .utils import NullHandler
+import warnings
 
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -40,6 +41,12 @@ class MipMap:
             d.update({'maskUrl': self.maskUrl})
         return d
 
+    def __setitem__(self, key, value):
+        if key == 'imageUrl':
+            self.imageUrl = value
+        if key == 'maskUrl':
+            self.maskUrl = value
+
     def __getitem__(self, key):
         if key == 'imageUrl':
             return self.imageUrl
@@ -77,8 +84,9 @@ class MipMapLevel:
     """
 
     def __init__(self, level, imageUrl=None, maskUrl=None):
-        logger.warning(
-            "use of mipmaplevels deprecated, use MipMap and ImagePyramid")
+        warnings.warn(
+            "use of mipmaplevels deprecated, use MipMap and ImagePyramid",
+            DeprecationWarning)
         self.level = level
         self.mipmap = MipMap(imageUrl, maskUrl)
 
@@ -154,11 +162,11 @@ class ImagePyramid(TransformedDict):
     def to_dict(self):
         return {k: v.to_dict() for k, v in self.items()}
 
-    @staticmethod
-    def from_dict(d):
-        return ImagePyramid({l: MipMap(v.get('imageUrl', None),
-                                       v.get('maskUrl', None))
-                             for l, v in d.items()})
+    @classmethod
+    def from_dict(cls, d):
+        return cls({l: MipMap(v.get('imageUrl', None),
+                              v.get('maskUrl', None))
+                    for l, v in d.items()})
 
     def __iter__(self):
         return iter(sorted(self.store))

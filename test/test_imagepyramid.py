@@ -3,7 +3,9 @@ from renderapi.errors import RenderError
 import pytest
 
 image_filename = "not_a_file.jpg"
+alt_image_filename = "not_a_file2.jpg"
 mask_filename = "not_a_mask.png"
+alt_mask_filename = "not_a_mask2.png"
 
 
 def test_basic_pyramid():
@@ -26,6 +28,13 @@ def test_basic_pyramid():
     ip[1] = image_pyramid.MipMap(imageUrl=image_filename,
                                  maskUrl=mask_filename)
     assert(ip[1].imageUrl == image_filename)
+
+    # test __setitem__ interface
+    ip[1]['imageUrl'] = alt_image_filename
+    ip[1]['maskUrl'] = alt_mask_filename
+    assert(ip[1].imageUrl == alt_image_filename)
+    assert(ip[1].maskUrl == alt_mask_filename)
+
     assert(len(ip) == 2)
     ip.pop(1)
     assert(len(ip) == 1)
