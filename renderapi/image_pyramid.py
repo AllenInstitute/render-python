@@ -1,22 +1,26 @@
-from collections import OrderedDict
+from collections import MutableMapping
+from .errors import RenderError
+import logging
+from .utils import NullHandler
+import warnings
+
+logger = logging.getLogger(__name__)
+logger.addHandler(NullHandler())
 
 
-class MipMapLevel:
-    """MipMapLevel class to represent a level of an image pyramid.
-    Can be put in dictionary formatting using dict(mML)
+class MipMap:
+    """MipMap class to represent a image and its mask
 
     Attributes
     ----------
-    level : int
-        level of 2x downsampling represented by mipmaplevel
     imageUrl : str or None
         uri corresponding to image
     maskUrl : str or None
         uri corresponding to mask
 
     """
-    def __init__(self, level, imageUrl=None, maskUrl=None):
-        self.level = level
+
+    def __init__(self, imageUrl=None, maskUrl=None):
         self.imageUrl = imageUrl
         self.maskUrl = maskUrl
 
@@ -37,90 +41,139 @@ class MipMapLevel:
             d.update({'maskUrl': self.maskUrl})
         return d
 
+    def __setitem__(self, key, value):
+        if key == 'imageUrl':
+            self.imageUrl = value
+        elif key == 'maskUrl':
+            self.maskUrl = value
+        else:
+            raise KeyError('{} not a valid mipmap attribute'.format(key))
+
+    def __getitem__(self, key):
+        if key == 'imageUrl':
+            return self.imageUrl
+        if key == 'maskUrl':
+            return self.maskUrl
+        else:
+            raise KeyError(
+                '{} is not a valid attribute of a mipmapLevel'.format(key))
+
     def __iter__(self):
-        return iter([(self.level, self._formatUrls())])
+        return iter(self._formatUrls().items())
+
+    def __eq__(self, b):
+        try:
+            return all([self.imageUrl == b.imageUrl,
+                        self.maskUrl == b.maskUrl])
+        except AttributeError as e:
+            return all([self.imageUrl == b.get('imageUrl'),
+                        self.maskUrl == b.get('maskUrl')])
 
 
-class ImagePyramid:
+class MipMapLevel:
+    """MipMapLevel class to represent a level of an image pyramid.
+    Can be put in dictionary formatting using dict(mML)
+
+    Attributes
+    ----------
+    level : int
+        level of 2x downsampling represented by mipmaplevel
+    imageUrl : str or None
+        uri corresponding to image
+    maskUrl : str or None
+        uri corresponding to mask
+
+    """
+
+    def __init__(self, level, imageUrl=None, maskUrl=None):
+        warnings.warn(
+            "use of mipmaplevels deprecated, use MipMap and ImagePyramid",
+            DeprecationWarning)
+        self.level = level
+        self.mipmap = MipMap(imageUrl, maskUrl)
+
+    def to_dict(self):
+        """
+        Returns
+        -------
+        dict
+            json compatible dictionary representaton
+        """
+        return dict(self.mipmap)
+
+    def __getitem__(self, key):
+        if key == 'imageUrl':
+            return self.mipmap.imageUrl
+        if key == 'maskUrl':
+            return self.mipmap.maskUrl
+        else:
+            raise KeyError(
+                '{} is not a valid attribute of a mipmapLevel'.format(key))
+
+    def __iter__(self):
+        return iter(self.to_dict().items())
+
+    def __eq__(self, b):
+        return self.mipmap == b.mipmap
+
+
+class TransformedDict(MutableMapping):
+    """A dictionary that applies an arbitrary key-altering
+       function before accessing the keys"""
+
+    def __init__(self, *args, **kwargs):
+        self.store = dict()
+        self.update(dict(*args, **kwargs))  # use the free update to set keys
+
+    def __getitem__(self, key):
+        return self.store[self.__keytransform__(key)]
+
+    def __setitem__(self, key, value):
+        self.store[self.__keytransform__(key)] = value
+
+    def __delitem__(self, key):
+        del self.store[self.__keytransform__(key)]
+
+    def __iter__(self):
+        return iter(self.store)
+
+    def __len__(self):
+        return len(self.store)
+
+    def __keytransform__(self, key):
+        return key
+
+
+class ImagePyramid(TransformedDict):
     '''Image Pyramid class representing a set of MipMapLevels which correspond
     to mipmapped (continuously downsmapled by 2x) representations
     of an image at level 0
     Can be put into dictionary formatting using dict(ip) or OrderedDict(ip)
-
-    Attributes
-    ----------
-    mipMapLevels : :obj:`list` of :class:`MipMapLevel`
-        list of :class:`MipMapLevel` objects defining image pyramid
-
     '''
-    def __init__(self, mipMapLevels=[]):
-        self.mipMapLevels = mipMapLevels
+
+    def __keytransform__(self, key):
+        try:
+            level = int(key)
+        except ValueError as e:
+            raise RenderError("{} is not a valid mipmap level".format(key))
+        if level < 0:
+            raise RenderError(
+                "{} is not a valid mipmap level (less than 0)".format(key))
+        return "{}".format(level)
 
     def to_dict(self):
-        """return dictionary representation of this object"""
-        return dict(self.__iter__())
+        return {k: v.to_dict() for k, v in self.items()}
 
-    def to_ordered_dict(self, key=None):
-        """returns :class:`OrderedDict` represention of this object,
-        ordered by mipmapLevel
+    @classmethod
+    def from_dict(cls, d):
+        return cls({l: MipMap(v.get('imageUrl', None),
+                              v.get('maskUrl', None))
+                    for l, v in d.items()})
 
-        Parameters
-        ----------
-        key : func
-            function to sort ordered dict of
-            :class:`mipMapLevel` dicts (default is by level)
-
-        Returns
-        -------
-        OrderedDict
-            sorted dictionary of :class:`mipMapLevels` in ImagePyramid
-
-        """
-        return OrderedDict(sorted(
-            self.__iter__(), key=((lambda x: x[0]) if key
-                                  is None else key)))
-
-    def append(self, mmL):
-        """appends a MipMapLevel to this ImagePyramid
-
-        Parameters
-        ----------
-        mml : :class:`MipMapLevel`
-            :class:`MipMapLevel` to append
-        """
-        self.mipMapLevels.append(mmL)
-
-    def update(self, mmL):
-        """updates the ImagePyramid with this MipMapLevel.
-        will overwrite existing mipMapLevels with same level
-
-        Args:
-            mml (MipMapLevel): mipmap level to update in pyramid
-        """
-        self.mipMapLevels = [
-            l for l in self.mipMapLevels if l.level != mmL.level]
-        self.append(mmL)
-
-    def get(self, to_get):
-        """gets a specific mipmap level in dictionary form
-
-        Parameters
-        ----------
-        to_get : int
-            level to get
-
-        Returns
-        -------
-        dict
-            representation of requested MipMapLevel
-        """
-        return self.to_dict()[to_get]  # TODO should this default
+    def __iter__(self):
+        return iter(sorted(self.store))
 
     @property
     def levels(self):
         """list of MipMapLevels in this ImagePyramid"""
-        return [int(i.level) for i in self.mipMapLevels]
-
-    def __iter__(self):
-        return iter([
-            l for sl in [list(mmL) for mmL in self.mipMapLevels] for l in sl])
+        return self.store.keys()

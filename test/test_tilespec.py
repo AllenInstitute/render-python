@@ -2,6 +2,7 @@ import json
 from operator import eq
 import renderapi
 import rendersettings
+from renderapi.image_pyramid import ImagePyramid
 
 
 def test_load_tilespecs_json():
@@ -33,17 +34,17 @@ def test_load_tilespecs_args():
                         for ts in ts_json]
 
     tilespecs = [renderapi.tilespec.TileSpec(
-        tileId=ts['tileId'], z=ts['z'], width=ts['width'],
-        height=ts['height'], mipMapLevels=[
-            renderapi.tilespec.MipMapLevel(
-                l, d.get('imageUrl'), d.get('maskUrl'))
-            for l, d in ts['mipmapLevels'].items()],
+        tileId=ts['tileId'],
+        z=ts['z'],
+        width=ts['width'],
+        height=ts['height'],
+        imagePyramid=ImagePyramid.from_dict(ts['mipmapLevels']),
         layout=renderapi.tilespec.Layout(
             force_pixelsize=False, **ts['layout']),
         minint=ts['minIntensity'], maxint=ts['maxIntensity'],
         tforms=renderapi.transform.TransformList(
             json=ts['transforms']).tforms)
-                 for ts in ts_json_expected]
+        for ts in ts_json_expected]
     assert(all(map(
         lambda x: eq(*x),
         zip([ts.to_dict() for ts in tilespecs], ts_json_expected))))

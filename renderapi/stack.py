@@ -571,13 +571,6 @@ def get_z_values_for_stack(stack, project=None, host=None, port=None,
     return get_json(session, request_url)
 
 
-def get_z_value_for_section(stack, sectionId, **kwargs):
-    """DEPRECATED (use :func:`get_section_z_value`) instead"""
-    logger.warning(
-        "DEPRECATED, use renderapi.stack.get_section_z_value instead")
-    return get_section_z_value(stack, sectionId, **kwargs)
-
-
 # haven't fully supported this yet
 # @renderaccess
 # def put_resolved_tilespecs(stack, json_dict, host=None, port=None,
