@@ -61,7 +61,7 @@ class ThinPlateSplineTransform(Transform):
             self.srcPts = values[0:self.ndims*self.nLm].reshape(
                                            self.ndims, self.nLm, order='C')
             self.dMtxDat = values[self.ndims*self.nLm:].reshape(
-                                           self.ndims, self.nLm, order='F')
+                                           self.ndims, self.nLm, order='C')
         except ValueError:
             raise RenderError(
                 "inconsistent sizes and array lengths, \
