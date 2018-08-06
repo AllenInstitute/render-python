@@ -59,7 +59,7 @@ class ThinPlateSplineTransform(Transform):
         try:
             values = decodeBase64(fields[4])
             self.srcPts = values[0:self.ndims*self.nLm].reshape(
-                                           self.ndims, self.nLm, order='C')
+                                           self.ndims, self.nLm, order='F')
             self.dMtxDat = values[self.ndims*self.nLm:].reshape(
                                            self.ndims, self.nLm, order='C')
         except ValueError:
