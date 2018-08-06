@@ -112,13 +112,16 @@ class ThinPlateSplineTransform(Transform):
                 self.srcPts -
                 pt.reshape(self.ndims, 1),
                 axis=0)
+        nrm = np.zeros_like(disp)
+        ind = disp > 1e-8
+        nrm[ind] = disp[ind] * disp[ind] * np.log(disp[ind])
 
         for lnd in range(self.nLm):
-            nrm = 0.0
-            if disp[lnd] > 1e-8:
-                nrm = disp[lnd] * disp[lnd] * np.log(disp[lnd])
+            #nrm = 0.0
+            #if disp[lnd] > 1e-8:
+            #    nrm = disp[lnd] * disp[lnd] * np.log(disp[lnd])
             for d in range(self.ndims):
-                result[d] += (nrm * self.dMtxDat[d, lnd])
+                result[d] += (nrm[lnd] * self.dMtxDat[d, lnd])
         return result
 
     @property
