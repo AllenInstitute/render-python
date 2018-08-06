@@ -98,7 +98,8 @@ class ThinPlateSplineTransform(Transform):
                 for j in range(self.ndims):
                     result[i] += self.aMtx[i, j] * pt[j]
         else:
-            result[i] += pt[j]
+            for i in range(self.ndims):
+                result[i] += pt[i]
 
         if self.bVec is not None:
             for i in range(self.ndims):
