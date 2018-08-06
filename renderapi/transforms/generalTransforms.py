@@ -4,9 +4,8 @@ from collections import Iterable
 
 import numpy as np
 
-from .errors import ConversionError, EstimationError, RenderError
-from .utils import NullHandler, encodeBase64, decodeBase64
-from .transforms.ThinPlateSpline import ThinPlateSplineTransform
+from ..errors import ConversionError, EstimationError, RenderError
+from ..utils import NullHandler, encodeBase64, decodeBase64
 
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
