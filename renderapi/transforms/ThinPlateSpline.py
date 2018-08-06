@@ -4,6 +4,7 @@ from collections import Iterable
 import numpy as np
 from ..errors import ConversionError, EstimationError, RenderError
 from ..utils import NullHandler, encodeBase64, decodeBase64
+from ..transform import Transform
 
 
 class ThinPlateSplineTransform(Transform):
