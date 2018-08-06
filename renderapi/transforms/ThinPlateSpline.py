@@ -117,7 +117,7 @@ class ThinPlateSplineTransform(Transform):
                     np.linalg.norm(
                         tmpDisplacement))
             for d in range(self.ndims):
-                result[d] += nrm * self.dMtxDat[d, di]
+                result[d] += nrm * self.dMtxDat[di, d]
             di += 1
         return result
 
