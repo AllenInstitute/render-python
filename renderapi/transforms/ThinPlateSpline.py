@@ -93,6 +93,17 @@ class ThinPlateSplineTransform(Transform):
 
         result = self.computeDeformationContribution(pt)
 
+        if self.aMtx is not None:
+            for i in range(self.ndims):
+                for j in range(self.ndims):
+                    result[i] += self.aMtx[i, j] * pt[j]
+        else:
+            result[i] += pt[j]
+
+        if self.bVec is not None:
+            for i in range(self.ndims):
+                result[i] += self.bVec[i] + pt[i]
+
         return result
 
     def computeDeformationContribution(self, pt):
