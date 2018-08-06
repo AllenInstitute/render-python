@@ -122,10 +122,10 @@ class ThinPlateSplineTransform(Transform):
         return result
 
     def srcPtDisplacement(self, lnd, pt):
-        result = np.zeros_like(pt)
-        for d in range(self.ndims):
-            result[d] = self.srcPts[d, lnd] - pt[d]
-        return result
+        #result = np.zeros_like(pt)
+        #for d in range(self.ndims):
+        #    result[d] = self.srcPts[d, lnd] - pt[d]
+        return self.srcPts - np.reshape(pt,(self.ndims,1))
 
     def r2Logr(self, r):
         nrm = 0.0
