@@ -108,15 +108,15 @@ class ThinPlateSplineTransform(Transform):
 
     def computeDeformationContribution(self, pt):
         result = np.zeros(self.ndims).astype(float)
-        displacements = np.linalg.norm(
+        disp = np.linalg.norm(
                 self.srcPts -
                 pt.reshape(self.ndims, 1),
                 axis=0)
 
         for lnd in range(self.nLm):
             nrm = 0.0
-            if tmpD[lnd] > 1e-8:
-                nrm = tmpD[lnd] * tmpD[lnd] * np.log(tmpD[lnd])
+            if disp[lnd] > 1e-8:
+                nrm = disp[lnd] * disp[lnd] * np.log(disp[lnd])
             for d in range(self.ndims):
                 result[d] += (nrm * self.dMtxDat[d, lnd])
         return result
