@@ -1,9 +1,6 @@
-import json
-import logging
-from collections import Iterable
 import numpy as np
-from ..errors import ConversionError, EstimationError, RenderError
-from ..utils import NullHandler, encodeBase64, decodeBase64
+from ..errors import RenderError
+from ..utils import encodeBase64, decodeBase64
 from .generalTransforms import Transform
 
 
@@ -90,7 +87,39 @@ class ThinPlateSplineTransform(Transform):
         return np.array(result)
 
     def apply(self, pt):
-        return pt
+        if not hasattr(self, 'dMtxDat'):
+            result = pt
+            return result
+
+        result = self.computeDeformationContribution(pt)
+
+        return result
+
+    def computeDeformationContribution(self, pt):
+        result = np.zeros(self.ndims).astype(float)
+        tmpDisplacement = np.zeros(self.ndims).astype(float)
+        di = 0
+        for lnd in range(self.nLm):
+            tmpDisplacement = self.srcPtDisplacement(lnd, pt)
+            nrm = self.r2Logr(
+                    np.linalg.norm(
+                        tmpDisplacement))
+            for d in range(self.ndims):
+                result[d] += nrm * self.dMtxDat[d, di]
+            di += 1
+        return result
+
+    def srcPtDisplacement(self, lnd, pt):
+        result = np.zeros_like(pt)
+        for d in range(self.ndims):
+            result[d] = self.srcPts[d][lnd] - pt[d]
+        return result
+
+    def r2Logr(self, r):
+        nrm = 0.0
+        if r > 1e-8:
+            nrm = r*r*np.log(r)
+        return nrm
 
     @property
     def dataString(self):
@@ -106,5 +135,3 @@ class ThinPlateSplineTransform(Transform):
         b64_2 = encodeBase64(blk2)
 
         return '{} {} {}'.format(header, b64_1, b64_2)
-
-
