@@ -14,7 +14,7 @@ import numpy
 import requests
 try:
     from inspect import getfullargspec
-except ImportErorr:
+except ImportError:
     from inspect import getargspec as getfullargspec
 
 from .errors import RenderError
