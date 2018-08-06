@@ -114,7 +114,7 @@ class ThinPlateSplineTransform(Transform):
             if tmpD > 1e-8:
                 nrm = tmpD * tmpD * np.log(tmpD)
             for d in range(self.ndims):
-                result[d] += (nrm * self.dMtxDat[d, lnd])
+                result[d] += (nrm * self.dMtxDat[d, -lnd])
         return result
 
     @property
