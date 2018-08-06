@@ -93,42 +93,30 @@ class ThinPlateSplineTransform(Transform):
 
         result = self.computeDeformationContribution(pt)
 
-        if self.aMtx is not None:
-            for i in range(self.ndims):
-                for j in range(self.ndims):
-                    result[i] += self.aMtx[i, j] * pt[j]
-        else:
-            for i in range(self.ndims):
-                result[i] += pt[i]
+        for i in range(self.ndims):
+            result[i] += pt[i]
 
-        if self.bVec is not None:
-            for i in range(self.ndims):
-                result[i] += self.bVec[i] + pt[i]
+        #if self.aMtx is not None:
+        #    for i in range(self.ndims):
+        #        for j in range(self.ndims):
+        #            result[i] += self.aMtx[i, j] * pt[j]
+        #if self.bVec is not None:
+        #    for i in range(self.ndims):
+        #        result[i] += self.bVec[i] + pt[i]
 
         return result
 
     def computeDeformationContribution(self, pt):
         result = np.zeros(self.ndims).astype(float)
         tmpDisplacement = np.zeros(self.ndims).astype(float)
-        di = 0
         for lnd in range(self.nLm):
             tmpD = np.linalg.norm(self.srcPts[:, lnd] - pt)
             nrm = 0.0
             if tmpD > 1e-8:
                 nrm = tmpD * tmpD * np.log(tmpD)
             for d in range(self.ndims):
-                result[d] += nrm * self.dMtxDat[d, di]
-            di += 1
+                result[d] += nrm * self.dMtxDat[d, lnd]
         return result
-
-    def srcPtDisplacement(self, lnd, pt):
-        return self.srcPts[:, lnd] - pt
-
-    def r2Logr(self, r):
-        nrm = 0.0
-        if r > 1e-8:
-            nrm = r * r * np.log(r)
-        return nrm
 
     @property
     def dataString(self):
