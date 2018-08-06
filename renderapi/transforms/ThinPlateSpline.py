@@ -124,13 +124,13 @@ class ThinPlateSplineTransform(Transform):
     def srcPtDisplacement(self, lnd, pt):
         result = np.zeros_like(pt)
         for d in range(self.ndims):
-            result[d] = self.srcPts[d][lnd] - pt[d]
+            result[d] = self.srcPts[d, lnd] - pt[d]
         return result
 
     def r2Logr(self, r):
         nrm = 0.0
         if r > 1e-8:
-            nrm = r*r*np.log(r)
+            nrm = r * r * np.log(r)
         return nrm
 
     @property
