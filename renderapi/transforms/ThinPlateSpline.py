@@ -70,6 +70,28 @@ class ThinPlateSplineTransform(Transform):
                 "inconsistent sizes and array lengths, \
                  in ThinPlateSplineTransform dataString")
 
+    def tform(self, points):
+        """transform a set of points through this transformation
+
+        Parameters
+        ----------
+        points : numpy.array
+            a Nx2 array of x,y points
+
+        Returns
+        -------
+        numpy.array
+            a Nx2 array of x,y points after transformation
+        """
+        result = []
+        for pt in points:
+            result.append(self.apply(pt))
+
+        return np.array(result)
+
+    def apply(self, pt):
+        return pt
+
     @property
     def dataString(self):
         header = 'ThinPlateSplineR2LogR {} {}'.format(self.ndims, self.nLm)
