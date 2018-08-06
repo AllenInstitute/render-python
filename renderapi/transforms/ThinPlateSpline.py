@@ -116,12 +116,11 @@ class ThinPlateSplineTransform(Transform):
         ind = disp > 1e-8
         nrm[ind] = disp[ind] * disp[ind] * np.log(disp[ind])
 
-        for lnd in range(self.nLm):
-            #nrm = 0.0
-            #if disp[lnd] > 1e-8:
-            #    nrm = disp[lnd] * disp[lnd] * np.log(disp[lnd])
-            for d in range(self.ndims):
-                result[d] += (nrm[lnd] * self.dMtxDat[d, lnd])
+        result = (nrm * self.dMtxDat).sum(1)
+
+        #for lnd in range(self.nLm):
+        #    for d in range(self.ndims):
+        #        result[d] += (nrm[lnd] * self.dMtxDat[d, lnd])
         return result
 
     @property
