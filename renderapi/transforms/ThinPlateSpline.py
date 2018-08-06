@@ -112,19 +112,16 @@ class ThinPlateSplineTransform(Transform):
         tmpDisplacement = np.zeros(self.ndims).astype(float)
         di = 0
         for lnd in range(self.nLm):
-            tmpDisplacement = self.srcPtDisplacement(lnd, pt)
-            nrm = self.r2Logr(
-                    np.linalg.norm(
-                        tmpDisplacement))
+            tmpD = np.linalg.norm(self.srcPts[:, lnd] - pt)
+            nrm = 0.0
+            if tmpD > 1e-8:
+                nrm = tmpD * tmpD * np.log(tmpD)
             for d in range(self.ndims):
                 result[d] += nrm * self.dMtxDat[d, di]
             di += 1
         return result
 
     def srcPtDisplacement(self, lnd, pt):
-        #result = np.zeros_like(pt)
-        #for d in range(self.ndims):
-        #    result[d] = self.srcPts[d, lnd] - pt[d]
         return self.srcPts[:, lnd] - pt
 
     def r2Logr(self, r):
