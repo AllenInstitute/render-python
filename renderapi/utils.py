@@ -4,7 +4,6 @@ utilities to make render/java/web/life interfacing easier
 '''
 import tempfile
 import logging
-import inspect
 import copy
 import json
 import base64
