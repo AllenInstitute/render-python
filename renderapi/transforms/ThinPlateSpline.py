@@ -120,7 +120,7 @@ class ThinPlateSplineTransform(Transform):
         else:
             b64_1 = "null"
 
-        blk2 = np.concatenate((self.srcPts.flatten(), self.dMtxDat.flatten()))
+        blk2 = np.concatenate((self.srcPts.flatten(order='F'), self.dMtxDat.flatten(order='C')))
         b64_2 = encodeBase64(blk2)
 
         return '{} {} {}'.format(header, b64_1, b64_2)
