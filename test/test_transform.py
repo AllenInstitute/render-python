@@ -645,6 +645,13 @@ def test_thinplatespline():
         t3 = renderapi.transform.ThinPlateSplineTransform(
                 dataString=" ".join(s))
 
+    x = np.linspace(0,3840,10)
+    xt, yt = np.meshgrid(x,x)
+    src_pts = np.transpose(
+            np.vstack((xt.flatten(), yt.flatten())))
+    dst_pts = t.tform(src_pts)
+    assert(dst_pts.shape == src_pts.shape)
+
 
 def test_encode64():
     # case for Stephan's '@' character
