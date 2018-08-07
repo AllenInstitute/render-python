@@ -400,7 +400,7 @@ def estimate_homography_transform(
     tform = transformclass()
     tform.estimate(src_pts, dst_pts, return_params=False)
     M = tform.estimate(src_pts, dst_pts, return_params=True)
-    assert(M.shape == (2,3))
+    assert(M.shape == (2, 3))
 
     assert np.allclose(target_tform.M, tform.M)
     if do_scale:
@@ -645,8 +645,8 @@ def test_thinplatespline():
         t3 = renderapi.transform.ThinPlateSplineTransform(
                 dataString=" ".join(s))
 
-    x = np.linspace(0,3840,10)
-    xt, yt = np.meshgrid(x,x)
+    x = np.linspace(0, 3840, 10)
+    xt, yt = np.meshgrid(x, x)
     src_pts = np.transpose(
             np.vstack((xt.flatten(), yt.flatten())))
     dst_pts = t.tform(src_pts)
