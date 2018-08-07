@@ -10,8 +10,8 @@ from collections import Iterable
 
 import numpy as np
 
-from .errors import ConversionError, EstimationError, RenderError
-from .utils import NullHandler
+from ..errors import ConversionError, EstimationError, RenderError
+from ..utils import NullHandler
 
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
