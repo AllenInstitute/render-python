@@ -651,6 +651,8 @@ def test_thinplatespline():
     xt, yt = np.meshgrid(x, x)
     src_pts = np.transpose(
             np.vstack((xt.flatten(), yt.flatten())))
+    t = renderapi.transform.ThinPlateSplineTransform(
+            dataString=j['dataString'])
     dst_pts = t.tform(src_pts)
     assert(dst_pts.shape == src_pts.shape)
 
