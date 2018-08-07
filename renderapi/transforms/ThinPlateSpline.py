@@ -97,17 +97,18 @@ class ThinPlateSplineTransform(Transform):
             result[i] += pt[i]
 
         if self.aMtx is not None:
-            for i in range(self.ndims):
-                for j in range(self.ndims):
-                    result[i] += self.aMtx[i, j] * pt[j]
+            result += self.aMtx.dot(pt)
+            #for i in range(self.ndims):
+            #    for j in range(self.ndims):
+            #        result[i] += self.aMtx[i, j] * pt[j]
         if self.bVec is not None:
-            for i in range(self.ndims):
-                result[i] += self.bVec[i]
+            result += self.bVec
+            #for i in range(self.ndims):
+            #    result[i] += self.bVec[i]
 
         return result
 
     def computeDeformationContribution(self, pt):
-        result = np.zeros(self.ndims).astype(float)
         disp = np.linalg.norm(
                 self.srcPts -
                 pt.reshape(self.ndims, 1),
@@ -115,12 +116,7 @@ class ThinPlateSplineTransform(Transform):
         nrm = np.zeros_like(disp)
         ind = disp > 1e-8
         nrm[ind] = disp[ind] * disp[ind] * np.log(disp[ind])
-
         result = (nrm * self.dMtxDat).sum(1)
-
-        #for lnd in range(self.nLm):
-        #    for d in range(self.ndims):
-        #        result[d] += (nrm[lnd] * self.dMtxDat[d, lnd])
         return result
 
     @property
