@@ -146,11 +146,11 @@ def test_Polynomial_estimation(use_numpy=False):
             return realimport(name, globals, locals, fromlist, level)
         builtins.__import__ = noscipy_import
 
-    cross_py23_reload(renderapi.transform.transform)
+    cross_py23_reload(renderapi.transform.PolynomialModels)
 
-    assert(renderapi.transform.transform.svd is np.linalg.svd
+    assert(renderapi.transform.PolynomialModels.svd is np.linalg.svd
            if use_numpy else
-           renderapi.transform.transform.svd is scipy.linalg.svd)
+           renderapi.transform.PolynomialModels.svd is scipy.linalg.svd)
 
     datastring = ('67572.7356991 0.972637082773 -0.0266434803369 '
                   '-3.08962731867E-06 3.52672451824E-06 1.36924119761E-07 '
@@ -173,8 +173,8 @@ def test_Polynomial_estimation(use_numpy=False):
 
     if use_numpy:
         builtins.__import__ = realimport
-    cross_py23_reload(renderapi.transform.transform)
-    assert(renderapi.transform.transform.svd is scipy.linalg.svd)
+    cross_py23_reload(renderapi.transform.PolynomialModels)
+    assert(renderapi.transform.PolynomialModels.svd is scipy.linalg.svd)
     cross_py23_reload(renderapi.transform)
 
 
