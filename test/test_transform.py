@@ -146,7 +146,7 @@ def test_Polynomial_estimation(use_numpy=False):
             return realimport(name, globals, locals, fromlist, level)
         builtins.__import__ = noscipy_import
 
-    cross_py23_reload(renderapi.transform)
+    cross_py23_reload(renderapi.transform.transform)
 
     assert(renderapi.transform.transform.svd is np.linalg.svd
            if use_numpy else
@@ -173,8 +173,9 @@ def test_Polynomial_estimation(use_numpy=False):
 
     if use_numpy:
         builtins.__import__ = realimport
-    cross_py23_reload(renderapi.transform)
+    cross_py23_reload(renderapi.transform.transform)
     assert(renderapi.transform.transform.svd is scipy.linalg.svd)
+    cross_py23_reload(renderapi.transform)
 
 
 def test_Polynomial_estimation_numpy():
