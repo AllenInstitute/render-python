@@ -4,7 +4,6 @@ utilities to make render/java/web/life interfacing easier
 '''
 import tempfile
 import logging
-import inspect
 import copy
 import json
 import base64
@@ -12,6 +11,10 @@ import zlib
 
 import numpy
 import requests
+try:
+    from inspect import getfullargspec
+except ImportError:
+    from inspect import getargspec as getfullargspec
 
 from .errors import RenderError
 
@@ -349,12 +352,13 @@ def fitargspec(f, oldargs, oldkwargs):
         kwargs with values filled in according to f spec
     """
     try:
-        args, varargs, keywords, defaults = inspect.getargspec(f)
-        num_expected_args = len(args) - len(defaults)
+        arginfo = getfullargspec(f)
+        # args, varargs, keywords, defaults = inspect.getargspec(f)
+        num_expected_args = len(arginfo.args) - len(arginfo.defaults)
         new_args = tuple(oldargs[:num_expected_args])
         new_kwargs = copy.copy(oldkwargs)
         for i, arg in enumerate(oldargs[num_expected_args:]):
-            new_kwargs.update({args[i + num_expected_args]: arg})
+            new_kwargs.update({arginfo.args[i + num_expected_args]: arg})
         return new_args, new_kwargs
     except Exception as e:
         logger.error('Cannot fit argspec for {}'.format(f))
