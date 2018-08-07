@@ -23,7 +23,9 @@ def test_TransformList_init():
 def test_simple_TransformList_init():
     aff = renderapi.transform.AffineModel()
     tlist = renderapi.transform.TransformList(tforms=[aff])  # noqa: F841
-    j = tlist.to_json()
+    js = tlist.to_json()
+    assert(isinstance(js, str))
+    j = json.loads(js)
     assert(isinstance(j, dict))
 
 
@@ -160,7 +162,7 @@ def test_Polynomial_estimation(use_numpy=False):
     derived_pt = renderapi.transform.Polynomial2DTransform(
         src=srcpts, dst=dstpts)
     assert(np.allclose(derived_pt.params, default_pt.params))
-    assert(not default_pt.is_affine())
+    assert(not default_pt.is_affine)
 
     with pytest.raises(renderapi.errors.EstimationError):
         derived_pt.estimate(srcpts, dstpts[0:-2, :])
