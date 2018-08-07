@@ -1,2 +1,2 @@
-from transform import *
-from ThinPlateSpline import *
+from .transform import *
+from .ThinPlateSpline import *
