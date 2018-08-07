@@ -402,7 +402,7 @@ def estimate_homography_transform(
     tform = transformclass()
     tform.estimate(src_pts, dst_pts, return_params=False)
     M = tform.estimate(src_pts, dst_pts, return_params=True)
-    assert(M.shape == (2, 3))
+    assert(M.shape == (3, 3))
 
     assert np.allclose(target_tform.M, tform.M)
     if do_scale:
