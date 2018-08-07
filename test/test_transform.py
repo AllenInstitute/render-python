@@ -23,6 +23,8 @@ def test_TransformList_init():
 def test_simple_TransformList_init():
     aff = renderapi.transform.AffineModel()
     tlist = renderapi.transform.TransformList(tforms=[aff])  # noqa: F841
+    j = tlist.to_json()
+    assert(isinstance(j, dict))
 
 
 def test_fail_TransformList_init():
@@ -88,6 +90,16 @@ def test_affine_rot_90():
     print(str(am))
 
 
+def test_affine_fail():
+    am = renderapi.transform.AffineModel()
+    # setup a 90 degree clockwise rotation
+    points_in = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], np.float)
+    points_out = np.array([[0, 0], [1, 0], [0, -1], [1, -1]], np.float)
+    # catch error
+    with pytest.raises(renderapi.errors.EstimationError):
+        am.estimate(points_in, points_out[0:-2, :])
+
+
 def test_affine_random():
     am = renderapi.transform.AffineModel(M00=.9,
                                          M10=-0.2,
@@ -148,6 +160,13 @@ def test_Polynomial_estimation(use_numpy=False):
     derived_pt = renderapi.transform.Polynomial2DTransform(
         src=srcpts, dst=dstpts)
     assert(np.allclose(derived_pt.params, default_pt.params))
+    assert(not default_pt.is_affine())
+
+    with pytest.raises(renderapi.errors.EstimationError):
+        derived_pt.estimate(srcpts, dstpts[0:-2, :])
+
+    with pytest.raises(renderapi.errors.EstimationError):
+        derived_pt.estimate(srcpts, dstpts[0:-2, :], order=500)
 
     if use_numpy:
         builtins.__import__ = realimport
@@ -380,6 +399,8 @@ def estimate_homography_transform(
     dst_pts = target_tform.tform(src_pts)
     tform = transformclass()
     tform.estimate(src_pts, dst_pts, return_params=False)
+    M = tform.estimate(src_pts, dst_pts, return_params=True)
+    assert(M.shape == (2,3))
 
     assert np.allclose(target_tform.M, tform.M)
     if do_scale:
