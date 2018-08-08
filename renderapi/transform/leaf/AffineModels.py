@@ -1,4 +1,4 @@
-from .transform import Transform
+from .transform import Transform, logger
 import numpy as np
 from renderapi.errors import ConversionError, EstimationError
 
