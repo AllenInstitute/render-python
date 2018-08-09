@@ -113,7 +113,7 @@ class ThinPlateSplineTransform(Transform):
     def gradient_descent(
             self,
             pt,
-            gamma=0.01,
+            gamma=1.0,
             precision=0.0001,
             max_iters=1000):
         """based on https://en.wikipedia.org/wiki/Gradient_descent#Python
@@ -150,7 +150,7 @@ class ThinPlateSplineTransform(Transform):
     def inverse_tform(
             self,
             points,
-            gamma=0.01,
+            gamma=1.0,
             precision=0.0001,
             max_iters=1000):
         """transform a set of points through the inverse of this transformation
