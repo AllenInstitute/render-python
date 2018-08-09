@@ -1,5 +1,5 @@
 from .transform import Transform, logger
-from .AffineModels import AffineModel
+from .affine_models import AffineModel
 import numpy as np
 from renderapi.errors import ConversionError, EstimationError, RenderError
 

@@ -1,16 +1,16 @@
 from .transform import Transform, logger
 from renderapi.errors import RenderError
-from .AffineModels import (
+from .affine_models import (
         AffineModel,
         TranslationModel,
         RigidModel,
         SimilarityModel)
-from .PolynomialModels import (
+from .polynomial_models import (
         Polynomial2DTransform,
         NonLinearTransform,
         NonLinearCoordinateTransform,
         LensCorrection)
-from .ThinPlateSpline import (
+from .thin_plate_spline import (
         ThinPlateSplineTransform)
 
 
