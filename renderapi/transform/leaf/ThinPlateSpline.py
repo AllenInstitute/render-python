@@ -116,7 +116,22 @@ class ThinPlateSplineTransform(Transform):
             gamma=0.01,
             precision=0.0001,
             max_iters=1000):
-        # based on https://en.wikipedia.org/wiki/Gradient_descent#Python
+        """based on https://en.wikipedia.org/wiki/Gradient_descent#Python
+        Parameters
+        ----------
+        pt : numpy array
+            [x,y] point for estimating inverse
+        gamma : float
+            step size is gamma fraction of current gradient
+        precision : float
+            criteria for stopping for differences between steps
+        max_iters : int
+            limit for iterations, error if reached
+        Returns
+        -------
+        cur_pt : numpy array
+            [x,y] point, estimated inverse of pt
+        """
         cur_pt = np.copy(pt)
         prev_pt = np.copy(pt)
         step_size = 1
