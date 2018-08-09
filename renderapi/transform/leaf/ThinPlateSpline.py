@@ -158,6 +158,12 @@ class ThinPlateSplineTransform(Transform):
         ----------
         points : numpy.array
             a Nx2 array of x,y points
+        gamma : float
+            step size is gamma fraction of current gradient
+        precision : float
+            criteria for stopping for differences between steps
+        max_iters : int
+            limit for iterations, error if reached
         Returns
         -------
         numpy.array
