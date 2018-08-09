@@ -627,6 +627,25 @@ def test_similarity_init():
     assert(tform.M[0, 2] == 10)
 
 
+def test_thinplatespline_inverse():
+    j = json.load(open(rendersettings.TEST_THINPLATESPLINE_FILE, 'r'))
+    t = renderapi.transform.ThinPlateSplineTransform(
+            dataString=j['dataString'])
+    assert (j['dataString'].split(' ')[-1] == t.dataString.split(' ')[-1])
+    x = np.linspace(0, 3840, 10)
+    xt, yt = np.meshgrid(x, x)
+    src_pts = np.transpose(
+            np.vstack((xt.flatten(), yt.flatten())))
+    src_inv_est = t.inverse_tform(t.tform(src_pts))
+    assert (src_inv_est.shape == src_pts.shape)
+    for i in range(src_pts.shape[0]):
+        assert(np.linalg.norm(src_pts[i, :] - src_inv_est[i, :]) < 0.1)
+    with pytest.raises(renderapi.errors.EstimationError):
+        src_inv_est = t.inverse_tform(
+                t.tform(src_pts),
+                max_iters=5)
+
+
 def test_thinplatespline():
     j = json.load(open(rendersettings.TEST_THINPLATESPLINE_FILE, 'r'))
     t = renderapi.transform.ThinPlateSplineTransform(

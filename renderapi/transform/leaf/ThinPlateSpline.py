@@ -1,5 +1,5 @@
 import numpy as np
-from renderapi.errors import RenderError
+from renderapi.errors import RenderError, EstimationError
 from renderapi.utils import encodeBase64, decodeBase64
 from .transform import Transform
 
@@ -109,6 +109,54 @@ class ThinPlateSplineTransform(Transform):
         nrm[ind] = disp[ind] * disp[ind] * np.log(disp[ind])
         result = (nrm * self.dMtxDat).sum(1)
         return result
+
+    def gradient_descent(
+            self,
+            pt,
+            gamma=0.01,
+            precision=0.0001,
+            max_iters=1000):
+        # based on https://en.wikipedia.org/wiki/Gradient_descent#Python
+        cur_pt = np.copy(pt)
+        prev_pt = np.copy(pt)
+        step_size = 1
+        iters = 0
+        while (step_size > precision) & (iters < max_iters):
+            prev_pt[:] = cur_pt[:]
+            cur_pt -= gamma*(self.apply(prev_pt) - pt)
+            step_size = np.linalg.norm(cur_pt - prev_pt)
+            iters += 1
+        if iters == max_iters:
+            raise EstimationError(
+                    'gradient descent for inversion of ThinPlateSpline '
+                    'reached maximum iterations: %d' % max_iters)
+        return cur_pt
+
+    def inverse_tform(
+            self,
+            points,
+            gamma=0.01,
+            precision=0.0001,
+            max_iters=1000):
+        """transform a set of points through the inverse of this transformation
+        Parameters
+        ----------
+        points : numpy.array
+            a Nx2 array of x,y points
+        Returns
+        -------
+        numpy.array
+            a Nx2 array of x,y points after inverse transformation
+        """
+        newpts = []
+        for p in points:
+            npt = self.gradient_descent(
+                    p,
+                    gamma=gamma,
+                    precision=precision,
+                    max_iters=max_iters)
+            newpts.append(npt)
+        return np.array(newpts)
 
     @property
     def dataString(self):
