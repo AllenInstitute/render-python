@@ -12,6 +12,7 @@ from .polynomial_models import (
         LensCorrection)
 from .thin_plate_spline import (
         ThinPlateSplineTransform)
+__all__ = ['load_leaf_json']
 
 
 def load_leaf_json(d):

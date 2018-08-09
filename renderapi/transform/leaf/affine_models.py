@@ -10,6 +10,9 @@ except ImportError as e:
                 'to better parameter fitting')
     from numpy.linalg import svd
     from numpy.linalg.linalg import LinAlgError
+__all__ = [
+        'AffineModel', 'TranslationModel',
+        'SimilarityModel', 'RigidModel']
 
 
 class AffineModel(Transform):

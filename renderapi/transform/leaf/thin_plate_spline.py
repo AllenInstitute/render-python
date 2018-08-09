@@ -2,6 +2,7 @@ import numpy as np
 from renderapi.errors import RenderError, EstimationError
 from renderapi.utils import encodeBase64, decodeBase64
 from .transform import Transform
+__all__ = ['ThinPlateSplineTransform']
 
 
 class ThinPlateSplineTransform(Transform):

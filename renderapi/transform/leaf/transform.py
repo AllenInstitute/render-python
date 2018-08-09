@@ -10,6 +10,7 @@ from renderapi.utils import NullHandler
 
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
+__all__ = ['Transform']
 
 
 class Transform(object):
