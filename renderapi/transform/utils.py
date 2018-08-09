@@ -2,9 +2,8 @@ from collections import Iterable
 from renderapi.errors import RenderError
 from .leaf import AffineModel, Polynomial2DTransform
 from .transform import TransformList, ReferenceTransform
-__all__ = [
-        'estimate_dstpts',
-        'estimate_transformsum']
+__all__ = ['estimate_dstpts',
+           'estimate_transformsum']
 
 
 def estimate_dstpts(transformlist, src=None, reference_tforms=None):
