@@ -23,6 +23,10 @@ def test_TransformList_init():
 def test_simple_TransformList_init():
     aff = renderapi.transform.AffineModel()
     tlist = renderapi.transform.TransformList(tforms=[aff])  # noqa: F841
+    js = tlist.to_json()
+    assert(isinstance(js, str))
+    j = json.loads(js)
+    assert(isinstance(j, dict))
 
 
 def test_fail_TransformList_init():
@@ -88,6 +92,16 @@ def test_affine_rot_90():
     print(str(am))
 
 
+def test_affine_fail():
+    am = renderapi.transform.AffineModel()
+    # setup a 90 degree clockwise rotation
+    points_in = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], np.float)
+    points_out = np.array([[0, 0], [1, 0], [0, -1], [1, -1]], np.float)
+    # catch error
+    with pytest.raises(renderapi.errors.EstimationError):
+        am.estimate(points_in, points_out[0:-2, :])
+
+
 def test_affine_random():
     am = renderapi.transform.AffineModel(M00=.9,
                                          M10=-0.2,
@@ -132,10 +146,11 @@ def test_Polynomial_estimation(use_numpy=False):
             return realimport(name, globals, locals, fromlist, level)
         builtins.__import__ = noscipy_import
 
-    cross_py23_reload(renderapi.transform)
+    cross_py23_reload(renderapi.transform.polynomial_models)
 
-    assert(renderapi.transform.svd is np.linalg.svd
-           if use_numpy else renderapi.transform.svd is scipy.linalg.svd)
+    assert(renderapi.transform.polynomial_models.svd is np.linalg.svd
+           if use_numpy else
+           renderapi.transform.polynomial_models.svd is scipy.linalg.svd)
 
     datastring = ('67572.7356991 0.972637082773 -0.0266434803369 '
                   '-3.08962731867E-06 3.52672451824E-06 1.36924119761E-07 '
@@ -148,11 +163,19 @@ def test_Polynomial_estimation(use_numpy=False):
     derived_pt = renderapi.transform.Polynomial2DTransform(
         src=srcpts, dst=dstpts)
     assert(np.allclose(derived_pt.params, default_pt.params))
+    assert(not default_pt.is_affine)
+
+    with pytest.raises(renderapi.errors.EstimationError):
+        derived_pt.estimate(srcpts, dstpts[0:-2, :])
+
+    with pytest.raises(renderapi.errors.EstimationError):
+        derived_pt.estimate(srcpts, dstpts[0:-2, :], order=500)
 
     if use_numpy:
         builtins.__import__ = realimport
+    cross_py23_reload(renderapi.transform.polynomial_models)
+    assert(renderapi.transform.polynomial_models.svd is scipy.linalg.svd)
     cross_py23_reload(renderapi.transform)
-    assert(renderapi.transform.svd is scipy.linalg.svd)
 
 
 def test_Polynomial_estimation_numpy():
@@ -380,6 +403,8 @@ def estimate_homography_transform(
     dst_pts = target_tform.tform(src_pts)
     tform = transformclass()
     tform.estimate(src_pts, dst_pts, return_params=False)
+    M = tform.estimate(src_pts, dst_pts, return_params=True)
+    assert(M.shape == (3, 3))
 
     assert np.allclose(target_tform.M, tform.M)
     if do_scale:
@@ -602,11 +627,30 @@ def test_similarity_init():
     assert(tform.M[0, 2] == 10)
 
 
+def test_thinplatespline_inverse():
+    j = json.load(open(rendersettings.TEST_THINPLATESPLINE_FILE, 'r'))
+    t = renderapi.transform.ThinPlateSplineTransform(
+            dataString=j['dataString'])
+    assert (j['dataString'].split(' ')[-1] == t.dataString.split(' ')[-1])
+    x = np.linspace(0, 3840, 10)
+    xt, yt = np.meshgrid(x, x)
+    src_pts = np.transpose(
+            np.vstack((xt.flatten(), yt.flatten())))
+    src_inv_est = t.inverse_tform(t.tform(src_pts))
+    assert (src_inv_est.shape == src_pts.shape)
+    for i in range(src_pts.shape[0]):
+        assert(np.linalg.norm(src_pts[i, :] - src_inv_est[i, :]) < 0.1)
+    with pytest.raises(renderapi.errors.EstimationError):
+        src_inv_est = t.inverse_tform(
+                t.tform(src_pts),
+                max_iters=5)
+
+
 def test_thinplatespline():
     j = json.load(open(rendersettings.TEST_THINPLATESPLINE_FILE, 'r'))
     t = renderapi.transform.ThinPlateSplineTransform(
             dataString=j['dataString'])
-    assert (j['dataString'] == t.dataString)
+    assert (j['dataString'].split(' ')[-1] == t.dataString.split(' ')[-1])
     t.aMtx = np.zeros(4)
     t.bVec = np.zeros(2)
     t2 = renderapi.transform.ThinPlateSplineTransform(
@@ -623,6 +667,15 @@ def test_thinplatespline():
         s[2] = str(int(s[2])-4)
         t3 = renderapi.transform.ThinPlateSplineTransform(
                 dataString=" ".join(s))
+
+    x = np.linspace(0, 3840, 10)
+    xt, yt = np.meshgrid(x, x)
+    src_pts = np.transpose(
+            np.vstack((xt.flatten(), yt.flatten())))
+    t = renderapi.transform.ThinPlateSplineTransform(
+            dataString=j['dataString'])
+    dst_pts = t.tform(src_pts)
+    assert(dst_pts.shape == src_pts.shape)
 
 
 def test_encode64():
