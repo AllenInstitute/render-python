@@ -41,16 +41,10 @@ def import_single_json_file(stack, jsonfile, transformFile=None,
     render : renderapi.render.RenderClient
         render connect object
     """
-    if transformFile is None:
-        transform_params = []
-    else:
-        transform_params = ['--transformFile', transformFile]
-    stack_params = make_stack_params(
-        host, port, owner, project, stack)
-    call_run_ws_client('org.janelia.render.client.ImportJsonClient',
-                       stack_params + transform_params + [jsonfile],
-                       client_script=client_script, memGB=memGB,
-                       subprocess_mode=subprocess_mode, **kwargs)
+    importJsonClient(stack, [jsonfile], transformFile,
+                     subprocess_mode=subprocess_mode, host=host, port=port,
+                     owner=owner, client_script=client_script,
+                     memGB=memGB, **kwargs)
 
 
 @renderclientaccess
@@ -155,16 +149,10 @@ def import_jsonfiles(stack, jsonfiles, transformFile=None,
     """
 
     set_stack_state(stack, 'LOADING', host, port, owner, project)
-    if transformFile is None:
-        transform_params = []
-    else:
-        transform_params = ['--transformFile', transformFile]
-    stack_params = make_stack_params(
-        host, port, owner, project, stack)
-    call_run_ws_client('org.janelia.render.client.ImportJsonClient',
-                       stack_params + transform_params + jsonfiles,
-                       client_script=client_script, memGB=memGB,
-                       subprocess_mode=subprocess_mode, **kwargs)
+    importJsonClient(stack, jsonfiles, transformFile,
+                     subprocess_mode=subprocess_mode, host=host, port=port,
+                     owner=owner, client_script=client_script,
+                     memGB=memGB, **kwargs)
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)
 
