@@ -659,7 +659,8 @@ def pointMatchClient(stack, collection, tile_pairs,
 
 
 __all__ = [
-    "run_subprocess_mode", "importJsonClient", "tilePairClient",
+    "call_run_ws_client", "run_subprocess_mode",
+    "importJsonClient", "tilePairClient",
     "importTransformChangesClient", "coordinateClient",
     "renderSectionClient", "transformSectionClient",
     "get_canvas_url_template", "pointMatchClient"]

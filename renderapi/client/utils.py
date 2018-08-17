@@ -62,4 +62,4 @@ def renderclientaccess(f, *args, **kwargs):
     return f(*args, **kwargs)
 
 
-__all__ = ["renderclientaccess"]
+__all__ = ["renderclientaccess", "ClientScriptError"]
