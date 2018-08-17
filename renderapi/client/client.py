@@ -360,4 +360,4 @@ __all__ = [
     "import_jsonfiles_parallel", "import_jsonfiles",
     "import_jsonfiles_validate_client", "import_tilespecs",
     "import_tilespecs_parallel", "local_to_world_array",
-    "world_to_local_array"]
+    "world_to_local_array", "WithPool"]
