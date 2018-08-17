@@ -66,3 +66,8 @@ class SiftPointMatchOptions(MatchDerivationParameters,
         super(SiftPointMatchOptions, self).__init__(**kwargs)
         self.renderScale = renderScale
         self.fillWithNoise = fillWithNoise
+
+
+__all__ = [
+    "ArgumentParameters", "FeatureExtractionParameters",
+    "MatchDerivationParameters", "SiftPointMatchOptions"]
