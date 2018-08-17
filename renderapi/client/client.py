@@ -43,7 +43,7 @@ def import_single_json_file(stack, jsonfile, transformFile=None,
     """
     importJsonClient(stack, [jsonfile], transformFile,
                      subprocess_mode=subprocess_mode, host=host, port=port,
-                     owner=owner, client_script=client_script,
+                     owner=owner, project=project, client_script=client_script,
                      memGB=memGB, **kwargs)
 
 
@@ -151,7 +151,7 @@ def import_jsonfiles(stack, jsonfiles, transformFile=None,
     set_stack_state(stack, 'LOADING', host, port, owner, project)
     importJsonClient(stack, jsonfiles, transformFile,
                      subprocess_mode=subprocess_mode, host=host, port=port,
-                     owner=owner, client_script=client_script,
+                     owner=owner, project=project, client_script=client_script,
                      memGB=memGB, **kwargs)
     if close_stack:
         set_stack_state(stack, 'COMPLETE', host, port, owner, project)

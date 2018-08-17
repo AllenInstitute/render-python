@@ -61,4 +61,5 @@ def renderclientaccess(f, *args, **kwargs):
                 'invalid client script: {} not a file'.format(client_script))
     return f(*args, **kwargs)
 
+
 __all__ = ["renderclientaccess"]
