@@ -258,7 +258,8 @@ def import_tilespecs(stack, tilespecs, sharedTransforms=None,
 def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
                               subprocess_mode=None, poolsize=20,
                               mpPool=WithPool,
-                              close_stack=True, host=None, port=None,
+                              close_stack=True, max_tilespecs_per_group=None,
+                              host=None, port=None,
                               owner=None, project=None,
                               client_script=None, memGB=None, render=None,
                               **kwargs):
@@ -280,10 +281,16 @@ def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
         subprocess mode used when calling client side java
     close_stack : bool
         mark render stack as COMPLETE after successful import
+    max_tilespecs_per_group: int
+        maximum tilespecs per import process, default to len(tilespecs)/poolsize
     render : :class:renderapi.render.Render
         render connect object
     kwargs: dict .. all other kwargs to pass on to renderapi.client.import_tilespecs
     """  # noqa: E501
+    tslists = (
+        max((len(tilespecs) // max_tilespecs_per_group) + 1, poolsize) if
+        max_tilespecs_per_group is not None else poolsize)
+
     set_stack_state(stack, 'LOADING', host, port, owner, project)
     partial_import = partial(
         import_tilespecs, stack, sharedTransforms=sharedTransforms,
@@ -293,7 +300,7 @@ def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
 
     # TODO this is a weird way to do splits.... is that okay?
     tilespec_groups = [g for g in
-                       (tilespecs[i::poolsize] for i in range(poolsize)) if g]
+                       (tilespecs[i::tslists] for i in range(tslists)) if g]
     with mpPool(poolsize) as pool:
         pool.map(partial_import, tilespec_groups)
     if close_stack:
