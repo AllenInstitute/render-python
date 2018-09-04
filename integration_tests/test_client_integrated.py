@@ -5,6 +5,7 @@ import os
 import logging
 import sys
 import json
+from PIL import Image
 import numpy as np
 from test_data import (render_host, render_port,
                        client_script_location, tilespec_file, tform_file,
@@ -358,3 +359,37 @@ def test_processpools_parallelfuncs(
         render, render_example_tilespec_and_transforms,
         "{}_jsonfiles".format(stackbase), False, poolsize=poolsize,
         mpPool=poolclass)
+
+
+@pytest.fixture(scope='module')
+def tile_tilespec():
+    tile_dims = (256, 256)
+    with tempfile.NamedTemporaryFile(suffix='.tif', mode='w') as imgf:
+        arr = np.random.randint(0, 256, size=tile_dims, dtype='uint8')
+        img = Image.fromarray(arr)
+        img.save(imgf.name)
+
+        ts = renderapi.tilespec.TileSpec(
+            tileId='myTestTile',
+            z=1.,
+            sectionId="z1.0",
+            width=tile_dims[0],
+            height=tile_dims[1],
+            minint=0,
+            maxint=255,
+            imageUrl="file://{}".format(imgf.name))
+        ts.minX = 0
+        ts.maxX = tile_dims[0]
+        ts.minY = 0
+        ts.maxY = tile_dims[1]
+
+        yield imgf.name, ts
+
+
+def test_ARGBrenderclient(render, tile_tilespec):
+    tile, tspec = tile_tilespec
+    arr = renderapi.client.render_tilespec(tspec, memGB='512M', render=render)
+    with Image.open(tile) as tileimg:
+        tilearr = np.array(tileimg)
+        assert arr.shape[:-1] == (tspec.width, tspec.height) == tilearr.shape
+        assert np.all(arr[:, :, 0] == tilearr)
