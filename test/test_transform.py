@@ -628,10 +628,13 @@ def test_similarity_init():
 
 
 def test_similarity_properties():
+    # scale
     sx = 1.5
     sy = 1.1
+    # shear
     cx = 0.0
     cy = 0.0
+    # angle
     theta = 0.1234
     pt = np.array(
         [1.234, 4.567, 1])
