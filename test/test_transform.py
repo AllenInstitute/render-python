@@ -59,8 +59,8 @@ def test_fail_bad_tform():
         tform = renderapi.transform.load_transform_json(d)  # noqa: F841
 
 
-def test_affine_rot_90():
-    am = renderapi.transform.AffineModel()
+def test_similarity_rot_90():
+    am = renderapi.transform.SimilarityModel()
     # setup a 90 degree clockwise rotation
     points_in = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], np.float)
     points_out = np.array([[0, 0], [1, 0], [0, -1], [1, -1]], np.float)
@@ -71,7 +71,7 @@ def test_affine_rot_90():
     assert(np.abs(am.rotation + np.pi / 2) < .000001)
     assert(np.abs(am.translation[0]) < .000001)
     assert(np.abs(am.translation[1]) < .000001)
-    assert(np.abs(am.shear) < .000001)
+    assert(np.all(np.abs(am.shear) < .000001))
 
     points = np.array([[20, 30], [1, 2], [10, -5], [-4, 3], [5.6, 2.3]])
     new_points = am.tform(points)
@@ -88,7 +88,7 @@ def test_affine_rot_90():
     assert(np.abs(identity.rotation) < .000001)
     assert(np.abs(identity.translation[0]) < .000001)
     assert(np.abs(identity.translation[1]) < .000001)
-    assert(np.abs(identity.shear) < .000001)
+    assert(np.all(np.abs(identity.shear) < .000001))
     print(str(am))
 
 
@@ -625,6 +625,47 @@ def test_similarity_init():
     assert(isinstance(tform, renderapi.transform.SimilarityModel))
     assert(np.abs(tform.M[0, 0]-2) < EPSILON)
     assert(tform.M[0, 2] == 10)
+
+
+def test_similarity_properties():
+    sx = 1.5
+    sy = 1.1
+    cx = 0.0
+    cy = 0.0
+    theta = 0.1234
+    pt = np.array(
+        [1.234, 4.567, 1])
+
+    scale = np.array([
+        [sx, 0, 0],
+        [0, sy, 0],
+        [0, 0, 1]])
+    shear = np.array([
+        [1, cx, 0],
+        [cy, 1, 0],
+        [0, 0, 1]])
+    rotation = np.array([
+        [np.cos(theta), -np.sin(theta), 0],
+        [np.sin(theta), np.cos(theta), 0],
+        [0, 0, 1]])
+    M = scale.dot(shear.dot(rotation))
+
+    testpt = M.dot(pt)[0:2]
+
+    rnd_tf = renderapi.transform.SimilarityModel(
+            M00=M[0, 0],
+            M01=M[0, 1],
+            M10=M[1, 0],
+            M11=M[1, 1])
+    tformpt = rnd_tf.tform(np.array([pt[0:2]]))
+
+    assert np.all(np.abs(M - rnd_tf.M) < 1e-8)
+    assert np.all(np.abs(testpt[0:2] - tformpt) < 1e-8)
+    assert (np.abs(rnd_tf.scale[0] - sx) < 1e-8) & \
+           (np.abs(rnd_tf.scale[1] - sy) < 1e-8)
+    assert np.abs(rnd_tf.rotation - theta) < 1e-8
+    assert (np.abs(rnd_tf.shear[0] - cx) < 1e-8) & \
+           (np.abs(rnd_tf.shear[1] - cy) < 1e-8)
 
 
 def test_thinplatespline_inverse():

@@ -207,17 +207,10 @@ class AffineModel(Transform):
         AffineModel
             model after concatenating model with this model
         """
-        a00 = self.M[0, 0] * model.M[0, 0] + self.M[0, 1] * model.M[1, 0]
-        a01 = self.M[0, 0] * model.M[0, 1] + self.M[0, 1] * model.M[1, 1]
-        a02 = (self.M[0, 0] * model.M[0, 2] + self.M[0, 1] * model.M[1, 2] +
-               self.M[0, 2])
-
-        a10 = self.M[1, 0] * model.M[0, 0] + self.M[1, 1] * model.M[1, 0]
-        a11 = self.M[1, 0] * model.M[0, 1] + self.M[1, 1] * model.M[1, 1]
-        a12 = (self.M[1, 0] * model.M[0, 2] + self.M[1, 1] * model.M[1, 2] +
-               self.M[1, 2])
-
-        newmodel = AffineModel(a00, a01, a10, a11, a02, a12)
+        A = self.M.dot(model.M)
+        newmodel = AffineModel(
+                A[0, 0], A[0, 1], A[1, 0],
+                A[1, 1], A[0, 2], A[1, 2])
         return newmodel
 
     def invert(self):
@@ -312,13 +305,18 @@ class AffineModel(Transform):
     @property
     def scale(self):
         """tuple of scale for x, y"""
-        return tuple([np.sqrt(sum([i ** 2 for i in self.M[:, j]]))
-                      for j in range(self.M.shape[1])])[:2]
+        return tuple([np.sqrt(sum([i ** 2 for i in self.M[j, 0:2]]))
+                      for j in range(self.M.shape[0])])[:2]
 
     @property
     def shear(self):
-        """counter-clockwise shear angle"""
-        return np.arctan2(-self.M[0, 1], self.M[1, 1]) - self.rotation
+        """tuple of shear coefficients"""
+        unrotate = np.array([
+            [np.cos(-self.rotation), -np.sin(-self.rotation), 0],
+            [np.sin(-self.rotation), np.cos(-self.rotation), 0],
+            [0, 0, 1]])
+        Mun = self.M.dot(unrotate)
+        return (Mun[0, 1], Mun[1, 0])
 
     @property
     def translation(self):
@@ -328,7 +326,9 @@ class AffineModel(Transform):
     @property
     def rotation(self):
         """counter-clockwise rotation"""
-        return np.arctan2(self.M[1, 0], self.M[0, 0])
+        return 0.5*(
+                np.arctan2(self.M[1, 0], self.M[1, 1]) -
+                np.arctan2(self.M[0, 1], self.M[0, 0]))
 
     def __str__(self):
         return "M=[[%f,%f],[%f,%f]] B=[%f,%f]" % (
