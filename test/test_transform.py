@@ -635,6 +635,23 @@ def test_affine_properties():
     cx = 0.0
     cy = 0.0
     # angle
+    theta = 0.0
+    pt = np.array(
+        [1.234, 4.567, 1])
+    M, testpt, rnd_tf = affine_property_function(sx, sy, cx, cy, theta, pt)
+    tformpt = rnd_tf.tform(np.array([pt[0:2]]))
+    assert np.all(np.abs(M - rnd_tf.M) < 1e-8)
+    assert np.all(np.abs(testpt[0:2] - tformpt) < 1e-8)
+    assert (np.abs(rnd_tf.scale[0] - sx) < 1e-8) & \
+           (np.abs(rnd_tf.scale[1] - sy) < 1e-8)
+    assert np.abs(rnd_tf.rotation - theta) < 1e-8
+    assert (np.abs(rnd_tf.shear - cx) < 1e-8)
+    rnd_tf.force_shear = 'y'
+    assert (np.abs(rnd_tf.scale[0] - sx) < 1e-8) & \
+           (np.abs(rnd_tf.scale[1] - sy) < 1e-8)
+    assert np.abs(rnd_tf.rotation - theta) < 1e-8
+    assert (np.abs(rnd_tf.shear - cx) < 1e-8)
+
     theta = 0.1234
     pt = np.array(
         [1.234, 4.567, 1])
