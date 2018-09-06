@@ -180,6 +180,111 @@ class ThinPlateSplineTransform(Transform):
             newpts.append(npt)
         return np.array(newpts)
 
+    @staticmethod
+    def fit(A, B, computeAffine=True):
+        """function to fit this transform given the corresponding sets of points A & B
+
+        Parameters
+        ----------
+        A : numpy.array
+            a Nx2 matrix of source points
+        B : numpy.array
+            a Nx2 matrix of destination points
+
+        Returns
+        -------
+        numpy.array
+            a 6x1 matrix with the best fit parameters
+            ordered M00,M01,M10,M11,B0,B1
+        """
+        if not all([A.shape[0] == B.shape[0], A.shape[1] == B.shape[1] == 2]):
+            raise EstimationError(
+                'shape mismatch! A shape: {}, B shape {}'.format(
+                    A.shape, B.shape))
+
+        # build displacements
+        ndims = B.shape[1]
+        nLm = B.shape[0]
+        if computeAffine:
+            y = np.zeros(ndims * (nLm + ndims +1)).astype('float64')
+        else:
+            y = np.zeros(ndims * nLm).astype('float64')
+        #for i in range(nLm):
+        #    for j in range(ndims):
+        #        y[i * ndims + j] = B[i, j] - A[i, j]
+        y[0: ndims*nLm] = (B - A).flatten()
+        print(y[0:20])
+
+        # compute W
+        dMatrix = np.zeros((ndims, nLm)).astype('float64')
+        kMatrix = np.zeros((ndims * nLm, ndims * nLm)).astype('float64')
+        if computeAffine:
+            aMatrix = np.zeros((ndims, ndims)).astype('float64')
+            bVector = np.zeros(ndims).astype('float64')
+            wMatrix = np.zeros(
+                    (ndims * nLm) + ndims * (ndims + 1)).astype('float64')
+        else:
+            wMatrix = np.zeros(ndims * nLm).astype('float64')
+            pMatrix = None
+
+        # compute K
+        stiffness = 0.0
+        G = np.eye(ndims) * stiffness
+        for i in range(nLm):
+            for j in range(nLm):
+                res = A[i, :] - A[j, :]
+                r = np.linalg.norm(res)
+                nrm = 0.0
+                if r > 1e-8:
+                    nrm = r * r * np.log(r)
+                G = np.eye(ndims) * nrm
+                kMatrix[
+                        i * ndims: (i + 1) * ndims,
+                        j * ndims: (j + 1) * ndims] = G
+
+        # compute L
+        if not computeAffine:
+            lMatrix = kMatrix
+        else:
+            # compute P
+            pMatrix = np.zeros(
+                    (ndims * nLm, ndims * (ndims + 1))).astype('float64')
+            for i in range(nLm):
+                for d in range(ndims):
+                    pMatrix[
+                            i * ndims: (i + 1) * ndims,
+                            d * ndims: (d + 1) * ndims] = np.eye(ndims) * A[i, d]
+                pMatrix[
+                        i * ndims: (i + 1) * ndims,
+                        ndims * ndims: (ndims + 1) * ndims] = np.eye(ndims)
+            lMatrix = np.zeros((ndims * (nLm + ndims + 1), ndims * (nLm + ndims + 1)))
+            lMatrix[0: ndims * nLm, 0: ndims * nLm] = kMatrix
+            lMatrix[
+                    0: pMatrix.shape[0],
+                    kMatrix.shape[1]: kMatrix.shape[1] + pMatrix.shape[1]] = pMatrix
+            pMatrix = np.transpose(pMatrix)
+            lMatrix[
+                    kMatrix.shape[0]: kMatrix.shape[0] + pMatrix.shape[0],
+                    0: pMatrix.shape[1]] = pMatrix
+            lMatrix[0: ndims * nLm, 0: ndims * nLm] = kMatrix
+        wMatrix = np.linalg.solve(lMatrix, y)
+
+        # fill d from w
+        ci = 0
+        for i in range(nLm):
+            for d in range(ndims):
+                dMatrix[d, i] = wMatrix[ci]
+                ci += 1
+        if computeAffine:
+            for j in range(ndims):
+                for i in range(ndims):
+                    aMatrix[i, j] = wMatrix[ci]
+                    ci += 1
+            for k in range(ndims):
+                bVector[k] = wMatrix[ci]
+                ci += 1
+        return dMatrix
+
     @property
     def dataString(self):
         header = 'ThinPlateSplineR2LogR {} {}'.format(self.ndims, self.nLm)
