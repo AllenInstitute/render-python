@@ -627,7 +627,7 @@ def test_similarity_init():
     assert(tform.M[0, 2] == 10)
 
 
-def test_similarity_properties():
+def test_affine_properties():
     # scale
     sx = 1.5
     sy = 1.1
@@ -638,7 +638,81 @@ def test_similarity_properties():
     theta = 0.1234
     pt = np.array(
         [1.234, 4.567, 1])
+    M, testpt, rnd_tf = affine_property_function(sx, sy, cx, cy, theta, pt)
+    tformpt = rnd_tf.tform(np.array([pt[0:2]]))
+    assert np.all(np.abs(M - rnd_tf.M) < 1e-8)
+    assert np.all(np.abs(testpt[0:2] - tformpt) < 1e-8)
+    assert (np.abs(rnd_tf.scale[0] - sx) < 1e-8) & \
+           (np.abs(rnd_tf.scale[1] - sy) < 1e-8)
+    assert np.abs(rnd_tf.rotation - theta) < 1e-8
+    assert (np.abs(rnd_tf.shear - cx) < 1e-8)
+    rnd_tf.force_shear = 'y'
+    assert (np.abs(rnd_tf.scale[0] - sx) < 1e-8) & \
+           (np.abs(rnd_tf.scale[1] - sy) < 1e-8)
+    assert np.abs(rnd_tf.rotation - theta) < 1e-8
+    assert (np.abs(rnd_tf.shear - cx) < 1e-8)
 
+    cx = 0.2
+    cy = 0.0
+    M, testpt, rnd_tf = affine_property_function(sx, sy, cx, cy, theta, pt)
+    tformpt = rnd_tf.tform(np.array([pt[0:2]]))
+    assert np.all(np.abs(M - rnd_tf.M) < 1e-8)
+    assert np.all(np.abs(testpt[0:2] - tformpt) < 1e-8)
+    assert (np.abs(rnd_tf.scale[0] - sx) < 1e-8) & \
+           (np.abs(rnd_tf.scale[1] - sy) < 1e-8)
+    assert np.abs(rnd_tf.rotation - theta) < 1e-8
+    assert (np.abs(rnd_tf.shear - cx) < 1e-8)
+
+    rnd_tf.force_shear = 'y'
+    with pytest.raises(AssertionError):
+        assert (np.abs(rnd_tf.scale[0] - sx) < 1e-8) & \
+               (np.abs(rnd_tf.scale[1] - sy) < 1e-8)
+    with pytest.raises(AssertionError):
+        assert np.abs(rnd_tf.rotation - theta) < 1e-8
+
+    cx = 0.0
+    cy = 0.1
+    M, testpt, rnd_tf = affine_property_function(sx, sy, cx, cy, theta, pt)
+    tformpt = rnd_tf.tform(np.array([pt[0:2]]))
+    assert np.all(np.abs(M - rnd_tf.M) < 1e-8)
+    assert np.all(np.abs(testpt[0:2] - tformpt) < 1e-8)
+    with pytest.raises(AssertionError):
+        assert (np.abs(rnd_tf.scale[0] - sx) < 1e-8) & \
+               (np.abs(rnd_tf.scale[1] - sy) < 1e-8)
+    with pytest.raises(AssertionError):
+        assert np.abs(rnd_tf.rotation - theta) < 1e-8
+
+    rnd_tf.force_shear = 'y'
+    assert (np.abs(rnd_tf.scale[0] - sx) < 1e-8) & \
+           (np.abs(rnd_tf.scale[1] - sy) < 1e-8)
+    assert np.abs(rnd_tf.rotation - theta) < 1e-8
+    assert (np.abs(rnd_tf.shear - cy) < 1e-8)
+
+    cx = 0.3
+    cy = 0.1
+    M, testpt, rnd_tf = affine_property_function(sx, sy, cx, cy, theta, pt)
+    tformpt = rnd_tf.tform(np.array([pt[0:2]]))
+    assert np.all(np.abs(M - rnd_tf.M) < 1e-8)
+    assert np.all(np.abs(testpt[0:2] - tformpt) < 1e-8)
+    with pytest.raises(AssertionError):
+        assert (np.abs(rnd_tf.scale[0] - sx) < 1e-8) & \
+               (np.abs(rnd_tf.scale[1] - sy) < 1e-8)
+    with pytest.raises(AssertionError):
+        assert np.abs(rnd_tf.rotation - theta) < 1e-8
+    with pytest.raises(AssertionError):
+        assert (np.abs(rnd_tf.shear - cx) < 1e-8)
+
+    rnd_tf.force_shear = 'y'
+    with pytest.raises(AssertionError):
+        assert (np.abs(rnd_tf.scale[0] - sx) < 1e-8) & \
+               (np.abs(rnd_tf.scale[1] - sy) < 1e-8)
+    with pytest.raises(AssertionError):
+        assert np.abs(rnd_tf.rotation - theta) < 1e-8
+    with pytest.raises(AssertionError):
+        assert (np.abs(rnd_tf.shear - cy) < 1e-8)
+
+
+def affine_property_function(sx, sy, cx, cy, theta, pt):
     scale = np.array([
         [sx, 0, 0],
         [0, sy, 0],
@@ -660,15 +734,7 @@ def test_similarity_properties():
             M01=M[0, 1],
             M10=M[1, 0],
             M11=M[1, 1])
-    tformpt = rnd_tf.tform(np.array([pt[0:2]]))
-
-    assert np.all(np.abs(M - rnd_tf.M) < 1e-8)
-    assert np.all(np.abs(testpt[0:2] - tformpt) < 1e-8)
-    assert (np.abs(rnd_tf.scale[0] - sx) < 1e-8) & \
-           (np.abs(rnd_tf.scale[1] - sy) < 1e-8)
-    assert np.abs(rnd_tf.rotation - theta) < 1e-8
-    assert (np.abs(rnd_tf.shear[0] - cx) < 1e-8) & \
-           (np.abs(rnd_tf.shear[1] - cy) < 1e-8)
+    return M, testpt, rnd_tf
 
 
 def test_thinplatespline_inverse():
