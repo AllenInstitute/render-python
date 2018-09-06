@@ -677,6 +677,69 @@ def test_thinplatespline():
     dst_pts = t.tform(src_pts)
     assert(dst_pts.shape == src_pts.shape)
 
+    # check load from json
+    jt = t.to_dict()
+    nt = renderapi.transform.ThinPlateSplineTransform(
+            json=jt)
+    assert nt == t
+
+
+def test_thinplatespline_apply():
+    # tests some copied behavior from trakem2
+    j = json.load(open(rendersettings.TEST_THINPLATESPLINE_FILE, 'r'))
+    t = renderapi.transform.ThinPlateSplineTransform(
+            dataString=j['dataString'])
+    del t.dMtxDat
+    pt = np.array([1.234, 45.678])
+    npt = t.apply(pt)
+    assert np.all(pt == npt)
+
+
+def estimate_test(jpath, computeAffine=True):
+    # test that the estimate method can produce same results
+    with open(jpath, 'r') as f:
+        j = json.load(f)
+
+    t = renderapi.transform.ThinPlateSplineTransform(
+            dataString=j['dataString'])
+    # exact points
+    src1 = np.transpose(t.srcPts)
+    # some in-between points
+    x = np.linspace(
+            src1[:, 0].min(),
+            src1[:, 0].max(),
+            int(np.sqrt(t.nLm)) * 3)
+    y = np.linspace(
+            src1[:, 1].min(),
+            src1[:, 1].max(),
+            int(np.sqrt(t.nLm)) * 3)
+    xt, yt = np.meshgrid(x, y)
+    src2 = np.transpose(np.vstack((xt.flatten(), yt.flatten())))
+    dst1_a = t.tform(src1)
+    dst2_a = t.tform(src2)
+
+    # estimate
+    t.estimate(src1, dst1_a, computeAffine=computeAffine)
+    dst1_b = t.tform(src1)
+    dst2_b = t.tform(src2)
+    delta1 = np.linalg.norm(dst1_b - dst1_a, axis=1)
+    delta2 = np.linalg.norm(dst2_b - dst2_a, axis=1)
+
+    assert delta1.max() < EPSILON
+    assert delta2.max() < EPSILON
+
+    with pytest.raises(renderapi.errors.EstimationError):
+        t.estimate(src1, dst1_a[1:, :])
+
+
+def test_thinplatespline_estimate():
+    estimate_test(
+            rendersettings.TEST_THINPLATESPLINE_FILE,
+            computeAffine=False)
+    estimate_test(
+            rendersettings.TEST_THINPLATESPLINEAFFINE_FILE,
+            computeAffine=True)
+
 
 def test_encode64():
     # case for Stephan's '@' character

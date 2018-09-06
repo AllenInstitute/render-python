@@ -206,12 +206,9 @@ class ThinPlateSplineTransform(Transform):
         ndims = B.shape[1]
         nLm = B.shape[0]
         if computeAffine:
-            y = np.zeros(ndims * (nLm + ndims +1)).astype('float64')
+            y = np.zeros(ndims * (nLm + ndims + 1)).astype('float64')
         else:
             y = np.zeros(ndims * nLm).astype('float64')
-        #for i in range(nLm):
-        #    for j in range(ndims):
-        #        y[i * ndims + j] = B[i, j] - A[i, j]
         y[0: ndims*nLm] = (B - A).flatten()
         print(y[0:20])
 
@@ -226,6 +223,8 @@ class ThinPlateSplineTransform(Transform):
         else:
             wMatrix = np.zeros(ndims * nLm).astype('float64')
             pMatrix = None
+            aMatrix = None
+            bVector = None
 
         # compute K
         stiffness = 0.0
@@ -253,15 +252,18 @@ class ThinPlateSplineTransform(Transform):
                 for d in range(ndims):
                     pMatrix[
                             i * ndims: (i + 1) * ndims,
-                            d * ndims: (d + 1) * ndims] = np.eye(ndims) * A[i, d]
+                            d * ndims: (d + 1) * ndims] = \
+                                    np.eye(ndims) * A[i, d]
                 pMatrix[
                         i * ndims: (i + 1) * ndims,
                         ndims * ndims: (ndims + 1) * ndims] = np.eye(ndims)
-            lMatrix = np.zeros((ndims * (nLm + ndims + 1), ndims * (nLm + ndims + 1)))
+            lMatrix = np.zeros(
+                    (ndims * (nLm + ndims + 1), ndims * (nLm + ndims + 1)))
             lMatrix[0: ndims * nLm, 0: ndims * nLm] = kMatrix
             lMatrix[
                     0: pMatrix.shape[0],
-                    kMatrix.shape[1]: kMatrix.shape[1] + pMatrix.shape[1]] = pMatrix
+                    kMatrix.shape[1]: kMatrix.shape[1] + pMatrix.shape[1]] = \
+                pMatrix
             pMatrix = np.transpose(pMatrix)
             lMatrix[
                     kMatrix.shape[0]: kMatrix.shape[0] + pMatrix.shape[0],
@@ -283,7 +285,25 @@ class ThinPlateSplineTransform(Transform):
             for k in range(ndims):
                 bVector[k] = wMatrix[ci]
                 ci += 1
-        return dMatrix
+        return dMatrix, aMatrix, bVector
+
+    def estimate(self, A, B, computeAffine=True):
+        """method for setting this transformation with the best fit
+        given the corresponding points A,B
+        Parameters
+        ----------
+        A : numpy.array
+            a Nx2 matrix of source points
+        B : numpy.array
+            a Nx2 matrix of destination points
+        computeAffine: boolean
+            whether to include an affine computation
+        """
+
+        self.dMtxDat, self.aMtx, self.bVec = self.fit(
+                A, B, computeAffine=computeAffine)
+        (self.nLm, self.ndims) = B.shape
+        self.srcPts = np.transpose(A)
 
     @property
     def dataString(self):
