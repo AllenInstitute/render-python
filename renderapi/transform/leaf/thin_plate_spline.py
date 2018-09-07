@@ -193,10 +193,14 @@ class ThinPlateSplineTransform(Transform):
 
         Returns
         -------
-        numpy.array
-            a 6x1 matrix with the best fit parameters
-            ordered M00,M01,M10,M11,B0,B1
+        dMatrix : numpy.array
+            ndims x nLm
+        aMatrix : numpy.array
+            ndims x ndims, affine matrix
+        bVector : numpy.array
+            ndims x 1, translation vector
         """
+
         if not all([A.shape[0] == B.shape[0], A.shape[1] == B.shape[1] == 2]):
             raise EstimationError(
                 'shape mismatch! A shape: {}, B shape {}'.format(
@@ -205,61 +209,29 @@ class ThinPlateSplineTransform(Transform):
         # build displacements
         ndims = B.shape[1]
         nLm = B.shape[0]
-        if computeAffine:
-            y = np.zeros(ndims * (nLm + ndims + 1)).astype('float64')
-        else:
-            y = np.zeros(ndims * nLm).astype('float64')
-        y[0: ndims*nLm] = (B - A).flatten()
-        print(y[0:20])
-
-        # compute W
-        dMatrix = np.zeros((ndims, nLm)).astype('float64')
-        kMatrix = np.zeros((ndims * nLm, ndims * nLm)).astype('float64')
-        if computeAffine:
-            aMatrix = np.zeros((ndims, ndims)).astype('float64')
-            bVector = np.zeros(ndims).astype('float64')
-            wMatrix = np.zeros(
-                    (ndims * nLm) + ndims * (ndims + 1)).astype('float64')
-        else:
-            wMatrix = np.zeros(ndims * nLm).astype('float64')
-            pMatrix = None
-            aMatrix = None
-            bVector = None
+        y = (B - A).flatten()
 
         # compute K
-        stiffness = 0.0
-        G = np.eye(ndims) * stiffness
+        # tempting to matricize this, but, nLm x nLm can get big
+        # settle for vectorize
+        kMatrix = np.zeros((ndims * nLm, ndims * nLm))
         for i in range(nLm):
-            for j in range(nLm):
-                res = A[i, :] - A[j, :]
-                r = np.linalg.norm(res)
-                nrm = 0.0
-                if r > 1e-8:
-                    nrm = r * r * np.log(r)
-                G = np.eye(ndims) * nrm
-                kMatrix[
-                        i * ndims: (i + 1) * ndims,
-                        j * ndims: (j + 1) * ndims] = G
+            r = np.linalg.norm(A[i, :] - A, axis=1)
+            nrm = np.zeros_like(r)
+            ind = np.argwhere(r > 1e-8)
+            nrm[ind] = r[ind] * r[ind] * np.log(r[ind])
+            kMatrix[i * ndims, 0::2] = nrm
+            kMatrix[(i * ndims + 1)::2, 1::2] = nrm
 
         # compute L
-        if not computeAffine:
-            lMatrix = kMatrix
-        else:
-            # compute P
-            pMatrix = np.zeros(
-                    (ndims * nLm, ndims * (ndims + 1))).astype('float64')
-            for i in range(nLm):
-                for d in range(ndims):
-                    pMatrix[
-                            i * ndims: (i + 1) * ndims,
-                            d * ndims: (d + 1) * ndims] = \
-                                    np.eye(ndims) * A[i, d]
-                pMatrix[
-                        i * ndims: (i + 1) * ndims,
-                        ndims * ndims: (ndims + 1) * ndims] = np.eye(ndims)
+        lMatrix = kMatrix
+        if computeAffine:
+            pMatrix = np.tile(np.eye(ndims), (nLm, ndims + 1))
+            for d in range(ndims):
+                pMatrix[0::2, d*ndims] = A[:, d]
+                pMatrix[1::2, d*ndims + 1] = A[:, d]
             lMatrix = np.zeros(
                     (ndims * (nLm + ndims + 1), ndims * (nLm + ndims + 1)))
-            lMatrix[0: ndims * nLm, 0: ndims * nLm] = kMatrix
             lMatrix[
                     0: pMatrix.shape[0],
                     kMatrix.shape[1]: kMatrix.shape[1] + pMatrix.shape[1]] = \
@@ -269,22 +241,20 @@ class ThinPlateSplineTransform(Transform):
                     kMatrix.shape[0]: kMatrix.shape[0] + pMatrix.shape[0],
                     0: pMatrix.shape[1]] = pMatrix
             lMatrix[0: ndims * nLm, 0: ndims * nLm] = kMatrix
+            y = np.append(y, np.zeros(ndims * (ndims + 1)))
+
         wMatrix = np.linalg.solve(lMatrix, y)
 
-        # fill d from w
-        ci = 0
-        for i in range(nLm):
-            for d in range(ndims):
-                dMatrix[d, i] = wMatrix[ci]
-                ci += 1
+        dMatrix = np.reshape(wMatrix[0: ndims * nLm], (ndims, nLm), order='F')
+        aMatrix = None
+        bVector = None
         if computeAffine:
-            for j in range(ndims):
-                for i in range(ndims):
-                    aMatrix[i, j] = wMatrix[ci]
-                    ci += 1
-            for k in range(ndims):
-                bVector[k] = wMatrix[ci]
-                ci += 1
+            aMatrix = np.reshape(
+                    wMatrix[ndims * nLm: ndims * nLm + ndims * ndims],
+                    (ndims, ndims),
+                    order='F')
+            bVector = wMatrix[ndims * nLm + ndims * ndims:]
+
         return dMatrix, aMatrix, bVector
 
     def estimate(self, A, B, computeAffine=True):
