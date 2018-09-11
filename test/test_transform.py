@@ -103,12 +103,18 @@ def test_affine_fail():
 
 
 def test_affine_random():
-    am = renderapi.transform.AffineModel(M00=.9,
-                                         M10=-0.2,
-                                         M01=0.3,
-                                         M11=.85,
-                                         B0=245.3,
-                                         B1=-234.1)
+    M00 = .9
+    M10 = -0.2
+    M01 = 0.3
+    M11 = .85
+    B0 = 245.3
+    B1 = -234.1
+    am = renderapi.transform.AffineModel(M00=M00,
+                                         M10=M10,
+                                         M01=M01,
+                                         M11=M11,
+                                         B0=B0,
+                                         B1=B1)
 
     points_in = np.random.rand(10, 2)
     points_out = am.tform(points_in)
@@ -117,6 +123,13 @@ def test_affine_random():
     am_fit.estimate(points_in, points_out)
 
     assert(np.sum(np.abs(am.M.ravel() - am_fit.M.ravel())) < (.001 * 6))
+
+    # return_all test
+    tvec, res, rank, s = am.fit(points_in, points_out, return_all=True)
+    compare_tvec = np.array([M00, M01, M10, M11, B0, B1])
+    tvec = tvec.flatten()
+    assert(np.linalg.norm(tvec - compare_tvec) < EPSILON)
+    assert(res < EPSILON)
 
 
 def test_invert_Affine():
