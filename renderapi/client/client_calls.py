@@ -11,7 +11,7 @@ from renderapi.render import (format_baseurl, format_preamble,
 from renderapi.stack import make_stack_params, set_stack_state
 
 from .utils import renderclientaccess
-from .params import SiftPointMatchOptions
+from .params import ArgumentParameters, SiftPointMatchOptions
 
 
 # setup logger
@@ -82,7 +82,7 @@ def call_run_ws_client(className, add_args=[], renderclient=None,
         logger.warning('call_run_ws_client requires memory specification -- '
                        'defaulting to 1G')
         memGB = '1G'
-    args = map(str, [client_script, memGB, className] + add_args)
+    args = list(map(str, [client_script, memGB, className] + add_args))
     try:
         ret_val = run_subprocess_mode(args, **kwargs)
     except subprocess.CalledProcessError:
@@ -653,6 +653,30 @@ def pointMatchClient(stack, collection, tile_pairs,
                   canvas_url_template2.format(tile2)]
 
     call_run_ws_client('org.janelia.render.client.PointMatchClient',
+                       memGB=memGB, client_script=client_script,
+                       subprocess_mode=subprocess_mode, add_args=argvs,
+                       **kwargs)
+
+
+@renderclientaccess
+def renderClient(tile_spec_url=None, height=None, width=None, in_fn=None,
+                 out_fn=None, x=None, y=None, res=None,
+                 subprocess_mode=None, client_script=None,
+                 memGB=None, render=None, **kwargs):
+    """call render
+    """
+    get_cmd_opt = ArgumentParameters.get_cmd_opt
+
+    argvs = (get_cmd_opt(tile_spec_url, '--tile_spec_url') +
+             get_cmd_opt(height, '--height') +
+             get_cmd_opt(width, '--width') +
+             get_cmd_opt(in_fn, '--in') +
+             get_cmd_opt(out_fn, '--out') +
+             get_cmd_opt(x, '--x') +
+             get_cmd_opt(y, '--y') +
+             get_cmd_opt(res, '--res'))
+
+    call_run_ws_client('org.janelia.alignment.Render',
                        memGB=memGB, client_script=client_script,
                        subprocess_mode=subprocess_mode, add_args=argvs,
                        **kwargs)

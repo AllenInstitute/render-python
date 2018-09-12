@@ -5,6 +5,10 @@ render functions relying on render-ws client scripts
 import os
 from functools import partial
 import logging
+import tempfile
+
+import numpy
+from PIL import Image
 
 from renderapi.utils import NullHandler, renderdump_temp
 from renderapi.render import renderaccess
@@ -13,7 +17,7 @@ from renderapi.resolvedtiles import put_tilespecs
 from renderapi.external.processpools.stdlib_pool import WithMultiprocessingPool
 
 from .utils import renderclientaccess
-from .client_calls import importJsonClient, call_run_ws_client
+from .client_calls import importJsonClient, call_run_ws_client, renderClient
 
 # setup logger
 logger = logging.getLogger(__name__)
@@ -361,10 +365,43 @@ def world_to_local_array(stack, points, subprocess_mode=None,
     raise NotImplementedError('Whoops.')
 
 
+def _defaultval(v, default=None):
+    return default if v is None else v
+
+
+@renderclientaccess
+def materialize_tilespec_image(
+        tilespec, out_fn=None, height=None, width=None,
+        x=None, y=None, res=32,
+        subprocess_mode=None,
+        client_script=None, memGB=None,
+        render=None, **kwargs):
+    tspecfile = renderdump_temp([tilespec])
+
+    x = _defaultval(x, tilespec.minX)
+    y = _defaultval(y, tilespec.minY)
+    width = _defaultval(width, int(float((tilespec.maxX - tilespec.minX))))
+    height = _defaultval(height, int(float((tilespec.maxY - tilespec.minY))))
+    renderClient(tile_spec_url=tspecfile, out_fn=out_fn,
+                 height=height, width=width, x=x, y=y, res=res,
+                 subprocess_mode=subprocess_mode,
+                 client_script=client_script, memGB=memGB, **kwargs)
+
+    os.remove(tspecfile)
+
+
+def render_tilespec(*args, **kwargs):
+    with tempfile.NamedTemporaryFile(suffix='.tif') as f:
+        materialize_tilespec_image(*args, out_fn=f.name, **kwargs)
+        arr = numpy.array(Image.open(f.name))
+    return arr
+
+
 __all__ = [
     "import_single_json_file",
     "import_jsonfiles_and_transforms_parallel_by_z",
     "import_jsonfiles_parallel", "import_jsonfiles",
     "import_jsonfiles_validate_client", "import_tilespecs",
     "import_tilespecs_parallel", "local_to_world_array",
-    "world_to_local_array", "WithPool"]
+    "world_to_local_array", "WithPool",
+    "render_tilespec", "materialize_tilespec_image"]
