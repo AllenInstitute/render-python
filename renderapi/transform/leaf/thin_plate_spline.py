@@ -180,6 +180,101 @@ class ThinPlateSplineTransform(Transform):
             newpts.append(npt)
         return np.array(newpts)
 
+    @staticmethod
+    def fit(A, B, computeAffine=True):
+        """function to fit this transform given the corresponding sets of points A & B
+
+        Parameters
+        ----------
+        A : numpy.array
+            a Nx2 matrix of source points
+        B : numpy.array
+            a Nx2 matrix of destination points
+
+        Returns
+        -------
+        dMatrix : numpy.array
+            ndims x nLm
+        aMatrix : numpy.array
+            ndims x ndims, affine matrix
+        bVector : numpy.array
+            ndims x 1, translation vector
+        """
+
+        if not all([A.shape[0] == B.shape[0], A.shape[1] == B.shape[1] == 2]):
+            raise EstimationError(
+                'shape mismatch! A shape: {}, B shape {}'.format(
+                    A.shape, B.shape))
+
+        # build displacements
+        ndims = B.shape[1]
+        nLm = B.shape[0]
+        y = (B - A).flatten()
+
+        # compute K
+        # tempting to matricize this, but, nLm x nLm can get big
+        # settle for vectorize
+        kMatrix = np.zeros((ndims * nLm, ndims * nLm))
+        for i in range(nLm):
+            r = np.linalg.norm(A[i, :] - A, axis=1)
+            nrm = np.zeros_like(r)
+            ind = np.argwhere(r > 1e-8)
+            nrm[ind] = r[ind] * r[ind] * np.log(r[ind])
+            kMatrix[i * ndims, 0::2] = nrm
+            kMatrix[(i * ndims + 1)::2, 1::2] = nrm
+
+        # compute L
+        lMatrix = kMatrix
+        if computeAffine:
+            pMatrix = np.tile(np.eye(ndims), (nLm, ndims + 1))
+            for d in range(ndims):
+                pMatrix[0::2, d*ndims] = A[:, d]
+                pMatrix[1::2, d*ndims + 1] = A[:, d]
+            lMatrix = np.zeros(
+                    (ndims * (nLm + ndims + 1), ndims * (nLm + ndims + 1)))
+            lMatrix[
+                    0: pMatrix.shape[0],
+                    kMatrix.shape[1]: kMatrix.shape[1] + pMatrix.shape[1]] = \
+                pMatrix
+            pMatrix = np.transpose(pMatrix)
+            lMatrix[
+                    kMatrix.shape[0]: kMatrix.shape[0] + pMatrix.shape[0],
+                    0: pMatrix.shape[1]] = pMatrix
+            lMatrix[0: ndims * nLm, 0: ndims * nLm] = kMatrix
+            y = np.append(y, np.zeros(ndims * (ndims + 1)))
+
+        wMatrix = np.linalg.solve(lMatrix, y)
+
+        dMatrix = np.reshape(wMatrix[0: ndims * nLm], (ndims, nLm), order='F')
+        aMatrix = None
+        bVector = None
+        if computeAffine:
+            aMatrix = np.reshape(
+                    wMatrix[ndims * nLm: ndims * nLm + ndims * ndims],
+                    (ndims, ndims),
+                    order='F')
+            bVector = wMatrix[ndims * nLm + ndims * ndims:]
+
+        return dMatrix, aMatrix, bVector
+
+    def estimate(self, A, B, computeAffine=True):
+        """method for setting this transformation with the best fit
+        given the corresponding points A,B
+        Parameters
+        ----------
+        A : numpy.array
+            a Nx2 matrix of source points
+        B : numpy.array
+            a Nx2 matrix of destination points
+        computeAffine: boolean
+            whether to include an affine computation
+        """
+
+        self.dMtxDat, self.aMtx, self.bVec = self.fit(
+                A, B, computeAffine=computeAffine)
+        (self.nLm, self.ndims) = B.shape
+        self.srcPts = np.transpose(A)
+
     @property
     def dataString(self):
         header = 'ThinPlateSplineR2LogR {} {}'.format(self.ndims, self.nLm)

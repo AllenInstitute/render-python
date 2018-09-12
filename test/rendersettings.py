@@ -9,7 +9,7 @@ DEFAULT_RENDER = {
     'owner': 'renderowner',
     'project': 'renderproject',
     'client_scripts': '/path/to/client_scripts'
-    }
+        }
 
 DEFAULT_RENDER_CLIENT = dict(DEFAULT_RENDER, **{
     'client_script': '/path/to/client_scripts/run_ws_client.sh',
@@ -21,7 +21,7 @@ DEFAULT_RENDER_ENVIRONMENT_VARIABLES = {
     'RENDER_OWNER': DEFAULT_RENDER['owner'],
     'RENDER_PROJECT': DEFAULT_RENDER['project'],
     'RENDER_CLIENT_SCRIPTS': DEFAULT_RENDER['client_scripts']
-    }
+        }
 
 DEFAULT_RENDER_CLIENT_ENVIRONMENT_VARIABLES = dict(
     DEFAULT_RENDER_ENVIRONMENT_VARIABLES, **{
@@ -33,8 +33,12 @@ TEST_FILES_DIR = os.path.join(os.path.dirname(
 
 TEST_TILESPECS_FILE = os.path.join(TEST_FILES_DIR, 'tilespecs.json')
 
-TEST_THINPLATESPLINE_FILE = os.path.join(TEST_FILES_DIR,
-                                         'thin_plate_spline.json')
+TEST_THINPLATESPLINE_FILE = os.path.join(
+        TEST_FILES_DIR,
+        'thin_plate_spline.json')
+TEST_THINPLATESPLINEAFFINE_FILE = os.path.join(
+        TEST_FILES_DIR,
+        'thin_plate_spline_affine.json')
 
 INTERPOLATED_TRANSFORM_TILESPEC = os.path.join(
     TEST_FILES_DIR, 'tilespec_interpolated.json')

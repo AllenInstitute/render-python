@@ -7,6 +7,7 @@ import importlib
 import pytest
 
 EPSILON = 0.0000000001
+EPSILON2 = 0.000000001
 
 
 def cross_py23_reload(module):
@@ -803,6 +804,104 @@ def test_thinplatespline():
             dataString=j['dataString'])
     dst_pts = t.tform(src_pts)
     assert(dst_pts.shape == src_pts.shape)
+
+    # check load from json
+    jt = t.to_dict()
+    nt = renderapi.transform.ThinPlateSplineTransform(
+            json=jt)
+    assert nt == t
+
+
+def test_thinplatespline_apply():
+    # tests some copied behavior from trakem2
+    j = json.load(open(rendersettings.TEST_THINPLATESPLINE_FILE, 'r'))
+    t = renderapi.transform.ThinPlateSplineTransform(
+            dataString=j['dataString'])
+    del t.dMtxDat
+    pt = np.array([1.234, 45.678])
+    npt = t.apply(pt)
+    assert np.all(pt == npt)
+
+
+def estimate_test(jpath, computeAffine=True):
+    # test that the estimate method can produce same results
+    with open(jpath, 'r') as f:
+        j = json.load(f)
+
+    t = renderapi.transform.ThinPlateSplineTransform(
+            dataString=j['dataString'])
+    # exact points
+    src1 = np.transpose(t.srcPts)
+    # some in-between points
+    x = np.linspace(
+            src1[:, 0].min(),
+            src1[:, 0].max(),
+            int(np.sqrt(t.nLm)) * 3)
+    y = np.linspace(
+            src1[:, 1].min(),
+            src1[:, 1].max(),
+            int(np.sqrt(t.nLm)) * 3)
+    xt, yt = np.meshgrid(x, y)
+    src2 = np.transpose(np.vstack((xt.flatten(), yt.flatten())))
+    dst1_a = t.tform(src1)
+    dst2_a = t.tform(src2)
+
+    # estimate
+    t.estimate(src1, dst1_a, computeAffine=computeAffine)
+    dst1_b = t.tform(src1)
+    dst2_b = t.tform(src2)
+    delta1 = np.linalg.norm(dst1_b - dst1_a, axis=1)
+    delta2 = np.linalg.norm(dst2_b - dst2_a, axis=1)
+
+    assert delta1.max() < EPSILON2
+    assert delta2.max() < EPSILON2
+
+    with pytest.raises(renderapi.errors.EstimationError):
+        t.estimate(src1, dst1_a[1:, :])
+
+
+def test_thinplatespline_estimate():
+    estimate_test(
+            rendersettings.TEST_THINPLATESPLINE_FILE,
+            computeAffine=False)
+    estimate_test(
+            rendersettings.TEST_THINPLATESPLINEAFFINE_FILE,
+            computeAffine=True)
+    thinplate_estimate_nojson(computeAffine=True)
+    thinplate_estimate_nojson(computeAffine=False)
+
+
+def thinplate_estimate_nojson(computeAffine=True):
+    # an estimate test that does not depend on pre-computed json
+    x = np.linspace(0, 1000, 40)
+    xt, yt = np.meshgrid(x, x)
+    src = np.transpose(np.vstack((xt.flatten(), yt.flatten())))
+
+    def poly2d(src):
+        dst = np.zeros_like(src)
+        dx = (src[:, 0] - src[:, 0].mean()) / (src[:, 0].ptp())
+        dy = (src[:, 1] - src[:, 1].mean()) / (src[:, 1].ptp())
+        dst[:, 0] = src[:, 0] + 0.5 * dx * dy + 7.0 * dx * dy * dy
+        dst[:, 1] = src[:, 1] + 0.7 * dy * dy - 4.0 * dx * dx * dy
+        a = np.array([[1.1, -0.04], [-0.02, 0.95]])
+        b = np.array([3.0, 4.0])
+        dst = np.transpose(a.dot(np.transpose(dst))) + b
+        return dst
+
+    dst = poly2d(src)
+    t = renderapi.transform.ThinPlateSplineTransform()
+    t.estimate(src, dst, computeAffine=computeAffine)
+
+    x = np.linspace(0, 1000, 120)
+    xt, yt = np.meshgrid(x, x)
+    test_src = np.transpose(np.vstack((xt.flatten(), yt.flatten())))
+    p_dst = poly2d(test_src)
+    t_dst = t.tform(test_src)
+
+    delta = np.linalg.norm(p_dst - t_dst, axis=1)
+    # can it match the polynomial within a pixel?
+    # for low-N, it won't
+    assert delta.max() < 1.0
 
 
 def test_encode64():
