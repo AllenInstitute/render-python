@@ -119,7 +119,7 @@ class AffineModel(Transform):
         self.M[1, 2] = self.B1
 
     @staticmethod
-    def fit(A, B):
+    def fit(A, B, return_all=False):
         """function to fit this transform given the corresponding sets of points A & B
 
         Parameters
@@ -151,6 +151,8 @@ class AffineModel(Transform):
             Y[2 * i + 1] = B[i, 1]
 
         (Tvec, residuals, rank, s) = np.linalg.lstsq(M, Y)
+        if return_all:
+            return Tvec, residuals, rank, s
         return Tvec
 
     def estimate(self, A, B, return_params=True, **kwargs):
