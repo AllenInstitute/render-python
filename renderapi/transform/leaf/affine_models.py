@@ -49,7 +49,7 @@ class AffineModel(Transform):
     className = 'mpicbg.trakem2.transform.AffineModel2D'
 
     def __init__(self, M00=1.0, M01=0.0, M10=0.0, M11=1.0, B0=0.0, B1=0.0,
-                 transformId=None, labels=None, json=None):
+                 transformId=None, labels=None, json=None, force_shear='x'):
         """Initialize AffineModel, defaulting to identity
 
         Parameters
@@ -88,6 +88,7 @@ class AffineModel(Transform):
             self.labels = labels
             self.load_M()
             self.transformId = transformId
+            self.force_shear = force_shear
 
     @property
     def dataString(self):
@@ -207,17 +208,10 @@ class AffineModel(Transform):
         AffineModel
             model after concatenating model with this model
         """
-        a00 = self.M[0, 0] * model.M[0, 0] + self.M[0, 1] * model.M[1, 0]
-        a01 = self.M[0, 0] * model.M[0, 1] + self.M[0, 1] * model.M[1, 1]
-        a02 = (self.M[0, 0] * model.M[0, 2] + self.M[0, 1] * model.M[1, 2] +
-               self.M[0, 2])
-
-        a10 = self.M[1, 0] * model.M[0, 0] + self.M[1, 1] * model.M[1, 0]
-        a11 = self.M[1, 0] * model.M[0, 1] + self.M[1, 1] * model.M[1, 1]
-        a12 = (self.M[1, 0] * model.M[0, 2] + self.M[1, 1] * model.M[1, 2] +
-               self.M[1, 2])
-
-        newmodel = AffineModel(a00, a01, a10, a11, a02, a12)
+        A = self.M.dot(model.M)
+        newmodel = AffineModel(
+                A[0, 0], A[0, 1], A[1, 0],
+                A[1, 1], A[0, 2], A[1, 2])
         return newmodel
 
     def invert(self):
@@ -309,16 +303,48 @@ class AffineModel(Transform):
         pt = np.dot(np.linalg.inv(self.M), points.T).T
         return self.convert_points_vector_to_array(pt, Nd)
 
+    def calc_properties(self):
+        if self.force_shear == 'x':
+            sy = np.sqrt(self.M[1, 0] ** 2 + self.M[1, 1] ** 2)
+            theta = np.arctan2(self.M[1, 0], self.M[1, 1])
+            rc = np.cos(theta)
+            rs = np.sin(theta)
+            sx = rc * self.M[0, 0] - rs * self.M[0, 1]
+            if rs != 0:
+                cx = (self.M[0, 0] - sx*rc) / (sx * rs)
+            else:
+                cx = (self.M[0, 1] - sx*rs) / (sx * rc)
+            cy = 0.0
+        else:
+            # shear in y direction
+            sx = np.sqrt(self.M[0, 0] ** 2 + self.M[0, 1] ** 2)
+            theta = np.arctan2(-self.M[0, 1], self.M[0, 0])
+            rc = np.cos(theta)
+            rs = np.sin(theta)
+            sy = rs * self.M[1, 0] + rc * self.M[1, 1]
+            if rs != 0:
+                cy = (self.M[1, 1] - sy * rc) / (-sy * rs)
+            else:
+                cy = (self.M[1, 0] - sy * rs) / (sy * rc)
+            cx = 0.0
+        # room for other cases, for example cx = cy
+
+        return sx, sy, cx, cy, theta
+
     @property
     def scale(self):
         """tuple of scale for x, y"""
-        return tuple([np.sqrt(sum([i ** 2 for i in self.M[:, j]]))
-                      for j in range(self.M.shape[1])])[:2]
+        sx, sy, cx, cy, theta = self.calc_properties()
+        return (sx, sy)
 
     @property
     def shear(self):
-        """counter-clockwise shear angle"""
-        return np.arctan2(-self.M[0, 1], self.M[1, 1]) - self.rotation
+        """shear"""
+        sx, sy, cx, cy, theta = self.calc_properties()
+        if self.force_shear == 'x':
+            return cx
+        else:
+            return cy
 
     @property
     def translation(self):
@@ -328,7 +354,8 @@ class AffineModel(Transform):
     @property
     def rotation(self):
         """counter-clockwise rotation"""
-        return np.arctan2(self.M[1, 0], self.M[0, 0])
+        sx, sy, cx, cy, theta = self.calc_properties()
+        return theta
 
     def __str__(self):
         return "M=[[%f,%f],[%f,%f]] B=[%f,%f]" % (
