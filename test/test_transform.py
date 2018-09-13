@@ -103,6 +103,28 @@ def test_affine_fail():
         am.estimate(points_in, points_out[0:-2, :])
 
 
+def test_json_affine():
+    M00 = .9
+    M10 = -0.2
+    M01 = 0.3
+    M11 = .85
+    B0 = 245.3
+    B1 = -234.1
+    am = renderapi.transform.AffineModel(M00=M00,
+                                         M10=M10,
+                                         M01=M01,
+                                         M11=M11,
+                                         B0=B0,
+                                         B1=B1)
+
+    props = np.array(am.calc_properties())
+    jam = am.to_dict()
+    am2 = renderapi.transform.AffineModel(json=jam)
+    jprops = np.array(am2.calc_properties())
+
+    assert(np.all(np.abs(props - jprops) < EPSILON))
+
+
 def test_affine_random():
     M00 = .9
     M10 = -0.2

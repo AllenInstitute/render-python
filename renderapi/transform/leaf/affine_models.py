@@ -75,6 +75,7 @@ class AffineModel(Transform):
             (will supersede all other parameters if not None)
 
         """
+        self.force_shear = force_shear
         if json is not None:
             self.from_dict(json)
         else:
@@ -88,7 +89,6 @@ class AffineModel(Transform):
             self.labels = labels
             self.load_M()
             self.transformId = transformId
-            self.force_shear = force_shear
 
     @property
     def dataString(self):
