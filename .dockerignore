@@ -1,2 +1,4 @@
 docker_setup.sh
 docker_base_setup.sh
+**/__pycache__
+**/*.pyc
