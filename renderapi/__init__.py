@@ -13,6 +13,7 @@ from . import resolvedtiles
 from .render import connect
 from .render import Render
 
+__version__ = "2.1.0"
 __all__ = ['render', 'client', 'tilespec', 'errors',
            'stack', 'image', 'pointmatch', 'coordinate',
            'connect', 'transform', 'resolvedtiles', 'Render']
