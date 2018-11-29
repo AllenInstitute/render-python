@@ -3,7 +3,6 @@ from renderapi.errors import RenderError, EstimationError
 from renderapi.utils import encodeBase64, decodeBase64
 from .transform import Transform
 import scipy.spatial
-import scipy.special
 __all__ = ['ThinPlateSplineTransform']
 
 
