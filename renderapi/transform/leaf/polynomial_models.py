@@ -90,6 +90,16 @@ class Polynomial2DTransform(Transform):
         return int((abs(np.sqrt(4 * no_coeffs + 1)) - 3) / 2)
 
     @property
+    def scale(self):
+        """tuple of scale for x, y"""
+        if self.order > 0:
+            scale = (self.params[0, 1], self.params[1, 2])
+        else:
+            # translation only has no scale impact
+            scale = (1.0, 1.0)
+        return scale
+
+    @property
     def dataString(self):
         """dataString of polynomial"""
         return Polynomial2DTransform._dataStringfromParams(self.params)

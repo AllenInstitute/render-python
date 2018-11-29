@@ -167,6 +167,18 @@ def test_invert_Affine():
     assert(np.allclose(am.concatenate(Iam).M, np.eye(3)))
 
 
+def test_polynomial_scale():
+    p = np.transpose(np.array([[0, 0]]))
+    t = renderapi.transform.Polynomial2DTransform(params=p)
+    assert(t.order==0)
+    assert(t.scale==(1.0, 1.0))
+    
+    p = np.transpose(np.array([[0, 0], [1.1, 0], [0, 0.9]]))
+    t = renderapi.transform.Polynomial2DTransform(params=p)
+    assert(t.order==1)
+    assert(t.scale==(1.1, 0.9))
+
+
 def test_Polynomial_estimation(use_numpy=False):
     if use_numpy:
         try:
