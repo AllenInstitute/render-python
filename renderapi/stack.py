@@ -680,7 +680,7 @@ def get_tilebounds_for_z(stack, z, host=None, port=None, owner=None,
     """
 
     request_url = format_preamble(
-        host, port, owner, project, stack) + 'z/{}/tileBounds'.format(z)
+        host, port, owner, project, stack) + '/z/{}/tileBounds'.format(z)
     return get_json(session, request_url)
 
 @renderaccess
