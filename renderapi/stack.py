@@ -678,10 +678,10 @@ def get_sectionId_for_z(stack, z, host=None, port=None, owner=None,
     RenderError
 
     """
-    bounds = get_stack_bounds(stack,z, host, port, owner, project, session)
+    bounds = get_bounds_from_z(stack,z, host, port, owner, project, session)
 
     try:
-        return bounds['sectionId'])
+        return bounds['sectionId']
     except Exception as e:
         logger.error(e)
         raise RenderError('Could not find z value %f in stack %s' % (z, stack))
