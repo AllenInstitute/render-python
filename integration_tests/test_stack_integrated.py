@@ -221,6 +221,15 @@ def teststack(request, render, render_example_tilespec_and_transforms):
     yield stack
     render.run(renderapi.stack.delete_stack, stack)
 
+@pytest.fixture(scope="module")
+def teststack_loading(request, render, render_example_tilespec_and_transforms):
+    (tilespecs, tforms) = render_example_tilespec_and_transforms
+    stack = 'test_insert_loading'
+    r = render.run(renderapi.stack.create_stack, stack, force_resolution=True)
+    render.run(renderapi.client.import_tilespecs, stack, tilespecs,
+               sharedTransforms=tforms)
+    yield stack
+    render.run(renderapi.stack.delete_stack, stack)
 
 def test_stack_bounds(render, teststack):
     # check the stack bounds
@@ -415,11 +424,14 @@ def test_get_tile_specs_from_stack(render, teststack,
     assert len(ts) == len(tilespecs)
 
 
-def test_get_sectionId_for_z(render, teststack,
+def test_get_sectionId_for_z(render, teststack, teststack_loading,
                              render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     sectionId = render.run(
         renderapi.stack.get_sectionId_for_z, teststack, tilespecs[0].z)
+    assert (sectionId == tilespecs[0].layout.sectionId)
+    sectionId = render.run(
+        renderapi.stack.get_sectionId_for_z, teststack_loading, tilespecs[0].z)
     assert (sectionId == tilespecs[0].layout.sectionId)
 
 
