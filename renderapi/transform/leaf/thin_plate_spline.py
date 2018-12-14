@@ -100,8 +100,7 @@ class ThinPlateSplineTransform(Transform):
         disp = scipy.spatial.distance.cdist(
                 points,
                 self.srcPts.transpose())
-        disp = np.power(disp, 2.0) * np.log(disp)
-        disp = np.nan_to_num(disp, copy=False)
+        disp = np.power(disp, 2.0) * np.ma.log(disp).filled(0.0)
         return disp.dot(self.dMtxDat.transpose())
 
     def gradient_descent(
