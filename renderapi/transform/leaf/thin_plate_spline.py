@@ -295,6 +295,27 @@ class ThinPlateSplineTransform(Transform):
             starting_grid=7,
             nworst=10,
             niter=0):
+        """method for creating a transform with fewer control points
+        that matches the original transfom within some tolerance.
+        Parameters
+        ----------
+        src : numpy.array
+            an Nx2 matrix of source points, None starts with grid
+        tol : float
+            in units of pixels, how close should the points match
+        max_iter: int
+            some limit on how many recursive attempts
+        starting_grid : int
+            estimate will start with an n x n grid
+        nworst : int
+            per iteration, the nworst matching srcPts will be added
+        niter : int
+            passed through the recursion for stopping criteria
+
+        Returns
+        -------
+        ThinPlateSplineTransform
+        """
 
         if src is None:
             mn = self.srcPts.min(axis=1)
