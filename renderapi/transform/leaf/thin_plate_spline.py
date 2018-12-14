@@ -3,7 +3,13 @@ from renderapi.errors import RenderError, EstimationError
 from renderapi.utils import encodeBase64, decodeBase64
 from .transform import Transform
 import scipy.spatial
+import logging
+import sys
 __all__ = ['ThinPlateSplineTransform']
+
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.StreamHandler(sys.stdout))
 
 
 class ThinPlateSplineTransform(Transform):
@@ -280,3 +286,50 @@ class ThinPlateSplineTransform(Transform):
         b64_2 = encodeBase64(blk2)
 
         return '{} {} {}'.format(header, b64_1, b64_2)
+
+    def adaptive_mesh_estimate(
+            self,
+            src=None,
+            tol=1.0,
+            max_iter=50,
+            starting_grid=7,
+            nworst=10,
+            niter=0):
+
+        if src is None:
+            mn = self.srcPts.min(axis=1)
+            mx = self.srcPts.max(axis=1)
+            xt, yt = np.meshgrid(
+                    np.linspace(mn[0], mx[0], starting_grid),
+                    np.linspace(mn[1], mx[1], starting_grid))
+            src = np.vstack((xt.flatten(), yt.flatten())).transpose()
+
+        dst = self.tform(src)
+        newtf = ThinPlateSplineTransform()
+        newtf.estimate(src, dst, computeAffine=(self.aMtx is not None))
+
+        if not hasattr(self, 'src'):
+            self.src = self.srcPts.transpose()
+        if not hasattr(self, 'dst'):
+            self.dst = self.tform(self.src)
+        newdst = newtf.tform(self.src)
+
+        delta = np.linalg.norm(newdst - self.dst, axis=1)
+        ind = np.argwhere(delta > tol).flatten()
+        sortind = np.argsort(delta[ind])
+
+        if niter == max_iter:
+            logger.warning("Maximum number of iterations reached"
+                           " in thin plate spline adaptive_mesh_estimate()")
+            return newtf
+
+        if ind.size == 0:
+            return newtf
+
+        src = np.vstack((src, self.src[ind[sortind[0: nworst]]]))
+        return self.adaptive_mesh_estimate(
+                src=src,
+                tol=tol,
+                max_iter=max_iter,
+                niter=(niter + 1),
+                nworst=nworst)

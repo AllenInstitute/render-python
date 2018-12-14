@@ -835,12 +835,12 @@ def test_thinplatespline():
     with pytest.raises(renderapi.errors.RenderError):
         s = t2.dataString.split(' ')
         s[1] = str(int(s[1])+1)
-        t3 = renderapi.transform.ThinPlateSplineTransform(
+        _ = renderapi.transform.ThinPlateSplineTransform(
                 dataString=" ".join(s))
     with pytest.raises(renderapi.errors.RenderError):
         s = t2.dataString.split(' ')
         s[2] = str(int(s[2])-4)
-        t3 = renderapi.transform.ThinPlateSplineTransform(
+        _ = renderapi.transform.ThinPlateSplineTransform(
                 dataString=" ".join(s))
 
     x = np.linspace(0, 3840, 10)
@@ -963,3 +963,27 @@ def test_encode64():
     s = renderapi.utils.encodeBase64(x)
     y = renderapi.utils.decodeBase64(s)
     assert(np.all(x == y))
+
+
+def test_adaptive_estimate():
+    with open(rendersettings.TEST_THINPLATESPLINE_FILE, 'r') as f:
+        j = json.load(f)
+
+    tf = renderapi.transform.ThinPlateSplineTransform(
+            dataString=j['dataString'])
+
+    tol = 1.0
+    ntf = tf.adaptive_mesh_estimate(tol=1.0)
+
+    src = ntf.srcPts.transpose()
+    dsta = tf.tform(src)
+    dstb = ntf.tform(src)
+    assert(np.linalg.norm(dsta - dstb, axis=1).max() <= tol)
+
+    src = tf.srcPts.transpose()
+    dsta = tf.tform(src)
+    dstb = ntf.tform(src)
+    nover = np.argwhere(np.linalg.norm(dsta - dstb, axis=1) >= tol).size
+    assert(nover == 0)
+
+    ntf = tf.adaptive_mesh_estimate(max_iter=1)
