@@ -340,8 +340,9 @@ class ThinPlateSplineTransform(Transform):
         sortind = np.argsort(delta[ind])
 
         if niter == max_iter:
-            logger.warning("Maximum number of iterations reached"
-                           " in thin plate spline adaptive_mesh_estimate()")
+            logger.warning(
+                    "Maximum number of iterations reached in"
+                    " ThinPlateSplineTransform.adaptive_mesh_estimate()")
             return newtf
 
         if ind.size == 0:
