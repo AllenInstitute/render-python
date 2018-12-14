@@ -341,7 +341,7 @@ class ThinPlateSplineTransform(Transform):
 
         if niter == max_iter:
             logger.warning(
-                    "Maximum number of iterations reached in"
+                    "Max number of iterations reached in"
                     " ThinPlateSplineTransform.adaptive_mesh_estimate()")
             return newtf
 
