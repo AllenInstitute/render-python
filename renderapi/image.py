@@ -7,7 +7,7 @@ import numpy as np
 import logging
 from .render import format_preamble, renderaccess
 from .errors import RenderError
-from .utils import NullHandler, jbool
+from .utils import NullHandler, jbool, get_json
 
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -23,6 +23,38 @@ IMAGE_FORMATS = {'png': 'png-image',
                  'tiff': 'tiff-image',
                  'tiff16': 'tiff16-image',
                  None: 'png-image'}  # Default to png
+
+
+def _strip_None_value_dictitems(d, exclude_keys=[]):
+    return {k: v for k, v in d.items()
+            if v is not None and k not in exclude_keys}
+
+
+@renderaccess
+def get_bb_renderparams(stack, z, x, y, width, height, scale=1.0,
+                        channel=None, minIntensity=None, maxIntensity=None,
+                        binaryMask=None, filter=None, filterListName=None,
+                        convertToGray=None, excludeMask=None,
+                        host=None, port=None, owner=None,
+                        project=None, session=requests.session(),
+                        render=None, **kwargs):
+
+    request_url = format_preamble(
+        host, port, owner, project, stack) + \
+        "/z/%d/box/%d,%d,%d,%d,%f/render-parameters" % (
+        z, x, y, width, height, scale)
+
+    qparams = _strip_None_value_dictitems({
+        "minIntensity": minIntensity,
+        "maxIntensity": maxIntensity,
+        "binaryMask": binaryMask,
+        "filter": filter,
+        "filterListName": filterListName,
+        "convertToGray": convertToGray,
+        "excludeMask": excludeMask,
+        "channels": channel})
+
+    return get_json(session, request_url, params=qparams)
 
 
 @renderaccess
@@ -109,6 +141,12 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
         return RenderError(r.text)
 
 
+# TODO get tile image renderparams
+@renderaccess
+def get_tile_image_renderparams():
+    pass
+
+
 @renderaccess
 def get_tile_image_data(stack, tileId, channel=None, normalizeForMatching=True,
                         excludeAllTransforms=False, scale=None,
@@ -189,6 +227,11 @@ def get_tile_image_data(stack, tileId, channel=None, normalizeForMatching=True,
         logger.error(e)
         logger.error(r.text)
         return RenderError(r.text)
+
+
+# TODO renderparams for section
+def get_section_renderparams():
+    pass
 
 
 @renderaccess
