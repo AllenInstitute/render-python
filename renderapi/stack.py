@@ -650,6 +650,40 @@ def get_stack_bounds(stack, host=None, port=None, owner=None, project=None,
 
 
 @renderaccess
+def get_tilebounds_for_z(stack, z, host=None, port=None, owner=None,
+                        project=None, session=requests.session(),
+                        render=None, **kwargs):
+    """returns the bounds for each tile associated with a particular z value
+
+    :func:`renderapi.render.renderaccess` decorated function
+
+    Parameters
+    ----------
+    stack : str
+        stack to look within
+    sectionId : str
+        sectionId to find z value
+    render : renderapi.render.Render
+        render connect object
+    session : requests.sessions.Session
+        session object (default start a new one)
+
+    Returns
+    -------
+    list
+        list of dictionaries with tilebounds
+
+    Raises
+    ------
+    RenderError
+
+    """
+
+    request_url = format_preamble(
+        host, port, owner, project, stack) + '/z/{}/tileBounds'.format(z)
+    return get_json(session, request_url)
+
+@renderaccess
 def get_sectionId_for_z(stack, z, host=None, port=None, owner=None,
                         project=None, session=requests.session(),
                         render=None, **kwargs):
@@ -678,10 +712,12 @@ def get_sectionId_for_z(stack, z, host=None, port=None, owner=None,
     RenderError
 
     """
-    sectionData = get_stack_sectionData(
-        stack, host, port, owner, project, session)
+  
+
+    bounds = get_tilebounds_for_z(stack, z, host, port, owner, project, session)
+
     try:
-        return next(sd['sectionId'] for sd in sectionData if sd['z'] == z)
+        return bounds[0]['sectionId']
     except Exception as e:
         logger.error(e)
         raise RenderError('Could not find z value %f in stack %s' % (z, stack))
