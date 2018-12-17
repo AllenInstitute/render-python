@@ -1,4 +1,5 @@
 requests
+scipy
 numpy
 pillow
 sphinxcontrib-napoleon

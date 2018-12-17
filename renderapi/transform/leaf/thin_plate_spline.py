@@ -2,6 +2,7 @@ import numpy as np
 from renderapi.errors import RenderError, EstimationError
 from renderapi.utils import encodeBase64, decodeBase64
 from .transform import Transform
+import scipy.spatial
 __all__ = ['ThinPlateSplineTransform']
 
 
@@ -81,47 +82,38 @@ class ThinPlateSplineTransform(Transform):
         numpy.array
             a Nx2 array of x,y points after transformation
         """
-        result = []
-        for pt in points:
-            result.append(self.apply(pt))
+        return self.apply(points)
 
-        return np.array(result)
-
-    def apply(self, pt):
+    def apply(self, points):
         if not hasattr(self, 'dMtxDat'):
-            result = pt
-            return result
+            return points
 
-        result = pt + self.computeDeformationContribution(pt)
+        result = points + self.computeDeformationContribution(points)
         if self.aMtx is not None:
-            result += self.aMtx.dot(pt)
+            result += self.aMtx.dot(points.transpose()).transpose()
         if self.bVec is not None:
             result += self.bVec
 
         return result
 
-    def computeDeformationContribution(self, pt):
-        disp = np.linalg.norm(
-                self.srcPts -
-                pt.reshape(self.ndims, 1),
-                axis=0)
-        nrm = np.zeros_like(disp)
-        ind = disp > 1e-8
-        nrm[ind] = disp[ind] * disp[ind] * np.log(disp[ind])
-        result = (nrm * self.dMtxDat).sum(1)
-        return result
+    def computeDeformationContribution(self, points):
+        disp = scipy.spatial.distance.cdist(
+                points,
+                self.srcPts.transpose())
+        disp = np.power(disp, 2.0) * np.ma.log(disp).filled(0.0)
+        return disp.dot(self.dMtxDat.transpose())
 
     def gradient_descent(
             self,
-            pt,
+            pts,
             gamma=1.0,
             precision=0.0001,
             max_iters=1000):
         """based on https://en.wikipedia.org/wiki/Gradient_descent#Python
         Parameters
         ----------
-        pt : numpy array
-            [x,y] point for estimating inverse
+        pts : numpy array
+            a Nx2 array of x,y points
         gamma : float
             step size is gamma fraction of current gradient
         precision : float
@@ -130,23 +122,23 @@ class ThinPlateSplineTransform(Transform):
             limit for iterations, error if reached
         Returns
         -------
-        cur_pt : numpy array
-            [x,y] point, estimated inverse of pt
+        cur_pts : numpy array
+            a Nx2 array of x,y points, estimated inverse of pt
         """
-        cur_pt = np.copy(pt)
-        prev_pt = np.copy(pt)
+        cur_pts = np.copy(pts)
+        prev_pts = np.copy(pts)
         step_size = 1
         iters = 0
         while (step_size > precision) & (iters < max_iters):
-            prev_pt[:] = cur_pt[:]
-            cur_pt -= gamma*(self.apply(prev_pt) - pt)
-            step_size = np.linalg.norm(cur_pt - prev_pt)
+            prev_pts[:, :] = cur_pts[:, :]
+            cur_pts -= gamma*(self.apply(prev_pts) - pts)
+            step_size = np.linalg.norm(cur_pts - prev_pts, axis=1).max()
             iters += 1
         if iters == max_iters:
             raise EstimationError(
                     'gradient descent for inversion of ThinPlateSpline '
                     'reached maximum iterations: %d' % max_iters)
-        return cur_pt
+        return cur_pts
 
     def inverse_tform(
             self,
@@ -170,15 +162,12 @@ class ThinPlateSplineTransform(Transform):
         numpy.array
             a Nx2 array of x,y points after inverse transformation
         """
-        newpts = []
-        for p in points:
-            npt = self.gradient_descent(
-                    p,
-                    gamma=gamma,
-                    precision=precision,
-                    max_iters=max_iters)
-            newpts.append(npt)
-        return np.array(newpts)
+        newpts = self.gradient_descent(
+                points,
+                gamma=gamma,
+                precision=precision,
+                max_iters=max_iters)
+        return newpts
 
     @staticmethod
     def fit(A, B, computeAffine=True):
