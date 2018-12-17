@@ -17,7 +17,7 @@ from renderapi.resolvedtiles import put_tilespecs
 from renderapi.external.processpools.stdlib_pool import WithMultiprocessingPool
 
 from .utils import renderclientaccess
-from .client_calls import importJsonClient, call_run_ws_client, renderClient
+from .client_calls import importJsonClient, call_run_ws_client, renderClient, rendererClient
 
 # setup logger
 logger = logging.getLogger(__name__)
@@ -393,6 +393,24 @@ def materialize_tilespec_image(
 def render_tilespec(*args, **kwargs):
     with tempfile.NamedTemporaryFile(suffix='.tif') as f:
         materialize_tilespec_image(*args, out_fn=f.name, **kwargs)
+        arr = numpy.array(Image.open(f.name))
+    return arr
+
+
+@renderclientaccess
+def materialize_renderparameters_image(
+        obj, out_fn=None, subprocess_mode=None, client_script=None, memGB=None,
+        render=None, **kwargs):
+    tfile = renderdump_temp(obj)
+    rendererClient(parameters_url=tfile, out_fn=out_fn,
+                   subprocess_mode=subprocess_mode,
+                   client_script=client_script, memGB=memGB,**kwargs)
+    os.remove(tfile)
+
+
+def render_renderparameters(*args, **kwargs):
+    with tempfile.NamedTemporaryFile(suffix='.tif') as f:
+        materialize_renderparameters_image(*args, out_fn=f.name, **kwargs)
         arr = numpy.array(Image.open(f.name))
     return arr
 
