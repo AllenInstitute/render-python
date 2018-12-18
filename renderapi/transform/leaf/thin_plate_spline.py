@@ -363,7 +363,7 @@ class ThinPlateSplineTransform(Transform):
 
         Returns
         -------
-        ThinPlateSplineTransform object
+        ThinPlateSplineTransform
         """
 
         mn = self.srcPts.min(axis=1)
