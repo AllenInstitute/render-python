@@ -986,4 +986,5 @@ def test_adaptive_estimate():
     nover = np.argwhere(np.linalg.norm(dsta - dstb, axis=1) >= tol).size
     assert(nover == 0)
 
-    ntf = tf.adaptive_mesh_estimate(max_iter=1)
+    with pytest.raises(renderapi.errors.EstimationError):
+        ex_ntf = tf.adaptive_mesh_estimate(max_iter=1)
