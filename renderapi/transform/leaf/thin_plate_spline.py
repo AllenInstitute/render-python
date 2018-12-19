@@ -99,8 +99,9 @@ class ThinPlateSplineTransform(Transform):
     def computeDeformationContribution(self, points):
         disp = scipy.spatial.distance.cdist(
                 points,
-                self.srcPts.transpose())
-        disp = np.power(disp, 2.0) * np.ma.log(disp).filled(0.0)
+                self.srcPts.transpose(),
+                metric='sqeuclidean')
+        disp *= np.ma.log(np.sqrt(disp)).filled(0.0)
         return disp.dot(self.dMtxDat.transpose())
 
     def gradient_descent(
