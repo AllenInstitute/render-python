@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
 
-class AdaptiveMeshEstimationError(Exception):
+class AdaptiveMeshEstimationError(EstimationError):
     def __init__(self, value, transform):
         self.value = value
         self.transform = transform
