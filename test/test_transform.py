@@ -995,7 +995,6 @@ def test_adaptive_estimate():
             assert isinstance(
                     e.transform,
                     renderapi.transform.ThinPlateSplineTransform)
-            assert isinstance(e.__str__(), str)
             raise
 
     # invoke the recursion directly, without passing self
