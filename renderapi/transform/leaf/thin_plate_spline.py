@@ -17,9 +17,6 @@ class AdaptiveMeshEstimationError(EstimationError):
         self.value = value
         self.transform = transform
 
-    def __str__(self):
-        return repr(self.value)
-
 
 class ThinPlateSplineTransform(Transform):
     """
