@@ -12,6 +12,15 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
 
+class AdaptiveMeshEstimationError(Exception):
+    def __init__(self, value, transform):
+        self.value = value
+        self.transform = transform
+
+    def __str__(self):
+        return repr(self.value)
+
+
 class ThinPlateSplineTransform(Transform):
     """
     render-python class that can hold a dataString for
@@ -298,6 +307,34 @@ class ThinPlateSplineTransform(Transform):
             max_iter=50,
             nworst=10,
             niter=0):
+        """recursive kernel for adaptive_mesh_estimate()
+        Parameters
+        ----------
+        new_src : numpy.array
+            Nx2 array of new control source points. Adapts during recursion.
+            Seeded by adaptive_mesh_estimate.
+        old_src : numpy.array
+            Nx2 array of orignal control source points.
+        old_dst : numpy.array
+            Nx2 array of orignal control destination points.
+        old_tf : ThinPlateSplineTransform
+            transform constructed from old_src and old_dst, passed through
+            recursion iterations. Created if None.
+        computeAffine : boolean
+            whether returned transform will have aMtx
+        tol : float
+            in units of pixels, how close should the points match
+        max_iter: int
+            some limit on how many recursive attempts
+        nworst : int
+            per iteration, the nworst matching srcPts will be added
+        niter : int
+            passed through the recursion for stopping criteria
+
+        Returns
+        -------
+        ThinPlateSplineTransform
+        """
 
         if old_tf is None:
             old_tf = ThinPlateSplineTransform()
@@ -317,10 +354,11 @@ class ThinPlateSplineTransform(Transform):
             return new_tf
 
         if niter == max_iter:
-            raise EstimationError(
+            raise AdaptiveMeshEstimationError(
                     "Max number of iterations ({}) reached in"
                     " ThinPlateSplineTransform.mesh_refine()".format(
-                        max_iter))
+                        max_iter),
+                    new_tf)
 
         sortind = np.argsort(delta[ind])
         new_src = np.vstack((new_src, old_src[ind[sortind[0: nworst]]]))
@@ -342,8 +380,7 @@ class ThinPlateSplineTransform(Transform):
             computeAffine=True,
             tol=1.0,
             max_iter=50,
-            nworst=10,
-            niter=0):
+            nworst=10):
         """method for creating a transform with fewer control points
         that matches the original transfom within some tolerance.
         Parameters
@@ -358,8 +395,6 @@ class ThinPlateSplineTransform(Transform):
             some limit on how many recursive attempts
         nworst : int
             per iteration, the nworst matching srcPts will be added
-        niter : int
-            passed through the recursion for stopping criteria
 
         Returns
         -------
@@ -379,9 +414,9 @@ class ThinPlateSplineTransform(Transform):
                 new_src,
                 old_src,
                 old_dst,
-                old_tf=None,
+                old_tf=self,
                 computeAffine=computeAffine,
                 tol=tol,
                 max_iter=max_iter,
                 nworst=nworst,
-                niter=(niter + 1))
+                niter=0)

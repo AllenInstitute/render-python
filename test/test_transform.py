@@ -1,5 +1,7 @@
 import json
 import renderapi
+from renderapi.transform.leaf.thin_plate_spline import \
+        AdaptiveMeshEstimationError
 import numpy as np
 import scipy.linalg
 import rendersettings
@@ -170,13 +172,13 @@ def test_invert_Affine():
 def test_polynomial_scale():
     p = np.transpose(np.array([[0, 0]]))
     t = renderapi.transform.Polynomial2DTransform(params=p)
-    assert(t.order==0)
-    assert(t.scale==(1.0, 1.0))
-    
+    assert(t.order == 0)
+    assert(t.scale == (1.0, 1.0))
+
     p = np.transpose(np.array([[0, 0], [1.1, 0], [0, 0.9]]))
     t = renderapi.transform.Polynomial2DTransform(params=p)
-    assert(t.order==1)
-    assert(t.scale==(1.1, 0.9))
+    assert(t.order == 1)
+    assert(t.scale == (1.1, 0.9))
 
 
 def test_Polynomial_estimation(use_numpy=False):
@@ -835,12 +837,12 @@ def test_thinplatespline():
     with pytest.raises(renderapi.errors.RenderError):
         s = t2.dataString.split(' ')
         s[1] = str(int(s[1])+1)
-        _ = renderapi.transform.ThinPlateSplineTransform(
+        renderapi.transform.ThinPlateSplineTransform(
                 dataString=" ".join(s))
     with pytest.raises(renderapi.errors.RenderError):
         s = t2.dataString.split(' ')
         s[2] = str(int(s[2])-4)
-        _ = renderapi.transform.ThinPlateSplineTransform(
+        renderapi.transform.ThinPlateSplineTransform(
                 dataString=" ".join(s))
 
     x = np.linspace(0, 3840, 10)
@@ -986,5 +988,35 @@ def test_adaptive_estimate():
     nover = np.argwhere(np.linalg.norm(dsta - dstb, axis=1) >= tol).size
     assert(nover == 0)
 
-    with pytest.raises(renderapi.errors.EstimationError):
-        ex_ntf = tf.adaptive_mesh_estimate(max_iter=1)
+    with pytest.raises(AdaptiveMeshEstimationError):
+        try:
+            tf.adaptive_mesh_estimate(max_iter=1)
+        except AdaptiveMeshEstimationError as e:
+            assert isinstance(
+                    e.transform,
+                    renderapi.transform.ThinPlateSplineTransform)
+            assert isinstance(e.__str__(), str)
+            raise
+
+    # invoke the recursion directly, without passing self
+    mn = tf.srcPts.min(axis=1)
+    mx = tf.srcPts.max(axis=1)
+    xt, yt = np.meshgrid(
+            np.linspace(mn[0], mx[0], 5),
+            np.linspace(mn[1], mx[1], 5))
+    new_src = np.vstack((xt.flatten(), yt.flatten())).transpose()
+    old_src = tf.srcPts.transpose()
+    old_dst = tf.tform(old_src)
+    ntf = tf.mesh_refine(
+        new_src,
+        old_src,
+        old_dst,
+        old_tf=None,
+        computeAffine=True,
+        tol=1.0,
+        max_iter=50,
+        nworst=10,
+        niter=0)
+    dsta = tf.tform(src)
+    dstb = ntf.tform(src)
+    assert(np.linalg.norm(dsta - dstb, axis=1).max() <= tol)
