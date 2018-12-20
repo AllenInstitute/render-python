@@ -12,12 +12,6 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
 
-class AdaptiveMeshEstimationError(EstimationError):
-    def __init__(self, value, transform):
-        self.value = value
-        self.transform = transform
-
-
 class ThinPlateSplineTransform(Transform):
     """
     render-python class that can hold a dataString for
@@ -351,11 +345,10 @@ class ThinPlateSplineTransform(Transform):
             return new_tf
 
         if niter == max_iter:
-            raise AdaptiveMeshEstimationError(
+            raise EstimationError(
                     "Max number of iterations ({}) reached in"
                     " ThinPlateSplineTransform.mesh_refine()".format(
-                        max_iter),
-                    new_tf)
+                        max_iter))
 
         sortind = np.argsort(delta[ind])
         new_src = np.vstack((new_src, old_src[ind[sortind[0: nworst]]]))

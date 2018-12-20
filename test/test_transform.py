@@ -1,7 +1,5 @@
 import json
 import renderapi
-from renderapi.transform.leaf.thin_plate_spline import \
-        AdaptiveMeshEstimationError
 import numpy as np
 import scipy.linalg
 import rendersettings
@@ -988,14 +986,8 @@ def test_adaptive_estimate():
     nover = np.argwhere(np.linalg.norm(dsta - dstb, axis=1) >= tol).size
     assert(nover == 0)
 
-    with pytest.raises(AdaptiveMeshEstimationError):
-        try:
-            tf.adaptive_mesh_estimate(max_iter=1)
-        except AdaptiveMeshEstimationError as e:
-            assert isinstance(
-                    e.transform,
-                    renderapi.transform.ThinPlateSplineTransform)
-            raise
+    with pytest.raises(renderapi.errors.EstimationError):
+        tf.adaptive_mesh_estimate(max_iter=1)
 
     # invoke the recursion directly, without passing self
     mn = tf.srcPts.min(axis=1)
