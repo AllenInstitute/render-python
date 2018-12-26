@@ -5,9 +5,9 @@ import requests
 from PIL import Image
 import numpy as np
 import logging
-from .render import format_preamble, renderaccess
+from .render import format_preamble, format_baseurl, renderaccess
 from .errors import RenderError
-from .utils import NullHandler, jbool, get_json
+from .utils import NullHandler, jbool, get_json, put_json
 
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -141,10 +141,39 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
         return RenderError(r.text)
 
 
-# TODO get tile image renderparams
 @renderaccess
-def get_tile_image_renderparams():
-    pass
+def get_tile_renderparams(
+        stack, tileId, channel=None, normalizeForMatching=None,
+        excludeAllTransforms=None, excludeTransformsAfterLast=None,
+        excludeFirstTransformAndAllAfter=None, scale=None,
+        width=None, height=None, minIntensity=None, maxIntensity=None,
+        filter=None, filterListName=None, excludeMask=None, convertToGray=None,
+        binaryMask=None, host=None, port=None, owner=None,
+        project=None, img_format=None,
+        session=requests.session(), render=None, **kwargs):
+    request_url = format_preamble(
+        host, port, owner, project, stack) + \
+        "/tile/%s/render-parameters" % (
+        tileId)
+
+    qparams = _strip_None_value_dictitems({
+        "normalizeForMatching": normalizeForMatching,
+        "excludeAllTransforms": excludeAllTransforms,
+        "excludeTransformsAfterLast": excludeTransformsAfterLast,
+        "excludeFirstTransformAndAllAfter": excludeFirstTransformAndAllAfter,
+        "scale": scale,
+        "width": width,
+        "height": height,
+        "minIntensity": minIntensity,
+        "maxIntensity": maxIntensity,
+        "binaryMask": binaryMask,
+        "filter": filter,
+        "filterListName": filterListName,
+        "convertToGray": convertToGray,
+        "excludeMask": excludeMask,
+        "channels": channel})
+
+    return get_json(session, request_url, params=qparams)
 
 
 @renderaccess
@@ -229,9 +258,30 @@ def get_tile_image_data(stack, tileId, channel=None, normalizeForMatching=True,
         return RenderError(r.text)
 
 
-# TODO renderparams for section
-def get_section_renderparams():
-    pass
+@renderaccess
+def get_section_renderparams(stack, z, binaryMask=None, channel=None,
+                             convertToGray=None, excludeMask=None, filter=None,
+                             filterListName=None, minIntensity=None,
+                             maxIntensity=None, scale=None,
+                             host=None, port=None, owner=None, project=None,
+                             session=requests.session(),
+                             render=None, **kwargs):
+    request_url = format_preamble(
+        host, port, owner, project, stack) + "/z/{}/render-parameters".format(
+            z)
+
+    qparams = _strip_None_value_dictitems({
+        "scale": scale,
+        "minIntensity": minIntensity,
+        "maxIntensity": maxIntensity,
+        "binaryMask": binaryMask,
+        "filter": filter,
+        "filterListName": filterListName,
+        "convertToGray": convertToGray,
+        "excludeMask": excludeMask,
+        "channels": channel})
+
+    return get_json(session, request_url, params=qparams)
 
 
 @renderaccess
@@ -298,3 +348,20 @@ def get_section_image(stack, z, scale=1.0, channel=None,
 
     r = session.get(request_url, params=qparams)
     return np.asarray(Image.open(io.BytesIO(r.content)))
+
+
+@renderaccess
+def get_renderparameters_image(renderparams, img_format=None,
+                               host=None, port=None, owner=None,
+                               session=requests.session(),
+                               render=None, **kwargs):
+    try:
+        image_ext = IMAGE_FORMATS[img_format]
+    except KeyError as e:  # pragma: no cover
+        raise ValueError('{} is not a valid render image format!'.format(e))
+
+    request_url = format_baseurl(host, port) + '/owner/{owner}/{ext}'.format(
+        owner=owner, ext=image_ext)
+
+    r = put_json(session, request_url, renderparams)
+    return np.array(Image.open(io.BytesIO(r.content)))
