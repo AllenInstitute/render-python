@@ -404,12 +404,12 @@ def materialize_renderparameters_image(
     tfile = renderdump_temp(obj)
     rendererClient(parameters_url=tfile, out_fn=out_fn,
                    subprocess_mode=subprocess_mode,
-                   client_script=client_script, memGB=memGB,**kwargs)
+                   client_script=client_script, memGB=memGB, **kwargs)
     os.remove(tfile)
 
 
-def render_renderparameters(*args, **kwargs):
-    with tempfile.NamedTemporaryFile(suffix='.tif') as f:
+def render_renderparameters(*args, image_ext='.png', **kwargs):
+    with tempfile.NamedTemporaryFile(suffix=image_ext) as f:
         materialize_renderparameters_image(*args, out_fn=f.name, **kwargs)
         arr = numpy.array(Image.open(f.name))
     return arr
@@ -422,4 +422,5 @@ __all__ = [
     "import_jsonfiles_validate_client", "import_tilespecs",
     "import_tilespecs_parallel", "local_to_world_array",
     "world_to_local_array", "WithPool",
-    "render_tilespec", "materialize_tilespec_image"]
+    "render_tilespec", "materialize_tilespec_image",
+    "materialize_renderparameters_image", "render_renderparameters"]
