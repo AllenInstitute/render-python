@@ -408,7 +408,9 @@ def materialize_renderparameters_image(
     os.remove(tfile)
 
 
-def render_renderparameters(*args, image_ext='.png', **kwargs):
+def render_renderparameters(*args, **kwargs):
+    # NOTE this is python2 compatible hack for keyword-only args
+    image_ext = kwargs.get('image_ext', '.png')
     with tempfile.NamedTemporaryFile(suffix=image_ext) as f:
         materialize_renderparameters_image(*args, out_fn=f.name, **kwargs)
         arr = numpy.array(Image.open(f.name))
