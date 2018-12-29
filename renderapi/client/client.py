@@ -17,7 +17,7 @@ from renderapi.resolvedtiles import put_tilespecs
 from renderapi.external.processpools.stdlib_pool import WithMultiprocessingPool
 
 from .utils import renderclientaccess
-from .client_calls import importJsonClient, call_run_ws_client, renderClient
+from .client_calls import importJsonClient, call_run_ws_client, renderClient, rendererClient
 
 # setup logger
 logger = logging.getLogger(__name__)
@@ -397,6 +397,26 @@ def render_tilespec(*args, **kwargs):
     return arr
 
 
+@renderclientaccess
+def materialize_renderparameters_image(
+        obj, out_fn=None, subprocess_mode=None, client_script=None, memGB=None,
+        render=None, **kwargs):
+    tfile = renderdump_temp(obj)
+    rendererClient(parameters_url=tfile, out_fn=out_fn,
+                   subprocess_mode=subprocess_mode,
+                   client_script=client_script, memGB=memGB, **kwargs)
+    os.remove(tfile)
+
+
+def render_renderparameters(*args, **kwargs):
+    # NOTE this is python2 compatible hack for keyword-only args
+    image_ext = kwargs.get('image_ext', '.png')
+    with tempfile.NamedTemporaryFile(suffix=image_ext) as f:
+        materialize_renderparameters_image(*args, out_fn=f.name, **kwargs)
+        arr = numpy.array(Image.open(f.name))
+    return arr
+
+
 __all__ = [
     "import_single_json_file",
     "import_jsonfiles_and_transforms_parallel_by_z",
@@ -404,4 +424,5 @@ __all__ = [
     "import_jsonfiles_validate_client", "import_tilespecs",
     "import_tilespecs_parallel", "local_to_world_array",
     "world_to_local_array", "WithPool",
-    "render_tilespec", "materialize_tilespec_image"]
+    "render_tilespec", "materialize_tilespec_image",
+    "materialize_renderparameters_image", "render_renderparameters"]

@@ -682,9 +682,53 @@ def renderClient(tile_spec_url=None, height=None, width=None, in_fn=None,
                        **kwargs)
 
 
+@renderclientaccess
+def rendererClient(tile_spec_url=None, meshCellSize=None, minMeshCellSize=None,
+                   in_fn=None, out_fn=None, x=None, y=None, width=None,
+                   height=None, scale=None, area_offset=None,
+                   minIntensity=None, maxIntensity=None, gray=None,
+                   quality=None, threads=None, skip_interpolation=None,
+                   binary_mask=None, exclude_mask=None, parameters_url=None,
+                   do_filter=None, background_color=None, fill_with_noise=None,
+                   channels=None, subprocess_mode=None, client_script=None,
+                   memGB=None, render=None, **kwargs):
+    get_cmd_opt = ArgumentParameters.get_cmd_opt
+
+    argvs = (get_cmd_opt(tile_spec_url, '--tile_spec_url') +
+             get_cmd_opt(height, '--height') +
+             get_cmd_opt(width, '--width') +
+             get_cmd_opt(in_fn, '--in') +
+             get_cmd_opt(out_fn, '--out') +
+             get_cmd_opt(x, '--x') +
+             get_cmd_opt(y, '--y') +
+             get_cmd_opt(meshCellSize, '--meshCellSize') +
+             get_cmd_opt(minMeshCellSize, '--minMeshCellSize') +
+             get_cmd_opt(scale, '--scale') +
+             get_cmd_opt(area_offset, '--area_offset') +
+             get_cmd_opt(minIntensity, '--minIntensity') +
+             get_cmd_opt(maxIntensity, '--maxIntensity') +
+             get_cmd_opt(gray, '--gray') +
+             get_cmd_opt(quality, '--quality') +
+             get_cmd_opt(threads, '--threads') +
+             get_cmd_opt(skip_interpolation, '--skip_interpolation') +
+             get_cmd_opt(binary_mask, '--binary_mask') +
+             get_cmd_opt(exclude_mask, '--exclude_mask') +
+             get_cmd_opt(parameters_url, '--parameters_url') +
+             get_cmd_opt(do_filter, '--do_filter') +
+             get_cmd_opt(background_color, '--background_color') +
+             get_cmd_opt(fill_with_noise, '--fill_with_noise') +
+             get_cmd_opt(channels, '--channels'))
+
+    call_run_ws_client('org.janelia.alignment.Render',
+                       memGB=memGB, client_script=client_script,
+                       subprocess_mode=subprocess_mode, add_args=argvs,
+                       **kwargs)
+
+
 __all__ = [
     "call_run_ws_client", "run_subprocess_mode",
     "importJsonClient", "tilePairClient",
     "importTransformChangesClient", "coordinateClient",
     "renderSectionClient", "transformSectionClient",
-    "get_canvas_url_template", "pointMatchClient"]
+    "get_canvas_url_template", "pointMatchClient", "renderClient",
+    "rendererClient"]

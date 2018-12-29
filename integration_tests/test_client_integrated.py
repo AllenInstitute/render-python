@@ -362,6 +362,29 @@ def test_processpools_parallelfuncs(
 
 
 @pytest.fixture(scope='module')
+def example_renderparameters(render, teststack):
+    zvalues = render.run(renderapi.stack.get_z_values_for_stack, teststack)
+    z = zvalues[0]
+    bounds = render.run(renderapi.stack.get_bounds_from_z, teststack, z)
+    width = (bounds['maxX'] - bounds['minX']) / 2
+    height = (bounds['maxY'] - bounds['minY']) / 2
+    x = bounds['minX'] + width / 4
+    y = bounds['minY'] + width / 4
+    renderparams = renderapi.image.get_bb_renderparams(
+        teststack, z, x, y, width, height,
+        scale=0.25, render=render)
+    yield renderparams
+
+
+@pytest.fixture(scope='module')
+def renderedimg_renderparams(render, example_renderparameters):
+    # TODO is there a "render from renderparams" api?
+    arr = renderapi.image.get_renderparameters_image(
+        example_renderparameters, render=render)
+    yield arr, example_renderparameters
+
+
+@pytest.fixture(scope='module')
 def tile_tilespec():
     tile_dims = (256, 256)
     with tempfile.NamedTemporaryFile(suffix='.tif', mode='w') as imgf:
@@ -393,3 +416,13 @@ def test_ARGBrenderclient(render, tile_tilespec):
         tilearr = np.array(tileimg)
         assert arr.shape[:-1] == (tspec.width, tspec.height) == tilearr.shape
         assert np.all(arr[:, :, 0] == tilearr)
+
+
+def testRendererClient(render, renderedimg_renderparams):
+    renderedarr, renderparams = renderedimg_renderparams
+    arr = renderapi.client.render_renderparameters(renderparams, render=render)
+    assert arr.shape[:-1] == (
+        int(renderparams['height'] * renderparams['scale']),
+        int(renderparams['width'] * renderparams['scale'])
+    ) == renderedarr.shape[:-1]
+    assert np.all(arr == renderedarr)

@@ -5,9 +5,9 @@ import requests
 from PIL import Image
 import numpy as np
 import logging
-from .render import format_preamble, renderaccess
+from .render import format_preamble, format_baseurl, renderaccess
 from .errors import RenderError
-from .utils import NullHandler, jbool
+from .utils import NullHandler, jbool, get_json, put_json
 
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -23,6 +23,38 @@ IMAGE_FORMATS = {'png': 'png-image',
                  'tiff': 'tiff-image',
                  'tiff16': 'tiff16-image',
                  None: 'png-image'}  # Default to png
+
+
+def _strip_None_value_dictitems(d, exclude_keys=[]):
+    return {k: v for k, v in d.items()
+            if v is not None and k not in exclude_keys}
+
+
+@renderaccess
+def get_bb_renderparams(stack, z, x, y, width, height, scale=1.0,
+                        channel=None, minIntensity=None, maxIntensity=None,
+                        binaryMask=None, filter=None, filterListName=None,
+                        convertToGray=None, excludeMask=None,
+                        host=None, port=None, owner=None,
+                        project=None, session=requests.session(),
+                        render=None, **kwargs):
+
+    request_url = format_preamble(
+        host, port, owner, project, stack) + \
+        "/z/%d/box/%d,%d,%d,%d,%f/render-parameters" % (
+        z, x, y, width, height, scale)
+
+    qparams = _strip_None_value_dictitems({
+        "minIntensity": minIntensity,
+        "maxIntensity": maxIntensity,
+        "binaryMask": binaryMask,
+        "filter": filter,
+        "filterListName": filterListName,
+        "convertToGray": convertToGray,
+        "excludeMask": excludeMask,
+        "channels": channel})
+
+    return get_json(session, request_url, params=qparams)
 
 
 @renderaccess
@@ -110,6 +142,41 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
 
 
 @renderaccess
+def get_tile_renderparams(
+        stack, tileId, channel=None, normalizeForMatching=None,
+        excludeAllTransforms=None, excludeTransformsAfterLast=None,
+        excludeFirstTransformAndAllAfter=None, scale=None,
+        width=None, height=None, minIntensity=None, maxIntensity=None,
+        filter=None, filterListName=None, excludeMask=None, convertToGray=None,
+        binaryMask=None, host=None, port=None, owner=None,
+        project=None, img_format=None,
+        session=requests.session(), render=None, **kwargs):
+    request_url = format_preamble(
+        host, port, owner, project, stack) + \
+        "/tile/%s/render-parameters" % (
+        tileId)
+
+    qparams = _strip_None_value_dictitems({
+        "normalizeForMatching": normalizeForMatching,
+        "excludeAllTransforms": excludeAllTransforms,
+        "excludeTransformsAfterLast": excludeTransformsAfterLast,
+        "excludeFirstTransformAndAllAfter": excludeFirstTransformAndAllAfter,
+        "scale": scale,
+        "width": width,
+        "height": height,
+        "minIntensity": minIntensity,
+        "maxIntensity": maxIntensity,
+        "binaryMask": binaryMask,
+        "filter": filter,
+        "filterListName": filterListName,
+        "convertToGray": convertToGray,
+        "excludeMask": excludeMask,
+        "channels": channel})
+
+    return get_json(session, request_url, params=qparams)
+
+
+@renderaccess
 def get_tile_image_data(stack, tileId, channel=None, normalizeForMatching=True,
                         excludeAllTransforms=False, scale=None,
                         filter=None, host=None, port=None, owner=None,
@@ -192,6 +259,32 @@ def get_tile_image_data(stack, tileId, channel=None, normalizeForMatching=True,
 
 
 @renderaccess
+def get_section_renderparams(stack, z, binaryMask=None, channel=None,
+                             convertToGray=None, excludeMask=None, filter=None,
+                             filterListName=None, minIntensity=None,
+                             maxIntensity=None, scale=None,
+                             host=None, port=None, owner=None, project=None,
+                             session=requests.session(),
+                             render=None, **kwargs):
+    request_url = format_preamble(
+        host, port, owner, project, stack) + "/z/{}/render-parameters".format(
+            z)
+
+    qparams = _strip_None_value_dictitems({
+        "scale": scale,
+        "minIntensity": minIntensity,
+        "maxIntensity": maxIntensity,
+        "binaryMask": binaryMask,
+        "filter": filter,
+        "filterListName": filterListName,
+        "convertToGray": convertToGray,
+        "excludeMask": excludeMask,
+        "channels": channel})
+
+    return get_json(session, request_url, params=qparams)
+
+
+@renderaccess
 def get_section_image(stack, z, scale=1.0, channel=None,
                       filter=False,
                       maxTileSpecsToRender=None, img_format=None,
@@ -255,3 +348,20 @@ def get_section_image(stack, z, scale=1.0, channel=None,
 
     r = session.get(request_url, params=qparams)
     return np.asarray(Image.open(io.BytesIO(r.content)))
+
+
+@renderaccess
+def get_renderparameters_image(renderparams, img_format=None,
+                               host=None, port=None, owner=None,
+                               session=requests.session(),
+                               render=None, **kwargs):
+    try:
+        image_ext = IMAGE_FORMATS[img_format]
+    except KeyError as e:  # pragma: no cover
+        raise ValueError('{} is not a valid render image format!'.format(e))
+
+    request_url = format_baseurl(host, port) + '/owner/{owner}/{ext}'.format(
+        owner=owner, ext=image_ext)
+
+    r = put_json(session, request_url, renderparams)
+    return np.array(Image.open(io.BytesIO(r.content)))

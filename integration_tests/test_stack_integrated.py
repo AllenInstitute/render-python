@@ -323,6 +323,25 @@ def test_bb_image_options(render, teststack):
                   maxIntensity=255)
 
 
+def test_bb_renderparams(render, teststack):
+    zvalues = render.run(renderapi.stack.get_z_values_for_stack, teststack)
+    z = zvalues[0]
+    bounds = render.run(renderapi.stack.get_bounds_from_z, teststack, z)
+    width = (bounds['maxX'] - bounds['minX']) / 2
+    height = (bounds['maxY'] - bounds['minY']) / 2
+    x = bounds['minX'] + width / 4
+    y = bounds['minY'] + width / 4
+    scale = 0.25
+
+    rp = renderapi.image.get_bb_renderparams(
+        teststack, z, x, y, width, height, scale=scale, render=render)
+    assert int(rp['width'] * rp['scale']) == int(width * scale)
+    assert int(rp['height'] * rp['scale']) == int(height * scale)
+    assert int(rp['x']) == int(x)
+    assert int(rp['y']) == int(y)
+    assert len(rp['tileSpecs'])
+
+
 def test_tile_image(render, teststack, render_example_tilespec_and_transforms,
                     **kwargs):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
@@ -346,6 +365,23 @@ def test_tile_image_options(render, teststack,
         scale=testscale, filter=True, normalizeForMatching=False)
 
 
+def test_tile_renderparams(render, teststack):
+    zvalues = render.run(renderapi.stack.get_z_values_for_stack, teststack)
+    z = zvalues[0]
+
+    tspecs = renderapi.tilespec.get_tile_specs_from_z(
+        teststack, z, render=render)
+    ts = tspecs[0]
+
+    rp = renderapi.image.get_tile_renderparams(
+        teststack, ts.tileId, render=render)
+    assert int(rp['x']) == int(ts.minX)
+    assert int(rp['y']) == int(ts.minY)
+    assert len(rp['tileSpecs']) == 1
+    assert rp['height'] - 1 == int(ts.maxY - ts.minY)
+    assert rp['width'] - 1 == int(ts.maxX - ts.minX)
+
+
 def test_section_image(render, teststack, **kwargs):
     zvalues = render.run(renderapi.stack.get_z_values_for_stack, teststack)
     z = zvalues[0]
@@ -365,6 +401,19 @@ def test_section_image(render, teststack, **kwargs):
 def test_section_image_options(render, teststack):
     test_section_image(render, teststack, filter=True,
                        maxTileSpecsToRender=50)
+
+
+def test_section_renderparams(render, teststack):
+    zvalues = render.run(renderapi.stack.get_z_values_for_stack, teststack)
+    z = zvalues[0]
+    tspecs = renderapi.tilespec.get_tile_specs_from_z(
+        teststack, z, render=render)
+
+    scalefactor = 0.05
+    rp = renderapi.image.get_section_renderparams(
+        teststack, z, scale=scalefactor, render=render)
+    assert len(rp['tileSpecs']) == len(tspecs)
+    assert rp['scale'] == scalefactor
 
 
 def fail_image_get(render, teststack, render_example_tilespec_and_transforms):
