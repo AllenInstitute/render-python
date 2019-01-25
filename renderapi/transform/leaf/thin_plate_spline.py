@@ -3,7 +3,13 @@ from renderapi.errors import RenderError, EstimationError
 from renderapi.utils import encodeBase64, decodeBase64
 from .transform import Transform
 import scipy.spatial
+import logging
+import sys
 __all__ = ['ThinPlateSplineTransform']
+
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.StreamHandler(sys.stdout))
 
 
 class ThinPlateSplineTransform(Transform):
@@ -281,3 +287,127 @@ class ThinPlateSplineTransform(Transform):
         b64_2 = encodeBase64(blk2)
 
         return '{} {} {}'.format(header, b64_1, b64_2)
+
+    @staticmethod
+    def mesh_refine(
+            new_src,
+            old_src,
+            old_dst,
+            old_tf=None,
+            computeAffine=True,
+            tol=1.0,
+            max_iter=50,
+            nworst=10,
+            niter=0):
+        """recursive kernel for adaptive_mesh_estimate()
+        Parameters
+        ----------
+        new_src : numpy.array
+            Nx2 array of new control source points. Adapts during recursion.
+            Seeded by adaptive_mesh_estimate.
+        old_src : numpy.array
+            Nx2 array of orignal control source points.
+        old_dst : numpy.array
+            Nx2 array of orignal control destination points.
+        old_tf : ThinPlateSplineTransform
+            transform constructed from old_src and old_dst, passed through
+            recursion iterations. Created if None.
+        computeAffine : boolean
+            whether returned transform will have aMtx
+        tol : float
+            in units of pixels, how close should the points match
+        max_iter: int
+            some limit on how many recursive attempts
+        nworst : int
+            per iteration, the nworst matching srcPts will be added
+        niter : int
+            passed through the recursion for stopping criteria
+
+        Returns
+        -------
+        ThinPlateSplineTransform
+        """
+
+        if old_tf is None:
+            old_tf = ThinPlateSplineTransform()
+            old_tf.estimate(old_src, old_dst, computeAffine=computeAffine)
+
+        new_tf = ThinPlateSplineTransform()
+        new_tf.estimate(
+                new_src,
+                old_tf.tform(new_src),
+                computeAffine=computeAffine)
+        new_dst = new_tf.tform(old_src)
+
+        delta = np.linalg.norm(new_dst - old_dst, axis=1)
+        ind = np.argwhere(delta > tol).flatten()
+
+        if ind.size == 0:
+            return new_tf
+
+        if niter == max_iter:
+            raise EstimationError(
+                    "Max number of iterations ({}) reached in"
+                    " ThinPlateSplineTransform.mesh_refine()".format(
+                        max_iter))
+
+        sortind = np.argsort(delta[ind])
+        new_src = np.vstack((new_src, old_src[ind[sortind[0: nworst]]]))
+
+        return ThinPlateSplineTransform.mesh_refine(
+            new_src,
+            old_src,
+            old_dst,
+            old_tf=old_tf,
+            computeAffine=computeAffine,
+            tol=tol,
+            max_iter=max_iter,
+            nworst=nworst,
+            niter=(niter + 1))
+
+    def adaptive_mesh_estimate(
+            self,
+            starting_grid=7,
+            computeAffine=True,
+            tol=1.0,
+            max_iter=50,
+            nworst=10):
+        """method for creating a transform with fewer control points
+        that matches the original transfom within some tolerance.
+        Parameters
+        ----------
+        starting_grid : int
+            estimate will start with an n x n grid
+        computeAffine : boolean
+            whether returned transform will have aMtx
+        tol : float
+            in units of pixels, how close should the points match
+        max_iter: int
+            some limit on how many recursive attempts
+        nworst : int
+            per iteration, the nworst matching srcPts will be added
+
+        Returns
+        -------
+        ThinPlateSplineTransform
+        """
+
+        mn = self.srcPts.min(axis=1)
+        mx = self.srcPts.max(axis=1)
+        xt, yt = np.meshgrid(
+                np.linspace(mn[0], mx[0], starting_grid),
+                np.linspace(mn[1], mx[1], starting_grid))
+        new_src = np.vstack((xt.flatten(), yt.flatten())).transpose()
+        old_src = self.srcPts.transpose()
+        old_dst = self.tform(old_src)
+
+        return ThinPlateSplineTransform.mesh_refine(
+                new_src,
+                old_src,
+                old_dst,
+                old_tf=self,
+                computeAffine=computeAffine,
+                tol=tol,
+                max_iter=max_iter,
+                nworst=nworst,
+                niter=0)

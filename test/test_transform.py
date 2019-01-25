@@ -170,13 +170,13 @@ def test_invert_Affine():
 def test_polynomial_scale():
     p = np.transpose(np.array([[0, 0]]))
     t = renderapi.transform.Polynomial2DTransform(params=p)
-    assert(t.order==0)
-    assert(t.scale==(1.0, 1.0))
-    
+    assert(t.order == 0)
+    assert(t.scale == (1.0, 1.0))
+
     p = np.transpose(np.array([[0, 0], [1.1, 0], [0, 0.9]]))
     t = renderapi.transform.Polynomial2DTransform(params=p)
-    assert(t.order==1)
-    assert(t.scale==(1.1, 0.9))
+    assert(t.order == 1)
+    assert(t.scale == (1.1, 0.9))
 
 
 def test_Polynomial_estimation(use_numpy=False):
@@ -835,12 +835,12 @@ def test_thinplatespline():
     with pytest.raises(renderapi.errors.RenderError):
         s = t2.dataString.split(' ')
         s[1] = str(int(s[1])+1)
-        t3 = renderapi.transform.ThinPlateSplineTransform(
+        renderapi.transform.ThinPlateSplineTransform(
                 dataString=" ".join(s))
     with pytest.raises(renderapi.errors.RenderError):
         s = t2.dataString.split(' ')
         s[2] = str(int(s[2])-4)
-        t3 = renderapi.transform.ThinPlateSplineTransform(
+        renderapi.transform.ThinPlateSplineTransform(
                 dataString=" ".join(s))
 
     x = np.linspace(0, 3840, 10)
@@ -963,3 +963,51 @@ def test_encode64():
     s = renderapi.utils.encodeBase64(x)
     y = renderapi.utils.decodeBase64(s)
     assert(np.all(x == y))
+
+
+def test_adaptive_estimate():
+    with open(rendersettings.TEST_THINPLATESPLINE_FILE, 'r') as f:
+        j = json.load(f)
+
+    tf = renderapi.transform.ThinPlateSplineTransform(
+            dataString=j['dataString'])
+
+    tol = 1.0
+    ntf = tf.adaptive_mesh_estimate(tol=1.0)
+
+    src = ntf.srcPts.transpose()
+    dsta = tf.tform(src)
+    dstb = ntf.tform(src)
+    assert(np.linalg.norm(dsta - dstb, axis=1).max() <= tol)
+
+    src = tf.srcPts.transpose()
+    dsta = tf.tform(src)
+    dstb = ntf.tform(src)
+    nover = np.argwhere(np.linalg.norm(dsta - dstb, axis=1) >= tol).size
+    assert(nover == 0)
+
+    with pytest.raises(renderapi.errors.EstimationError):
+        tf.adaptive_mesh_estimate(max_iter=1)
+
+    # invoke the recursion directly, without passing self
+    mn = tf.srcPts.min(axis=1)
+    mx = tf.srcPts.max(axis=1)
+    xt, yt = np.meshgrid(
+            np.linspace(mn[0], mx[0], 5),
+            np.linspace(mn[1], mx[1], 5))
+    new_src = np.vstack((xt.flatten(), yt.flatten())).transpose()
+    old_src = tf.srcPts.transpose()
+    old_dst = tf.tform(old_src)
+    ntf = tf.mesh_refine(
+        new_src,
+        old_src,
+        old_dst,
+        old_tf=None,
+        computeAffine=True,
+        tol=1.0,
+        max_iter=50,
+        nworst=10,
+        niter=0)
+    dsta = tf.tform(src)
+    dstb = ntf.tform(src)
+    assert(np.linalg.norm(dsta - dstb, axis=1).max() <= tol)
