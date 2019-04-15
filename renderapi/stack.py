@@ -704,8 +704,8 @@ def get_sectionId_for_z(stack, z, host=None, port=None, owner=None,
 
     Returns
     -------
-    float
-        z value of sectionId
+    str 
+        value of sectionId
 
     Raises
     ------
