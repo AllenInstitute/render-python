@@ -651,8 +651,8 @@ def get_stack_bounds(stack, host=None, port=None, owner=None, project=None,
 
 @renderaccess
 def get_tilebounds_for_z(stack, z, host=None, port=None, owner=None,
-                        project=None, session=requests.session(),
-                        render=None, **kwargs):
+                         project=None, session=requests.session(),
+                         render=None, **kwargs):
     """returns the bounds for each tile associated with a particular z value
 
     :func:`renderapi.render.renderaccess` decorated function
@@ -683,6 +683,7 @@ def get_tilebounds_for_z(stack, z, host=None, port=None, owner=None,
         host, port, owner, project, stack) + '/z/{}/tileBounds'.format(z)
     return get_json(session, request_url)
 
+
 @renderaccess
 def get_sectionId_for_z(stack, z, host=None, port=None, owner=None,
                         project=None, session=requests.session(),
@@ -704,7 +705,7 @@ def get_sectionId_for_z(stack, z, host=None, port=None, owner=None,
 
     Returns
     -------
-    str 
+    str
         value of sectionId
 
     Raises
@@ -712,9 +713,9 @@ def get_sectionId_for_z(stack, z, host=None, port=None, owner=None,
     RenderError
 
     """
-  
 
-    bounds = get_tilebounds_for_z(stack, z, host, port, owner, project, session)
+    bounds = get_tilebounds_for_z(
+            stack, z, host, port, owner, project, session)
 
     try:
         return bounds[0]['sectionId']
