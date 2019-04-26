@@ -1,6 +1,7 @@
 from .transform import Transform, logger
 from .affine_models import AffineModel
 import numpy as np
+from .common import calc_first_order_properties
 from renderapi.errors import ConversionError, EstimationError, RenderError
 
 try:
@@ -29,7 +30,8 @@ class Polynomial2DTransform(Transform):
 
     def __init__(self, dataString=None, src=None, dst=None, order=2,
                  force_polynomial=True, params=None, identity=False,
-                 labels=None, transformId=None, json=None, **kwargs):
+                 labels=None, transformId=None, json=None,
+                 force_shear='x', **kwargs):
         """Initialize Polynomial2DTransform
         This provides 5 different ways to initialize the transform which are
         mutually exclusive and applied in the order specified here.
@@ -58,6 +60,7 @@ class Polynomial2DTransform(Transform):
 
 
         """
+        self.force_shear = force_shear
         if json is not None:
             self.from_dict(json)
         else:
@@ -89,15 +92,38 @@ class Polynomial2DTransform(Transform):
         no_coeffs = len(self.params.ravel())
         return int((abs(np.sqrt(4 * no_coeffs + 1)) - 3) / 2)
 
+    def calc_properties(self):
+        if self.order == 0:
+            return 1.0, 1.0, 0.0, 0.0, 0.0
+        return calc_first_order_properties(
+                self.params[:, 1:3],
+                force_shear=self.force_shear)
+
     @property
     def scale(self):
         """tuple of scale for x, y"""
-        if self.order > 0:
-            scale = (self.params[0, 1], self.params[1, 2])
+        sx, sy, cx, cy, theta = self.calc_properties()
+        return (sx, sy)
+
+    @property
+    def shear(self):
+        """shear"""
+        sx, sy, cx, cy, theta = self.calc_properties()
+        if self.force_shear == 'x':
+            return cx
         else:
-            # translation only has no scale impact
-            scale = (1.0, 1.0)
-        return scale
+            return cy
+
+    @property
+    def translation(self):
+        """tuple of translation in x, y"""
+        return tuple(self.params[:, 0])
+
+    @property
+    def rotation(self):
+        """counter-clockwise rotation"""
+        sx, sy, cx, cy, theta = self.calc_properties()
+        return theta
 
     @property
     def dataString(self):
