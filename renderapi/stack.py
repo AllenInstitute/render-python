@@ -331,7 +331,7 @@ def delete_section(stack, z, host=None, port=None, owner=None,
     ----------
     stack : str
         stack to delete section from
-    z : float
+    z : int or float or str
         z value to delete
     render : renderapi.render.Render
         render connect object
@@ -595,7 +595,7 @@ def get_bounds_from_z(stack, z, host=None, port=None, owner=None,
     ----------
     stack : str
         stack to get bounds from
-    z : float
+    z : int or float or str
         z value to get bounds for
     render : renderapi.render.Render
         render connect object
@@ -661,8 +661,8 @@ def get_tilebounds_for_z(stack, z, host=None, port=None, owner=None,
     ----------
     stack : str
         stack to look within
-    sectionId : str
-        sectionId to find z value
+    z : int or float or str
+        z value for which to get tile bounds
     render : renderapi.render.Render
         render connect object
     session : requests.sessions.Session
@@ -696,8 +696,8 @@ def get_sectionId_for_z(stack, z, host=None, port=None, owner=None,
     ----------
     stack : str
         stack to look within
-    sectionId : str
-        sectionId to find z value
+    z : int or float or str
+        section z value
     render : renderapi.render.Render
         render connect object
     session : requests.sessions.Session
