@@ -17,7 +17,7 @@ addons:
         - libopenblas-base
         - libopenblas-dev
         - gfortran
-        - oracle-java8-set-default
+        - oracle-java9-set-default
         - maven
 install:
   - pip install codecov

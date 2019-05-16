@@ -331,7 +331,7 @@ def delete_section(stack, z, host=None, port=None, owner=None,
     ----------
     stack : str
         stack to delete section from
-    z : float
+    z : int or float or str
         z value to delete
     render : renderapi.render.Render
         render connect object
@@ -595,7 +595,7 @@ def get_bounds_from_z(stack, z, host=None, port=None, owner=None,
     ----------
     stack : str
         stack to get bounds from
-    z : float
+    z : int or float or str
         z value to get bounds for
     render : renderapi.render.Render
         render connect object
@@ -651,8 +651,8 @@ def get_stack_bounds(stack, host=None, port=None, owner=None, project=None,
 
 @renderaccess
 def get_tilebounds_for_z(stack, z, host=None, port=None, owner=None,
-                        project=None, session=requests.session(),
-                        render=None, **kwargs):
+                         project=None, session=requests.session(),
+                         render=None, **kwargs):
     """returns the bounds for each tile associated with a particular z value
 
     :func:`renderapi.render.renderaccess` decorated function
@@ -661,8 +661,8 @@ def get_tilebounds_for_z(stack, z, host=None, port=None, owner=None,
     ----------
     stack : str
         stack to look within
-    sectionId : str
-        sectionId to find z value
+    z : int or float or str
+        z value for which to get tile bounds
     render : renderapi.render.Render
         render connect object
     session : requests.sessions.Session
@@ -683,6 +683,7 @@ def get_tilebounds_for_z(stack, z, host=None, port=None, owner=None,
         host, port, owner, project, stack) + '/z/{}/tileBounds'.format(z)
     return get_json(session, request_url)
 
+
 @renderaccess
 def get_sectionId_for_z(stack, z, host=None, port=None, owner=None,
                         project=None, session=requests.session(),
@@ -695,8 +696,8 @@ def get_sectionId_for_z(stack, z, host=None, port=None, owner=None,
     ----------
     stack : str
         stack to look within
-    sectionId : str
-        sectionId to find z value
+    z : int or float or str
+        section z value
     render : renderapi.render.Render
         render connect object
     session : requests.sessions.Session
@@ -704,17 +705,17 @@ def get_sectionId_for_z(stack, z, host=None, port=None, owner=None,
 
     Returns
     -------
-    float
-        z value of sectionId
+    str
+        value of sectionId
 
     Raises
     ------
     RenderError
 
     """
-  
 
-    bounds = get_tilebounds_for_z(stack, z, host, port, owner, project, session)
+    bounds = get_tilebounds_for_z(
+            stack, z, host, port, owner, project, session)
 
     try:
         return bounds[0]['sectionId']
