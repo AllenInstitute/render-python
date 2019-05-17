@@ -24,7 +24,7 @@ install:
   - pip install -r requirements.txt
   - pip install -r test_requirements.txt
 before_install:
-  - git clone --depth 1 https://github.com/saalfeldlab/render.git render -b master
+  - git clone --depth 1 https://github.com/djkapner/render.git render -b maven_url_change
   - mvn package -pl render-ws-java-client -am -DskipTests -f render/pom.xml
   - export RENDER_CLIENT_JAR=`readlink -m $TRAVIS_BUILD_DIR/render/render-ws-java-client/target/render-ws-java-client-*-standalone.jar`
   - export RENDER_WS_JAVA_CLIENT_EXAMPLE_DATA=`readlink -m $TRAVIS_BUILD_DIR/render/render-ws-java-client/src/main/resources`
