@@ -2,8 +2,6 @@ import os
 from jinja2 import Environment, FileSystemLoader
 import json
 
-# trivial change
-
 
 def render_json_template(env, template_file, **kwargs):
     template = env.get_template(template_file)
