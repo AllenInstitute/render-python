@@ -1011,3 +1011,29 @@ def test_adaptive_estimate():
     dsta = tf.tform(src)
     dstb = ntf.tform(src)
     assert(np.linalg.norm(dsta - dstb, axis=1).max() <= tol)
+
+
+def test_polynomial_shear():
+    # make sure it gives the same answer as affine
+    M = np.array([
+        [1.1, -0.2, 7.0],
+        [0.3, 0.8, -9.0],
+        [0.0, 0.0, 1.0]])
+
+    atf = renderapi.transform.AffineModel()
+    atf.M = M
+
+    params = np.zeros((2, 3))
+    params[:, 1:] = M[0:2, 0:2]
+    params[:, 0] = M[0:2, 2]
+
+    ptf = renderapi.transform.Polynomial2DTransform(params=params)
+
+    for shear in ['x', 'y']:
+        atf.force_shear = shear
+        ptf.force_shear = shear
+
+        assert atf.scale == ptf.scale
+        assert atf.shear == ptf.shear
+        assert atf.rotation == ptf.rotation
+        assert atf.translation == ptf.translation

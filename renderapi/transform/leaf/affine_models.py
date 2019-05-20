@@ -1,4 +1,5 @@
 from .transform import Transform, logger
+from .common import calc_first_order_properties
 import numpy as np
 from renderapi.errors import ConversionError, EstimationError
 
@@ -306,32 +307,9 @@ class AffineModel(Transform):
         return self.convert_points_vector_to_array(pt, Nd)
 
     def calc_properties(self):
-        if self.force_shear == 'x':
-            sy = np.sqrt(self.M[1, 0] ** 2 + self.M[1, 1] ** 2)
-            theta = np.arctan2(self.M[1, 0], self.M[1, 1])
-            rc = np.cos(theta)
-            rs = np.sin(theta)
-            sx = rc * self.M[0, 0] - rs * self.M[0, 1]
-            if rs != 0:
-                cx = (self.M[0, 0] - sx*rc) / (sx * rs)
-            else:
-                cx = (self.M[0, 1] - sx*rs) / (sx * rc)
-            cy = 0.0
-        else:
-            # shear in y direction
-            sx = np.sqrt(self.M[0, 0] ** 2 + self.M[0, 1] ** 2)
-            theta = np.arctan2(-self.M[0, 1], self.M[0, 0])
-            rc = np.cos(theta)
-            rs = np.sin(theta)
-            sy = rs * self.M[1, 0] + rc * self.M[1, 1]
-            if rs != 0:
-                cy = (self.M[1, 1] - sy * rc) / (-sy * rs)
-            else:
-                cy = (self.M[1, 0] - sy * rs) / (sy * rc)
-            cx = 0.0
-        # room for other cases, for example cx = cy
-
-        return sx, sy, cx, cy, theta
+        return calc_first_order_properties(
+                self.M[0:2, 0:2],
+                force_shear=self.force_shear)
 
     @property
     def scale(self):
