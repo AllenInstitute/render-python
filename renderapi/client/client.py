@@ -300,7 +300,7 @@ def import_tilespecs_parallel(stack, tilespecs, sharedTransforms=None,
         import_tilespecs, stack, sharedTransforms=sharedTransforms,
         subprocess_mode=subprocess_mode, host=host, port=port,
         owner=owner, project=project, client_script=client_script,
-        memGB=memGB, **kwargs)
+        render=render, memGB=memGB, **kwargs)
 
     # TODO this is a weird way to do splits.... is that okay?
     tilespec_groups = [g for g in
