@@ -474,7 +474,7 @@ def get_canvas_url_template(
         stack, filter=False, renderWithoutMask=False,
         normalizeForMatching=True, excludeTransformsAfterLast=None,
         excludeFirstTransformAndAllAfter=None, excludeAllTransforms=False,
-        channels=None,
+        scale=None, channels=None,
         host=None, port=None, owner=None, project=None, client_script=None,
         render=None, **kwargs):
     """function for making a render-parameters url template for point matching
@@ -508,6 +508,9 @@ def get_canvas_url_template(
     excludeAllTransforms: bool
         alternative to normalizeForMatching which simply removes all transforms from the list.
         default=False
+    scale: float or None
+        render scaling factor to apply.
+        default = None
     channels: str
         list of channels and weights to render in the format [channel name], [channel name]__[weight] or
         channel one name]__[weight]__ ... [channel n name]__[weight].
@@ -540,9 +543,10 @@ def get_canvas_url_template(
             excludeFirstTransformAndAllAfter)
     if excludeAllTransforms:
         url_suffix += '&excludeAllTransforms=true'
+    if scale:
+        url_suffix += '&scale={}'.format(scale)
     if channels:
-        url_suffix += '&channels={}'.format(
-            channels)
+        url_suffix += '&channels={}'.format(channels)
 
     canvas_url_template = "%s/{}/%s" % (tile_base_url,
                                         url_suffix)
@@ -560,6 +564,7 @@ def pointMatchClient(stack, collection, tile_pairs,
                      excludeTransformsAfterLast=None,
                      excludeAllTransforms=None,
                      excludeFirstTransformAndAllAfter=None,
+                     scale=None,
                      stackChannels=None,
                      stack2Channels=None,
                      subprocess_mode=None,
@@ -609,7 +614,10 @@ def pointMatchClient(stack, collection, tile_pairs,
         transforms that you had applied after it. default= None.
     excludeAllTransforms: bool
         alternative to normalizeForMatching which simply removes all transforms from the list.
-        default=False
+        default = False
+    scale: float or None
+        render scaling factor to use on images before matching.
+        default = None
     stackChannel: str or None
         If specified, option to select which channel is used for the stack.
         default = None
@@ -642,6 +650,7 @@ def pointMatchClient(stack, collection, tile_pairs,
         excludeTransformsAfterLast,
         excludeFirstTransformAndAllAfter,
         excludeAllTransforms,
+        scale=scale,
         channels=stackChannels,
         host=host,
         port=port,
@@ -658,6 +667,7 @@ def pointMatchClient(stack, collection, tile_pairs,
             excludeTransformsAfterLast,
             excludeFirstTransformAndAllAfter,
             excludeAllTransforms,
+            scale=scale,
             channels=stack2Channels,
             host=host,
             port=port,
