@@ -564,7 +564,6 @@ def pointMatchClient(stack, collection, tile_pairs,
                      excludeTransformsAfterLast=None,
                      excludeAllTransforms=None,
                      excludeFirstTransformAndAllAfter=None,
-                     scale=None,
                      stackChannels=None,
                      stack2Channels=None,
                      subprocess_mode=None,
@@ -615,9 +614,6 @@ def pointMatchClient(stack, collection, tile_pairs,
     excludeAllTransforms: bool
         alternative to normalizeForMatching which simply removes all transforms from the list.
         default = False
-    scale: float or None
-        render scaling factor to use on images before matching.
-        default = None
     stackChannel: str or None
         If specified, option to select which channel is used for the stack.
         default = None
@@ -650,7 +646,6 @@ def pointMatchClient(stack, collection, tile_pairs,
         excludeTransformsAfterLast,
         excludeFirstTransformAndAllAfter,
         excludeAllTransforms,
-        scale=scale,
         channels=stackChannels,
         host=host,
         port=port,
@@ -667,7 +662,6 @@ def pointMatchClient(stack, collection, tile_pairs,
             excludeTransformsAfterLast,
             excludeFirstTransformAndAllAfter,
             excludeAllTransforms,
-            scale=scale,
             channels=stack2Channels,
             host=host,
             port=port,
