@@ -47,29 +47,25 @@ def test_section_image_channels(render, multichannel_test_stack):
     print(section_image.shape)
 
 
-def test_multichannel_pointmatch_same_channel(render, multichannel_test_stack):
-    collection = 'test_multichannel_same_channel_collection'
-    sift_options = renderapi.client.SiftPointMatchOptions(renderScale=.25)
+def test_multichannel_pointmatches(render, multichannel_test_stack):
+    collection = 'test_multichannel_pointmatch_same_channel_collection'
+    sift_options = renderapi.client.SiftPointMatchOptions(renderScale=1.0)
     tile_pairs = [['100000001003000', '100000001004000']]
     renderapi.client.pointMatchClient(multichannel_test_stack,
                     collection,
                     tile_pairs,
-                    filter=False,
+                    filter=True,
                     excludeAllTransforms=True,
                     stackChannels='DAPI',
                     sift_options=sift_options,
                     render=render)
-    pms = renderapi.pointmatch.get_matches_involving_tile(
+    pms1 = renderapi.pointmatch.get_matches_involving_tile(
         collection, collection, '100000001003000', render=render)
-    assert(len(pms) > 0)
+    assert(len(pms1) > 0)
 
-
-def test_multichannel_pointmatch_different_channel(render, multichannel_test_stack):
-    collection = 'test_multichannel_pointmatch_different_channel'
-    sift_options = renderapi.client.SiftPointMatchOptions(renderScale=.25)
-    tile_pairs = [['100000001003000', '100000001004000']]
+    collection2 = 'test_multichannel_pointmatch_different_channel'
     renderapi.client.pointMatchClient(multichannel_test_stack,
-                    collection,
+                    collection2,
                     tile_pairs,
                     stack2=multichannel_test_stack,
                     filter=False,
@@ -78,10 +74,7 @@ def test_multichannel_pointmatch_different_channel(render, multichannel_test_sta
                     stack2Channels='TdTomato',
                     sift_options=sift_options,
                     render=render)
-    try:
-        pms = renderapi.pointmatch.get_matches_involving_tile(
-            collection, collection, '100000001003000', render=render)
-        assert(len(pms) == 0)
-    except renderapi.errors.RenderError:
-        # The point match collection should not exist.
-        return
+    pms2 = renderapi.pointmatch.get_matches_involving_tile(
+        collection2, collection2, '100000001003000', render=render)
+
+    assert(len(pms1[0]['matches']['p'][0]) > len(pms2[0]['matches']['p'][0]))
