@@ -540,8 +540,6 @@ def get_canvas_url_template(
             excludeFirstTransformAndAllAfter)
     if excludeAllTransforms:
         url_suffix += '&excludeAllTransforms=true'
-    if scale:
-        url_suffix += '&scale={}'.format(scale)
     if channels:
         url_suffix += '&channels={}'.format(channels)
 
