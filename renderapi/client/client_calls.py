@@ -474,7 +474,7 @@ def get_canvas_url_template(
         stack, filter=False, renderWithoutMask=False,
         normalizeForMatching=True, excludeTransformsAfterLast=None,
         excludeFirstTransformAndAllAfter=None, excludeAllTransforms=False,
-        scale=None, channels=None,
+        channels=None,
         host=None, port=None, owner=None, project=None, client_script=None,
         render=None, **kwargs):
     """function for making a render-parameters url template for point matching
@@ -508,9 +508,6 @@ def get_canvas_url_template(
     excludeAllTransforms: bool
         alternative to normalizeForMatching which simply removes all transforms from the list.
         default=False
-    scale: float or None
-        render scaling factor to apply.
-        default = None
     channels: str
         list of channels and weights to render in the format [channel name], [channel name]__[weight] or
         channel one name]__[weight]__ ... [channel n name]__[weight].
