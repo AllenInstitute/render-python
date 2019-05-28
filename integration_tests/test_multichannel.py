@@ -40,9 +40,7 @@ def multichannel_test_stack_channelflip(render):
     tilespecs = [renderapi.tilespec.TileSpec(json=d)
                  for d in test_2_channels_d]
     for tilespec in tilespecs:
-        print(tilespec.channels)
         tilespec.channels.reverse()
-        print(tilespec.channels)
     renderapi.stack.create_stack(stack, render=render)
     renderapi.client.import_tilespecs(stack, tilespecs, render=render)
     renderapi.stack.set_stack_state(stack, 'COMPLETE', render=render)
@@ -85,8 +83,8 @@ def test_section_image_different_channel_order(render, multichannel_test_stack, 
 
 
 def test_multichannel_pointmatches(render, multichannel_test_stack):
-    collection = 'test_multichannel_pointmatch_same_channel_collection'
-    sift_options = renderapi.client.SiftPointMatchOptions(matchMinNumInliers=20)
+    collection = 'test_multichannel_pointmatch_same_channel'
+    sift_options = renderapi.client.SiftPointMatchOptions(renderScale=0.5)
     tile_pairs = [['100000001003000', '100000001004000']]
     renderapi.client.pointMatchClient(multichannel_test_stack,
                     collection,
@@ -105,16 +103,12 @@ def test_multichannel_pointmatches(render, multichannel_test_stack):
                     collection2,
                     tile_pairs,
                     stack2=multichannel_test_stack,
-                    filter=False,
+                    filter=True,
                     excludeAllTransforms=True,
                     stackChannels='DAPI',
                     stack2Channels='TdTomato',
                     sift_options=sift_options,
-                    render=render)                    
-    pms2 = renderapi.pointmatch.get_matches_involving_tile(
-        collection2, collection2, '100000001003000', render=render)
-
-    renderapi.pointmatch.delete_collection(collection, render=render)
-    renderapi.pointmatch.delete_collection(collection2, render=render)
-
-    assert(len(pms1[0]['matches']['p'][0]) > len(pms2[0]['matches']['p'][0]))
+                    render=render)            
+    with pytest.raises(renderapi.errors.RenderError):      
+        pms2 = renderapi.pointmatch.get_matches_involving_tile(
+            collection2, collection2, '100000001003000', render=render)

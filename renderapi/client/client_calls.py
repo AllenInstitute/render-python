@@ -515,7 +515,7 @@ def get_canvas_url_template(
         list of channels and weights to render in the format [channel name], [channel name]__[weight] or
         channel one name]__[weight]__ ... [channel n name]__[weight].
         e.g., "DAPI" or "DAPI__0.9__TdTomato__0.1"
-        default=None
+        default = None
     """  # noqa: E501
     request_url = format_preamble(host, port, owner, project, stack)
     tile_base_url = request_url + "/tile"
@@ -614,10 +614,10 @@ def pointMatchClient(stack, collection, tile_pairs,
     excludeAllTransforms: bool
         alternative to normalizeForMatching which simply removes all transforms from the list.
         default = False
-    stackChannel: str or None
+    stackChannels: str or None
         If specified, option to select which channel is used for the stack.
         default = None
-    stack2Channel: str or None
+    stack2Channels: str or None
         If specified, option to select which channel is used for stack2, if specified.
         default = None
 
@@ -670,7 +670,6 @@ def pointMatchClient(stack, collection, tile_pairs,
             client_script=client_script)
     else:
         canvas_url_template2 = canvas_url_template
-
     for tile1, tile2 in tile_pairs:
         argvs += [canvas_url_template.format(tile1),
                   canvas_url_template2.format(tile2)]
