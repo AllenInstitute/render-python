@@ -36,6 +36,9 @@ TEST_TILESPECS_FILE = os.path.join(TEST_FILES_DIR, 'tilespecs.json')
 TEST_THINPLATESPLINE_FILE = os.path.join(
         TEST_FILES_DIR,
         'thin_plate_spline.json')
+TEST_THINPLATEROUGH_FILE = os.path.join(
+        TEST_FILES_DIR,
+        'thin_plate_from_rough.json')
 TEST_THINPLATESPLINEAFFINE_FILE = os.path.join(
         TEST_FILES_DIR,
         'thin_plate_spline_affine.json')
