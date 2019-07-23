@@ -1041,10 +1041,11 @@ def test_polynomial_shear():
         assert atf.translation == ptf.translation
 
 
+@pytest.mark.parametrize('ngrid', [5, 20])
 @pytest.mark.parametrize('preserve_srcPts', [True, False])
 @pytest.mark.parametrize('computeAffine', [True, False])
 @pytest.mark.parametrize('factor', [1e-3, 1e3, 1e5])
-def test_scale_thinplate(factor, computeAffine, preserve_srcPts):
+def test_scale_thinplate(factor, computeAffine, preserve_srcPts, ngrid):
     # use case is to scale a rough alignment thinplate spline
     with open(rendersettings.TEST_THINPLATEROUGH_FILE, 'r') as f:
         tform = renderapi.transform.load_transform_json(
@@ -1064,12 +1065,15 @@ def test_scale_thinplate(factor, computeAffine, preserve_srcPts):
     dst = tform.tform(src)
 
     scaled_tform = tform.scale_coordinates(
-            factor, preserve_srcPts=preserve_srcPts)
+            factor, ngrid=ngrid, preserve_srcPts=preserve_srcPts)
     dst_scaled = scaled_tform.tform(src * factor)
 
     delta = np.linalg.norm(dst_scaled - dst * factor, axis=1)
     scale = dst_scaled.ptp(axis=0).mean()
-    assert (delta.max() / scale) < 1e-4
+    tol = 1e-4
+    if ngrid == 5:
+        tol = 1e-3
+    assert (delta.max() / scale) < tol
 
     if preserve_srcPts:
         dist = cdist(
