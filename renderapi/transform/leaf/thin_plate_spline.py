@@ -435,10 +435,7 @@ class ThinPlateSplineTransform(Transform):
             (nx * ny) x 2 array of coordinated.
 
         """
-        x = np.linspace(xmin, xmax, nx)
-        y = np.linspace(ymin, ymax, ny)
-        xt, yt = np.meshgrid(x, y)
-        src = np.vstack((xt.flatten(), yt.flatten())).transpose()
+        src = np.mgrid[xmin:xmax:nx*1j, ymin:ymax:ny*1j].reshape(2, -1).T
         return src
 
     def scale_coordinates(
