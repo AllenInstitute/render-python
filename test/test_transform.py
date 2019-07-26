@@ -5,6 +5,8 @@ import scipy.linalg
 import rendersettings
 import importlib
 import pytest
+from scipy.spatial.distance import cdist
+
 
 EPSILON = 0.0000000001
 EPSILON2 = 0.000000001
@@ -1037,3 +1039,47 @@ def test_polynomial_shear():
         assert atf.shear == ptf.shear
         assert atf.rotation == ptf.rotation
         assert atf.translation == ptf.translation
+
+
+@pytest.mark.parametrize('ngrid', [5, 20])
+@pytest.mark.parametrize('preserve_srcPts', [True, False])
+@pytest.mark.parametrize('computeAffine', [True, False])
+@pytest.mark.parametrize('factor', [1e-3, 1e3, 1e5])
+def test_scale_thinplate(factor, computeAffine, preserve_srcPts, ngrid):
+    # use case is to scale a rough alignment thinplate spline
+    with open(rendersettings.TEST_THINPLATEROUGH_FILE, 'r') as f:
+        tform = renderapi.transform.load_transform_json(
+                json.load(f))
+
+    if not computeAffine:
+        tform.aMtx = None
+        tform.bVec = None
+
+    mn = tform.srcPts.min(axis=0)
+    mx = tform.srcPts.max(axis=0)
+
+    npts = 1000
+    src = np.random.rand(npts, 2)
+    src[:, 0] = src[:, 0] * (mx[0] - mn[0]) + mn[0]
+    src[:, 1] = src[:, 1] * (mx[1] - mn[1]) + mn[1]
+    dst = tform.tform(src)
+
+    scaled_tform = tform.scale_coordinates(
+            factor, ngrid=ngrid, preserve_srcPts=preserve_srcPts)
+    dst_scaled = scaled_tform.tform(src * factor)
+
+    delta = np.linalg.norm(dst_scaled - dst * factor, axis=1)
+    scale = dst_scaled.ptp(axis=0).mean()
+    tol = 1e-4
+    if ngrid == 5:
+        tol = 1e-3
+    assert (delta.max() / scale) < tol
+
+    if preserve_srcPts:
+        dist = cdist(
+                tform.srcPts.transpose() * factor,
+                scaled_tform.srcPts.transpose(),
+                metric='euclidean')
+        # check that the original srcPts have a close neighbor still
+        # in the scaled srcPts
+        assert np.all(np.any(dist < 1e-3, axis=1))

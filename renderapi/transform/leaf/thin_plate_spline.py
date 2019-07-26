@@ -394,10 +394,8 @@ class ThinPlateSplineTransform(Transform):
 
         mn = self.srcPts.min(axis=1)
         mx = self.srcPts.max(axis=1)
-        xt, yt = np.meshgrid(
-                np.linspace(mn[0], mx[0], starting_grid),
-                np.linspace(mn[1], mx[1], starting_grid))
-        new_src = np.vstack((xt.flatten(), yt.flatten())).transpose()
+        new_src = self.src_array(
+                mn[0], mn[1], mx[0], mx[1], starting_grid, starting_grid)
         old_src = self.srcPts.transpose()
         old_dst = self.tform(old_src)
 
@@ -411,3 +409,82 @@ class ThinPlateSplineTransform(Transform):
                 max_iter=max_iter,
                 nworst=nworst,
                 niter=0)
+
+    @staticmethod
+    def src_array(xmin, ymin, xmax, ymax, nx, ny):
+        """create N x 2 array of regularly spaced points
+
+        Parameters
+        ----------
+        xmin : float
+            minimum of x grid
+        ymin : float
+            minimum of y grid
+        xmax : float
+            maximum of x grid
+        ymax : float
+            maximum of y grid
+        nx : int
+            number of points in x axis
+        ny : int
+            number of points in y axis
+
+        Returns
+        -------
+        src : :class:`numpy.ndarray`
+            (nx * ny) x 2 array of coordinated.
+
+        """
+        src = np.mgrid[xmin:xmax:nx*1j, ymin:ymax:ny*1j].reshape(2, -1).T
+        return src
+
+    def scale_coordinates(
+            self,
+            factor,
+            ngrid=20,
+            preserve_srcPts=False):
+        """estimates a new ThinPlateSplineTransform from the current one
+           in a scaled transform space.
+
+        Parameters
+        ----------
+        factor : float
+            the factor by which to scale the space
+        ngrid : int
+            number of points per axis for the estimation grid
+        preserve_srcPts : bool
+            one might want to keep the original scaled srcPts
+            for example, if pts were made specially for a mask
+            or a crack or fold
+
+        Returns
+        -------
+        new_tform : :class:`renderapi.transform.ThinPlateSplineTransform`
+            the new transform in the scaled space
+
+        """
+
+        new_tform = ThinPlateSplineTransform()
+        computeAffine = True
+        if self.aMtx is None:
+            computeAffine = False
+
+        mn = self.srcPts.min(axis=1)
+        mx = self.srcPts.max(axis=1)
+        src = self.src_array(mn[0], mn[1], mx[0], mx[1], ngrid, ngrid)
+
+        if preserve_srcPts:
+            # do not repeat close points
+            dist = scipy.spatial.distance.cdist(
+                    src,
+                    self.srcPts.transpose(),
+                    metric='euclidean')
+            ind = np.invert(np.any(dist < 1e-3, axis=0))
+            src = np.vstack((src, self.srcPts.transpose()[ind]))
+
+        new_tform.estimate(
+                src * factor,
+                self.tform(src) * factor,
+                computeAffine=computeAffine)
+
+        return new_tform
