@@ -17,7 +17,7 @@ addons:
         - libopenblas-base
         - libopenblas-dev
         - gfortran
-        - oracle-java9-set-default
+        - openjdk-8-jdk
         - maven
 install:
   - pip install codecov
@@ -25,6 +25,8 @@ install:
   - pip install -r test_requirements.txt
 before_install:
   - git clone --depth 1 https://github.com/saalfeldlab/render.git render -b master
+  - export JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64/jre"
+  - mvn -version
   - mvn package -pl render-ws-java-client -am -DskipTests -f render/pom.xml
   - export RENDER_CLIENT_JAR=`readlink -m $TRAVIS_BUILD_DIR/render/render-ws-java-client/target/render-ws-java-client-*-standalone.jar`
   - export RENDER_WS_JAVA_CLIENT_EXAMPLE_DATA=`readlink -m $TRAVIS_BUILD_DIR/render/render-ws-java-client/src/main/resources`
