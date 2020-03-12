@@ -21,12 +21,14 @@ class Layout:
         angle of camera when this was taken
     pixelsize : float
         effective size of pixels (in units of choice)
+    distanceZ : float
+        distance (in units of choice) from prior layer
 
     """
     def __init__(self, sectionId=None, scopeId=None, cameraId=None,
                  imageRow=None, imageCol=None, stageX=None, stageY=None,
                  rotation=None, pixelsize=None,
-                 force_pixelsize=True, **kwargs):
+                 force_pixelsize=True, distanceZ=None, **kwargs):
         """Initialize Layout
 
         Parameters
@@ -51,6 +53,8 @@ class Layout:
             effective size of pixels (in units of choice)
         force_pixelsize : bool
             whether to default pixelsize to 0.1
+        distanceZ : float
+            distance (in units of choice) from prior layer
 
         """
         self.sectionId = sectionId
@@ -64,6 +68,7 @@ class Layout:
         if force_pixelsize:
             pixelsize = 0.100 if pixelsize is None else pixelsize
         self.pixelsize = pixelsize
+        self.distanceZ = distanceZ
 
     def to_dict(self):
         """return a dictionary representation of this object
@@ -83,6 +88,7 @@ class Layout:
         d['stageY'] = self.stageY
         d['rotation'] = self.rotation
         d['pixelsize'] = self.pixelsize
+        d['distanceZ'] = self.distanceZ
         d = {k: v for k, v in d.items() if v is not None}
         return d
 
@@ -104,3 +110,4 @@ class Layout:
             self.stageY = d.get('stageY')
             self.rotation = d.get('rotation')
             self.pixelsize = d.get('pixelsize')
+            self.distanceZ = d.get('distanceZ')
