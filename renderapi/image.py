@@ -112,6 +112,7 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
 @renderaccess
 def get_tile_image_data(stack, tileId, channel=None, normalizeForMatching=True,
                         excludeAllTransforms=False, scale=None,
+                        minIntensity=None, maxIntensity=None,
                         filter=None, host=None, port=None, owner=None,
                         project=None, img_format=None,
                         session=requests.session(), render=None, **kwargs):
@@ -138,6 +139,10 @@ def get_tile_image_data(stack, tileId, channel=None, normalizeForMatching=True,
         (or remove till there are max 3 transforms)
     scale : float
         force scale of image
+    minIntensity : int
+        Minimum pixel value to rescale image
+    maxIntensity : int
+        Maximum pixel value to rescale image
     filter : bool
         whether to apply server side filtering to image
     img_format : str
@@ -178,6 +183,10 @@ def get_tile_image_data(stack, tileId, channel=None, normalizeForMatching=True,
         qparams['excludeAllTransforms'] = jbool(excludeAllTransforms)
     if channel is not None:
         qparams.update({'channels': channel})
+    if minIntensity is not None:
+        qparams['minIntensity'] = minIntensity
+    if maxIntensity is not None:
+        qparams['maxIntensity'] = maxIntensity
     logger.debug(request_url)
 
     r = session.get(request_url, params=qparams)
