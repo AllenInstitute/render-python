@@ -202,6 +202,7 @@ def get_tile_image_data(stack, tileId, channel=None, normalizeForMatching=True,
 
 @renderaccess
 def get_section_image(stack, z, scale=1.0, channel=None,
+                      minIntensity=None, maxIntensity=None,
                       filter=False,
                       maxTileSpecsToRender=None, img_format=None,
                       host=None, port=None, owner=None, project=None,
@@ -223,6 +224,10 @@ def get_section_image(stack, z, scale=1.0, channel=None,
     channel: str
         channel name to render, (e.g. 'DAPI') or a weighted average of channels of the format
         e.g 'DAPI___.8___GFP___.2'
+    minIntensity : int
+        Minimum pixel value to rescale image
+    maxIntensity : int
+        Maximum pixel value to rescale image
     filter : bool
         whether or not to apply server side filtering
     maxTileSpecsToRender : int
@@ -261,6 +266,10 @@ def get_section_image(stack, z, scale=1.0, channel=None,
         qparams.update({'maxTileSpecsToRender': maxTileSpecsToRender})
     if channel is not None:
         qparams.update({'channels': channel})
+    if minIntensity is not None:
+        qparams['minIntensity'] = minIntensity
+    if maxIntensity is not None:
+        qparams['maxIntensity'] = maxIntensity
 
     r = session.get(request_url, params=qparams)
     return np.asarray(Image.open(io.BytesIO(r.content)))
