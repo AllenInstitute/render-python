@@ -265,9 +265,10 @@ def tilePairClient(stack, minz, maxz, outjson=None, delete_json=False,
                        add_args=argvs, **kwargs)
 
     # We create the jsonfile, so if it is empty it could be multiple
-    if os.stat(outjson).st_size == 0:
-        # outjson we created is empty, so remove it
-        os.remove(outjson)
+    if not os.path.isfile(outjson) or os.stat(outjson).st_size == 0:
+        if os.path.isfile(outjson):
+            # outjson we created is empty, so remove it
+            os.remove(outjson)
 
         outbn_root, outbn_ext = os.path.splitext(os.path.basename(outjson))
         outbn_pattern = "{root}_p[0-9]+{ext}".format(

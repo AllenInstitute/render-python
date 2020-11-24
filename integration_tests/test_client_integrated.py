@@ -195,12 +195,20 @@ def test_tile_pair_client(render, teststack, **kwargs):
     assert isinstance(tilepairjson, dict)
     assert len(tilepairjson['neighborPairs']) > 3
 
-    multitpjson, multitpfiles = renderapi.client.tilePairClient(
-        teststack, np.min(zvalues), np.max(zvalues), outjson=outjson,
+    multitpjson_tmp, multitpfiles_tmp = renderapi.client.tilePairClient(
+        teststack, np.min(zvalues), np.max(zvalues), outjson=None,
         render=render, maxPairsPerFile=2, return_jsonfiles=True, **kwargs)
 
-    assert len(multitpjson["neighborPairs"]) == len(tilepairjson["neighborPairs"])
-    assert len(multitpfiles) == len(tilepairjson["neighborPairs"]) // 2
+    with tempfile.NamedTemporaryFile(
+            suffix=".json", mode='r', delete=False) as f:
+        outjson_specified = f.name
+
+    multitpjson, multitpfiles = renderapi.client.tilePairClient(
+        teststack, np.min(zvalues), np.max(zvalues), outjson=outjson_specified,
+        render=render, maxPairsPerFile=2, return_jsonfiles=True, **kwargs)
+
+    assert len(multitpjson["neighborPairs"]) == len(tilepairjson["neighborPairs"]) == len(multitpjson_tmp["neighborPairs"])
+    assert len(multitpfiles) == len(multitpfiles_tmp) == len(tilepairjson["neighborPairs"]) // 2
 
 
 @pytest.mark.parametrize("bounds,raises", [
