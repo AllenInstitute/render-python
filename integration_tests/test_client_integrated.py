@@ -185,7 +185,6 @@ def teststack2(render, render_example_tilespec_and_transforms):
     renderapi.stack.delete_stack(stack, render=render)
 
 
-
 def test_tile_pair_client(render, teststack, **kwargs):
     zvalues = np.array(renderapi.stack.get_z_values_for_stack(
         teststack, render=render))
@@ -195,6 +194,21 @@ def test_tile_pair_client(render, teststack, **kwargs):
         render=render, **kwargs)
     assert isinstance(tilepairjson, dict)
     assert len(tilepairjson['neighborPairs']) > 3
+
+    multitpjson_tmp, multitpfiles_tmp = renderapi.client.tilePairClient(
+        teststack, np.min(zvalues), np.max(zvalues), outjson=None,
+        render=render, maxPairsPerFile=2, return_jsonfiles=True, **kwargs)
+
+    with tempfile.NamedTemporaryFile(
+            suffix=".json", mode='r', delete=False) as f:
+        outjson_specified = f.name
+
+    multitpjson, multitpfiles = renderapi.client.tilePairClient(
+        teststack, np.min(zvalues), np.max(zvalues), outjson=outjson_specified,
+        render=render, maxPairsPerFile=2, return_jsonfiles=True, **kwargs)
+
+    assert len(multitpjson["neighborPairs"]) == len(tilepairjson["neighborPairs"]) == len(multitpjson_tmp["neighborPairs"])
+    assert len(multitpfiles) == len(multitpfiles_tmp) == len(tilepairjson["neighborPairs"]) // 2
 
 
 @pytest.mark.parametrize("bounds,raises", [
