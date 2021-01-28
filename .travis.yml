@@ -33,6 +33,7 @@ before_install:
   - mkdir -p /tmp/example_1 && cp -R $RENDER_WS_JAVA_CLIENT_EXAMPLE_DATA/example_1 /tmp/.
   - cp -R $RENDER_APP_EXAMPLE_DATA/* /tmp/.
   - export RENDER_EXAMPLE_DATA=/tmp
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   - docker-compose up -d
 env:
   global:
