@@ -53,6 +53,32 @@ class ResolvedTiles:
     """  # noqa: E501
 
 
+def combine_resolvedtiles(rts_l):
+    """combine multiple ResolvedTiles objects into a single ResolvedTiles
+
+    Like render, this has an implicit expectation that transformIds and tileIds
+      are unique among all input objects
+
+    Parameters
+    ----------
+    rts_l : list[renderapi.resolvedtiles.ResolvedTiles]
+        list of ResolvedTiles objects to combine
+
+    Returns
+    -------
+    rts : renderapi.resolvedtiles.ResolvedTiles
+        combined ResolvedTiles object
+    """
+    tforms = list({tform.transformId: tform for l in (
+        rts.transforms for rts in rts_l)
+                   for tform in l}.values())
+    tspecs = list({ts.tileId: ts for l in (
+        rts.tilespecs for rts in rts_l)
+                   for ts in l}.values())
+
+    return ResolvedTiles(transformList=tforms, tilespecs=tspecs)
+
+
 @renderaccess
 def put_tilespecs(stack, resolved_tiles=None, deriveData=True,
                   tilespecs=None, shared_transforms=None,
