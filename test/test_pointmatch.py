@@ -1,6 +1,9 @@
 import copy
-import renderapi
+
 import pytest
+import six
+
+import renderapi
 
 
 @pytest.fixture(scope="module")
@@ -87,7 +90,7 @@ def copymatch_and_compare(input_match, tuple_subscript_to_change,
 
 def test_copy_match(match):
     # test for top level keys
-    for k in (match.keys() - {"matches"}):
+    for k in (six.viewkeys(match) - {"matches"}):
         assert not copymatch_and_compare(match, (k,))
     # test for nested values in matches
     for subtup in (("matches", "p", 0, 0),
