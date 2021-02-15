@@ -11,6 +11,51 @@ logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
 
 
+def copy_match_explicit(match):
+    """create independent match dictionary equivalent to the input match
+      significantly faster than e.g. copy.deepcopy or json serialization
+
+    Parameters
+    ----------
+    match : dict
+      match dictionary
+
+    Returns
+    -------
+    new_match : dict
+      match dictionary equivalent to input match
+
+    """
+    # explicitly copy match dictionary since it contains lists
+    new_matchd = {
+        "p": [i[:] for i in match["matches"]["p"]],
+        "q": [i[:] for i in match["matches"]["q"]],
+        "w": match["matches"]["w"][:]
+    }
+
+    new_match = {k: (match[k] if k != "matches" else new_matchd)
+                 for k in match.keys()}
+    return new_match
+
+
+def copy_matches_explicit(matches):
+    """create independent match dictionaries equivalent to the input matches
+      significantly faster than e.g. copy.deepcopy or json serialization
+
+    Parameters
+    ----------
+    matches :  list[dict]
+      list of match dictionaries to copy
+
+    Returns
+    -------
+    new_matches : list[dict]
+      list of match dictionaries equivalent to input matches
+
+    """
+    return [copy_match_explicit(match) for match in matches]
+
+
 @renderaccess
 def get_matchcollection_owners(host=None, port=None,
                                session=requests.session(),
