@@ -102,3 +102,13 @@ def test_copy_match(match):
 def test_copy_matches(matches):
     assert all([i == j for i, j in zip(
         matches, renderapi.pointmatch.copy_matches_explicit(matches))])
+
+
+@pytest.mark.parametrize("do_copy", [True, False])
+def test_swap_matchpair(matches, do_copy):
+    for match, swapped_match in zip(
+            matches, (renderapi.pointmatch.swap_matchpair(
+                match, copy=do_copy) for match in matches)):
+        assert match != swapped_match
+        assert match == renderapi.pointmatch.swap_matchpair(
+            swapped_match, do_copy)
