@@ -56,6 +56,38 @@ def copy_matches_explicit(matches):
     return [copy_match_explicit(match) for match in matches]
 
 
+def swap_matchpair(match, copy=True):
+    """
+
+    Parameters
+    ----------
+    match : dict
+        match dictionary to swap p->q,q->p
+    copy : bool
+        whether to return a copy which, when modified, does not change original
+
+    Returns
+    -------
+    new_match : dict
+        match dictionary with "p" and "q" swapped
+    """
+    updated_d = {
+        "pId": match["qId"],
+        "qId": match["pId"],
+        "qGroupId": match["pGroupId"],
+        "pGroupId": match["qGroupId"],
+        "matches": {
+            "p": match["matches"]["q"],
+            "q": match["matches"]["p"],
+            "w": match["matches"]["w"]  # include weight because shallow swap
+            }
+    }
+
+    new_match = {k: updated_d.get(k, v) for k, v in match.items()}
+
+    return (copy_match_explicit(new_match) if copy else new_match)
+
+
 @renderaccess
 def get_matchcollection_owners(host=None, port=None,
                                session=requests.session(),
