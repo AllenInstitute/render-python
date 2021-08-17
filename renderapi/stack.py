@@ -50,7 +50,7 @@ class StackVersion:
         self.stackResolutionZ = stackResolutionZ
         self.mipmapPathBuilder = mipmapPathBuilder
         self.materializedBoxRootPath = materializedBoxRootPath
-        self.createTimestamp = (strftime('%Y-%M-%dT%H:%M:%S.00Z') if
+        self.createTimestamp = (strftime('%Y-%m-%dT%H:%M:%S.00Z') if
                                 createTimestamp is None else createTimestamp)
         self.versionNotes = versionNotes
 
