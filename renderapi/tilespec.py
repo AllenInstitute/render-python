@@ -67,8 +67,8 @@ class TileSpec:
 
     def __init__(self, tileId=None, z=None, width=None, height=None,
                  imageUrl=None, maskUrl=None,
-                 minint=0, maxint=65535, layout=None, tforms=[],
-                 inputfilters=[], json=None, channels=None,
+                 minint=0, maxint=65535, layout=None, tforms=None,
+                 labels=None, groupId=None, inputfilters=None, json=None, channels=None,
                  mipMapLevels=None, imagePyramid=None, **kwargs):
         if json is not None:
             self.from_dict(json)
@@ -80,8 +80,10 @@ class TileSpec:
             self.layout = layout
             self.minint = minint
             self.maxint = maxint
-            self.tforms = tforms
-            self.inputfilters = inputfilters
+            self.tforms = tforms if tforms else []
+            self.labels = labels if labels else []
+            self.groupId = groupId
+            self.inputfilters = inputfilters if inputfilters else []
             self.layout = Layout(**kwargs) if layout is None else layout
 
             if imagePyramid is not None:
@@ -188,6 +190,12 @@ class TileSpec:
             else:
                 thedict['transforms']['specList'].append(t.to_dict())
 
+        if len(self.labels) > 0:
+            thedict['labels'] = self.labels
+
+        if self.groupId is not None:
+            thedict['groupId'] = self.groupId
+
         # TODO filters not implemented
         '''
         if len(self.inputfilters):
@@ -233,6 +241,9 @@ class TileSpec:
             self.channels = None
         else:
             self.channels = [Channel(json=ch) for ch in chd]
+
+        self.labels = d.get('labels', [])
+        self.groupId = d.get('groupId', None)
 
         # TODO filters not implemented -- should skip
         '''

@@ -1,6 +1,7 @@
 import logging
 import json
 import os
+import re
 import subprocess
 import tempfile
 
@@ -135,6 +136,11 @@ def tilePairClient(stack, minz, maxz, outjson=None, delete_json=False,
                    excludeSameSectionNeighbors=None,
                    excludePairsInMatchCollection=None,
                    minx=None, maxx=None, miny=None, maxy=None,
+                   useRowColPositions=None, existingMatchOwner=None,
+                   minExistingMatchCount=None, onlyIncludeTilesFromStack=None,
+                   onlyIncludeTilesNearTileIdsJson=None, maxPairsPerFile=None,
+                   return_jsondata=True,
+                   return_jsonfiles=False,
                    subprocess_mode=None,
                    host=None, port=None, owner=None, project=None,
                    client_script=None, memGB=None,
@@ -191,11 +197,29 @@ def tilePairClient(stack, minz, maxz, outjson=None, delete_json=False,
         minimum y bound from which tile 'p' is selected
     maxy : float
         maximum y bound from wich tile 'p' is selected
+    useRowColPositions : bool
+        whether to use raster positions for neighbor analysis rather
+        than radial cutoff
+    existingMatchOwner : str
+        owner for the excludePairsInMatchCollection collection
+    minExistingMatchCount : int
+        minimum match threshold to exclude pairs
+        present in excludePairsInMatchCollection collection
+    onlyIncludeTilesFromStack : str
+        only include tiles which exist in this stack
+    onlyIncludeTilesNearTileIdsJson : str
+        path to json listing tileIds which should be paired
+    maxPairsPerFile : int
+        maximum neighborPairs per file.  Generating more pairs than
+        this number (default 100000) will generate additional json
+        files with a p[0-9]+ suffix on the root.
 
     Returns
     -------
-    :obj:`list` of :obj:`dict`
+    :obj:`list` of :obj:`dict`, optional
         list of tilepairs
+    :obj:`list` of string, optional
+        list of json files containing tilepairs
     """
     if outjson is None:
         with tempfile.NamedTemporaryFile(
@@ -219,6 +243,18 @@ def tilePairClient(stack, minz, maxz, outjson=None, delete_json=False,
                        '--excludeSameSectionNeighbors') +
              get_param(excludePairsInMatchCollection,
                        '--excludePairsInMatchCollection') +
+             get_param(useRowColPositions,
+                       '--useRowColPositions') +
+             get_param(existingMatchOwner,
+                       '--existingMatchOwner') +
+             get_param(minExistingMatchCount,
+                       '--minExistingMatchCount') +
+             get_param(onlyIncludeTilesFromStack,
+                       "--onlyIncludeTilesFromStack") +
+             get_param(onlyIncludeTilesNearTileIdsJson,
+                       '--onlyIncludeTilesNearTileIdsJson') +
+             get_param(maxPairsPerFile,
+                       '--maxPairsPerFile') +
              ['--toJson', outjson] +
              get_param(minx, '--minX') + get_param(maxx, '--maxX') +
              get_param(miny, '--minY') + get_param(maxy, '--maxY'))
@@ -228,12 +264,45 @@ def tilePairClient(stack, minz, maxz, outjson=None, delete_json=False,
                        subprocess_mode=subprocess_mode,
                        add_args=argvs, **kwargs)
 
-    with open(outjson, 'r') as f:
-        jsondata = json.load(f)
+    # We create the jsonfile, so if it is empty it could be multiple
+    if not os.path.isfile(outjson) or os.stat(outjson).st_size == 0:
+        if os.path.isfile(outjson):
+            # outjson we created is empty, so remove it
+            os.remove(outjson)
+
+        outbn_root, outbn_ext = os.path.splitext(os.path.basename(outjson))
+        outbn_pattern = "{root}_p[0-9]+{ext}".format(
+            root=outbn_root, ext=outbn_ext)
+        jsonfiles = [
+            os.path.join(os.path.dirname(outjson), bn)
+            for bn in os.listdir(os.path.dirname(outjson))
+            if re.match(outbn_pattern, bn)]
+    else:
+        jsonfiles = [outjson]
+
+    if return_jsondata:
+        jsondata_list = []
+        for jsonfile in jsonfiles:
+            with open(jsonfile, 'r') as f:
+                jsondata_list.append(json.load(f))
+        if len({d["renderParametersUrlTemplate"] for d in jsondata_list}) != 1:  # pragma: no cover
+            raise ValueError(
+                "Found tilepair files with disparate "
+                "renderParametersUrlTemplate values. "
+                "Maybe there are additional files "
+                "matching the outjson pattern?")
+        pairdata = [i for l in (d["neighborPairs"] for d in jsondata_list)
+                    for i in l]
+        jsondata = dict(jsondata_list[0], **{"neighborPairs": pairdata})
 
     if delete_json:
-        os.remove(outjson)
-    return jsondata
+        for jsonfile in jsonfiles:
+            os.remove(jsonfile)
+
+    return ((jsondata, jsonfiles) if return_jsonfiles and return_jsondata
+            else jsondata if return_jsondata
+            else jsonfiles if return_jsonfiles
+            else None)
 
 
 @renderclientaccess
@@ -346,10 +415,11 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
                         maxIntensity=None, minIntensity=None, bounds=None,
                         format=None, channel=None, customOutputFolder=None,
                         customSubFolder=None, padFileNamesWithZeros=None,
-                        doFilter=None, fillWithNoise=None, imageType=None,
-                        subprocess_mode=None, host=None, port=None, owner=None,
-                        project=None, client_script=None, memGB=None,
-                        render=None, **kwargs):
+                        resolutionUnit=None, doFilter=None, fillWithNoise=None,
+                        imageType=None, subprocess_mode=None, host=None,
+                        port=None, owner=None, project=None,
+                        client_script=None, memGB=None, render=None,
+                        **kwargs):
     """run RenderSectionClient.java
 
     Parameters
@@ -379,6 +449,9 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
         folder to save all images in under outputFolder (overrides default of none)
     padFileNamesWithZeros: bool
         whether to pad file names with zeros to make sortable
+    resolutionUnit: str
+        if format is tiff and unit is specified (e.g. as 'nm'), include resolution data 
+        in rendered tiff headers.
     imageType: int
         8,16,24 to specify what kind of image type to save
     doFilter : str
@@ -418,9 +491,11 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
              get_param(customOutputFolder, '--customOutputFolder') +
              get_param(imageType, '--imageType') +
              get_param(channel, '--channels') +
-             get_param(customSubFolder, '--customSubFolder') +
+             get_param(customSubFolder, '--customSubFolder') +             
              get_param(padFileNamesWithZeros, '--padFileNamesWithZeros') +
+             get_param(resolutionUnit, '--resolutionUnit') +
              bound_param + zs)
+    
     call_run_ws_client('org.janelia.render.client.RenderSectionClient',
                        memGB=memGB, client_script=client_script,
                        subprocess_mode=subprocess_mode, add_args=argvs,

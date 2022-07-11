@@ -1,11 +1,11 @@
 .. image:: https://readthedocs.org/projects/render-python/badge/
    :target: http://render-python.readthedocs.io/en/latest/
    :alt: Documentation Status 
-.. image:: https://travis-ci.org/fcollman/render-python.svg?branch=master
-   :target: https://travis-ci.org/fcollman/render-python
+.. image:: https://travis-ci.com/AllenInstitute/render-python.svg?branch=master
+   :target: https://travis-ci.com/AllenInstitute/render-python
    :alt: Build Status
-.. image:: https://codecov.io/gh/fcollman/render-python/branch/master/graph/badge.svg
-  :target: https://codecov.io/gh/fcollman/render-python
+.. image:: https://codecov.io/gh/AllenInstitute/render-python/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/AllenInstitute/render-python
   
 render-python
 #############

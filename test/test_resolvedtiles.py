@@ -24,6 +24,15 @@ def resolvedtiles_object(referenced_tilespecs_and_transforms):
     return resolved_tiles
 
 
+@pytest.fixture(scope="module")
+def resolvedtiles_objects(resolvedtiles_object):
+    # one resolvedtiles object per tile in the resolvedtiles_object
+    rts_l = [renderapi.resolvedtiles.ResolvedTiles(
+        tilespecs=[ts], transformList=resolvedtiles_object.transforms)
+             for ts in resolvedtiles_object.tilespecs]
+    return rts_l
+
+
 def test_resolvedtiles_from_dict(resolvedtiles_object,
                                  referenced_tilespecs_and_transforms):
     tilespecs, transforms = referenced_tilespecs_and_transforms
@@ -31,3 +40,9 @@ def test_resolvedtiles_from_dict(resolvedtiles_object,
     resolved_tiles = renderapi.resolvedtiles.ResolvedTiles(json=d)
     assert(len(tilespecs) == len(resolved_tiles.tilespecs))
     assert(len(transforms) == len(resolved_tiles.transforms))
+
+
+def test_combine_resolvedtiles(resolvedtiles_object, resolvedtiles_objects):
+    assert(resolvedtiles_object.to_dict() ==
+           renderapi.resolvedtiles.combine_resolvedtiles(
+               resolvedtiles_objects).to_dict())

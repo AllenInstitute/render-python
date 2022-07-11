@@ -11,6 +11,83 @@ logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
 
 
+def copy_match_explicit(match):
+    """create independent match dictionary equivalent to the input match
+      significantly faster than e.g. copy.deepcopy or json serialization
+
+    Parameters
+    ----------
+    match : dict
+      match dictionary
+
+    Returns
+    -------
+    new_match : dict
+      match dictionary equivalent to input match
+
+    """
+    # explicitly copy match dictionary since it contains lists
+    new_matchd = {
+        "p": [i[:] for i in match["matches"]["p"]],
+        "q": [i[:] for i in match["matches"]["q"]],
+        "w": match["matches"]["w"][:]
+    }
+
+    new_match = {k: (match[k] if k != "matches" else new_matchd)
+                 for k in match.keys()}
+    return new_match
+
+
+def copy_matches_explicit(matches):
+    """create independent match dictionaries equivalent to the input matches
+      significantly faster than e.g. copy.deepcopy or json serialization
+
+    Parameters
+    ----------
+    matches :  list[dict]
+      list of match dictionaries to copy
+
+    Returns
+    -------
+    new_matches : list[dict]
+      list of match dictionaries equivalent to input matches
+
+    """
+    return [copy_match_explicit(match) for match in matches]
+
+
+def swap_matchpair(match, copy=True):
+    """
+
+    Parameters
+    ----------
+    match : dict
+        match dictionary to swap p->q,q->p
+    copy : bool
+        whether to return a copy which, when modified, does not change original
+
+    Returns
+    -------
+    new_match : dict
+        match dictionary with "p" and "q" swapped
+    """
+    updated_d = {
+        "pId": match["qId"],
+        "qId": match["pId"],
+        "qGroupId": match["pGroupId"],
+        "pGroupId": match["qGroupId"],
+        "matches": {
+            "p": match["matches"]["q"],
+            "q": match["matches"]["p"],
+            "w": match["matches"]["w"]  # include weight because shallow swap
+            }
+    }
+
+    new_match = {k: updated_d.get(k, v) for k, v in match.items()}
+
+    return (copy_match_explicit(new_match) if copy else new_match)
+
+
 @renderaccess
 def get_matchcollection_owners(host=None, port=None,
                                session=requests.session(),
