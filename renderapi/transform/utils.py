@@ -1,4 +1,4 @@
-from collections import Iterable
+from collections.abc import Iterable
 from renderapi.errors import RenderError
 from .leaf import AffineModel, Polynomial2DTransform
 from .transform import TransformList, ReferenceTransform
