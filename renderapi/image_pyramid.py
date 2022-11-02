@@ -1,4 +1,4 @@
-from collections import MutableMapping
+from collections.abc import MutableMapping
 from .errors import RenderError
 import logging
 from .utils import NullHandler
