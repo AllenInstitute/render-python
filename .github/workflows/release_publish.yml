@@ -1,0 +1,21 @@
+name: release_publish
+on:
+  # workflow_dispatch:
+  release:
+    types: [published]
+jobs:
+  pypi_publish:
+    name: Deploy to pypi
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v2
+
+      - name: Build
+        run: python setup.py sdist bdist_wheel
+
+      - name: Publish to Pypi
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
