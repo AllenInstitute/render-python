@@ -416,7 +416,7 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
                         format=None, channel=None, customOutputFolder=None,
                         customSubFolder=None, padFileNamesWithZeros=None,
                         resolutionUnit=None, doFilter=None, fillWithNoise=None,
-                        imageType=None, subprocess_mode=None, host=None,
+                        convertToGray=None, subprocess_mode=None, host=None,
                         port=None, owner=None, project=None,
                         client_script=None, memGB=None, render=None,
                         **kwargs):
@@ -452,8 +452,8 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
     resolutionUnit: str
         if format is tiff and unit is specified (e.g. as 'nm'), include resolution data 
         in rendered tiff headers.
-    imageType: int
-        8,16,24 to specify what kind of image type to save
+    convertToGray: str
+        string representing java boolean for whether to save output as 8bit uint
     doFilter : str
         string representing java boolean for whether to render image
         with default filter (varies with render version)
@@ -489,7 +489,7 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
              get_param(maxIntensity, '--maxIntensity') +
              get_param(fillWithNoise, '--fillWithNoise') +
              get_param(customOutputFolder, '--customOutputFolder') +
-             get_param(imageType, '--imageType') +
+             get_param(convertToGray, '--convertToGray') +
              get_param(channel, '--channels') +
              get_param(customSubFolder, '--customSubFolder') +             
              get_param(padFileNamesWithZeros, '--padFileNamesWithZeros') +
