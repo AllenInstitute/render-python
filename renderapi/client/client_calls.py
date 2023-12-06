@@ -489,7 +489,7 @@ def renderSectionClient(stack, rootDirectory, zs, scale=None,
              get_param(maxIntensity, '--maxIntensity') +
              get_param(fillWithNoise, '--fillWithNoise') +
              get_param(customOutputFolder, '--customOutputFolder') +
-             get_param(convertToGray, '--convertToGray') +
+             (['--convertToGray'] if convertToGray else []) +
              get_param(channel, '--channels') +
              get_param(customSubFolder, '--customSubFolder') +             
              get_param(padFileNamesWithZeros, '--padFileNamesWithZeros') +
