@@ -243,8 +243,7 @@ def tilePairClient(stack, minz, maxz, outjson=None, delete_json=False,
                        '--excludeSameSectionNeighbors') +
              get_param(excludePairsInMatchCollection,
                        '--excludePairsInMatchCollection') +
-             get_param(useRowColPositions,
-                       '--useRowColPositions') +
+             (['--useRowColPositions'] if useRowColPositions else []) +
              get_param(existingMatchOwner,
                        '--existingMatchOwner') +
              get_param(minExistingMatchCount,
