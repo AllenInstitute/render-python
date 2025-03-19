@@ -65,8 +65,8 @@ def test_fail_bad_tform():
 def test_similarity_rot_90():
     am = renderapi.transform.SimilarityModel()
     # setup a 90 degree clockwise rotation
-    points_in = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], np.float)
-    points_out = np.array([[0, 0], [1, 0], [0, -1], [1, -1]], np.float)
+    points_in = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], np.float64)
+    points_out = np.array([[0, 0], [1, 0], [0, -1], [1, -1]], np.float64)
     am.estimate(points_in, points_out)
 
     assert(np.abs(am.scale[0] - 1.0) < .00001)
@@ -98,8 +98,8 @@ def test_similarity_rot_90():
 def test_affine_fail():
     am = renderapi.transform.AffineModel()
     # setup a 90 degree clockwise rotation
-    points_in = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], np.float)
-    points_out = np.array([[0, 0], [1, 0], [0, -1], [1, -1]], np.float)
+    points_in = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], np.float64)
+    points_out = np.array([[0, 0], [1, 0], [0, -1], [1, -1]], np.float64)
     # catch error
     with pytest.raises(renderapi.errors.EstimationError):
         am.estimate(points_in, points_out[0:-2, :])
@@ -525,7 +525,7 @@ def test_non_linear_transform():
         "9.885988268659214E18 1.1051253229808925E19 1.6002173610912907E19 "
         "0.0 2048 2048 "), transformId="testing")
 
-    ticks = np.arange(0, 2048, 64, np.float)
+    ticks = np.arange(0, 2048, 64, np.float64)
     xx, yy = np.meshgrid(ticks, ticks)
     x = np.ravel(xx).T
     y = np.ravel(yy).T
@@ -626,7 +626,7 @@ def referenced_tilespecs_and_transforms():
 def test_estimate_dstpoints_reference(referenced_tilespecs_and_transforms):
     tilespecs, transforms = referenced_tilespecs_and_transforms
 
-    ticks = np.arange(0, 2048, 64, np.float)
+    ticks = np.arange(0, 2048, 64, np.float64)
     xx, yy = np.meshgrid(ticks, ticks)
     x = np.ravel(xx).T
     y = np.ravel(yy).T
@@ -643,7 +643,7 @@ def test_estimate_dstpoints_reference(referenced_tilespecs_and_transforms):
 
 
 def test_fail_convert_points():
-    points_in = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], np.float)
+    points_in = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], np.float64)
     with pytest.raises(renderapi.errors.ConversionError):
         renderapi.transform.AffineModel.convert_to_point_vector(points_in.T)
 
@@ -928,8 +928,8 @@ def thinplate_estimate_nojson(computeAffine=True):
 
     def poly2d(src):
         dst = np.zeros_like(src)
-        dx = (src[:, 0] - src[:, 0].mean()) / (src[:, 0].ptp())
-        dy = (src[:, 1] - src[:, 1].mean()) / (src[:, 1].ptp())
+        dx = (src[:, 0] - src[:, 0].mean()) / (np.ptp(src[:, 0]))
+        dy = (src[:, 1] - src[:, 1].mean()) / (np.ptp(src[:, 1]))
         dst[:, 0] = src[:, 0] + 0.5 * dx * dy + 7.0 * dx * dy * dy
         dst[:, 1] = src[:, 1] + 0.7 * dy * dy - 4.0 * dx * dx * dy
         a = np.array([[1.1, -0.04], [-0.02, 0.95]])
@@ -1069,7 +1069,7 @@ def test_scale_thinplate(factor, computeAffine, preserve_srcPts, ngrid):
     dst_scaled = scaled_tform.tform(src * factor)
 
     delta = np.linalg.norm(dst_scaled - dst * factor, axis=1)
-    scale = dst_scaled.ptp(axis=0).mean()
+    scale = np.ptp(dst_scaled, axis=0).mean()
     tol = 1e-4
     if ngrid == 5:
         tol = 1e-3
