@@ -32,7 +32,8 @@ def render():
 
 @pytest.fixture
 def simpletilespec():
-    mml = renderapi.image_pyramid.MipMapLevel(0, '/not/a/path.jpg')
+    mm = renderapi.image_pyramid.MipMap(imageUrl='file://not/a/path.jpg')
+    ip = renderapi.image_pyramid.ImagePyramid({0: mm})
     tform = renderapi.transform.AffineModel(labels=['simple'])
     layout = renderapi.tilespec.Layout(sectionId="section0",
                                        scopeId="testscope",
@@ -45,7 +46,7 @@ def simpletilespec():
     ts = renderapi.tilespec.TileSpec(tileId="1000",
                                      width=2048,
                                      height=2048,
-                                     mipMapLevels=[mml],
+                                     imagePyramid=ip,
                                      z=0,
                                      tforms=[tform],
                                      layout=layout)
