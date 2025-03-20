@@ -74,18 +74,20 @@ def test_pyramid_deserialize():
 
 
 def test_mipmaplevel_deprecated():
-    mml = image_pyramid.MipMapLevel(0,
-                                    imageUrl=image_filename,
-                                    maskUrl=mask_filename)
+    with pytest.deprecated_call():
+        mml = image_pyramid.MipMapLevel(
+            0,
+            imageUrl=image_filename,
+            maskUrl=mask_filename)
     assert(mml['imageUrl'] == image_filename)
     assert(mml['maskUrl'] == mask_filename)
     with pytest.raises(KeyError):
         mml['not_a_key']
 
     assert(mml == mml)
-
-    mml2 = image_pyramid.MipMapLevel(0,
-                                     imageUrl=image_filename)
+    with pytest.deprecated_call():
+        mml2 = image_pyramid.MipMapLevel(0,
+                                         imageUrl=image_filename)
     assert(mml != mml2)
     assert(len([k for k, v in mml]) == 2)
 
