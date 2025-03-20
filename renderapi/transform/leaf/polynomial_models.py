@@ -10,8 +10,8 @@ except ImportError as e:
     logger.info(e)
     logger.info('scipy-based linalg may or may not lead '
                 'to better parameter fitting')
-    from numpy.linalg import svd
-    from numpy.linalg.linalg import LinAlgError
+    from numpy.linalg import svd, LinAlgError
+
 __all__ = [
         'Polynomial2DTransform', 'NonLinearCoordinateTransform',
         'NonLinearTransform', 'LensCorrection']
