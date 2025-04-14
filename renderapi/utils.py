@@ -18,12 +18,15 @@ except ImportError:
 
 from .errors import RenderError
 
-# use ujson if installed for faster json
 try:
-    import ujson as requests_json
+    from .msgspec_json import MsgSpecRenderJson
+    default_json = MsgSpecRenderJson
 except ImportError:
-    import json as requests_json
-requests.models.complexjson = requests_json
+    default_json = json
+
+# default_json = MsgSpecRenderJson
+
+requests.models.complexjson = default_json
 
 
 class NullHandler(logging.Handler):
@@ -104,7 +107,7 @@ def post_json(session, request_url, d, params=None):
 
     headers = {"content-type": "application/json"}
     if d is not None:
-        payload = json.dumps(d)
+        payload = default_json.dumps(d)
     else:
         payload = None
         headers['Accept'] = "application/json"
@@ -235,7 +238,7 @@ def renderdumps(obj, *args, **kwargs):
         serialized object
     """
     cls_ = kwargs.pop('cls', RenderEncoder)
-    return json.dumps(obj, *args, cls=cls_, **kwargs)
+    return default_json.dumps(obj, *args, cls=cls_, **kwargs)
 
 
 def renderdump(obj, *args, **kwargs):
@@ -251,7 +254,7 @@ def renderdump(obj, *args, **kwargs):
         json.dump kwargs
     """
     cls_ = kwargs.pop('cls', RenderEncoder)
-    return json.dump(obj, *args, cls=cls_, **kwargs)
+    return default_json.dump(obj, *args, cls=cls_, **kwargs)
 
 
 def renderdump_temp(obj, *args, **kwargs):
