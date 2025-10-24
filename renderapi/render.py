@@ -32,17 +32,25 @@ class Render(object):
         render client scripts path to which make_kwargs will default
     session : requests.sessions.Session
         session object to which make_kwargs will default
+    create_session : bool
+        create a new session for this instance of render if no session was
+        provided, allowing the same session to be reused for requests and
+        increasing performance, defaults to True
 
     """
 
     def __init__(self, host=None, port=None, owner=None, project=None,
-                 client_scripts=None, session=None, **kwargs):
+                 client_scripts=None, session=None, create_session=True,
+                 **kwargs):
         self.DEFAULT_HOST = host
         self.DEFAULT_PORT = port
         self.DEFAULT_PROJECT = project
         self.DEFAULT_OWNER = owner
         self.DEFAULT_CLIENT_SCRIPTS = client_scripts
-        self.session = session
+        if create_session and session is None:
+            self.session = requests.Session()
+        else:
+            self.session = session
 
         logger.debug('Render object created with '
                      'host={h}, port={p}, project={pr}, '
@@ -155,6 +163,10 @@ class RenderClient(Render):
         render client scripts path to which make_kwargs will default
     session : requests.sessions.Session
         session object to which make_kwargs will default
+    create_session : bool
+        create a new session for this instance of render if no session was
+        provided, allowing the same session to be reused for requests and
+        increasing performance, defaults to True
     client_script : str
         location of wrapper script for java client with input same as Render
         java client's run_ws_client.sh
