@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import io
-import requests
 from PIL import Image
 import numpy as np
 import logging

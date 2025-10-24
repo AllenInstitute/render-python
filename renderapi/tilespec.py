@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import logging
-import requests
 import numpy as np
 from .render import format_preamble, renderaccess
 from .utils import NullHandler, get_json
@@ -68,8 +67,9 @@ class TileSpec:
     def __init__(self, tileId=None, z=None, width=None, height=None,
                  imageUrl=None, maskUrl=None,
                  minint=0, maxint=65535, layout=None, tforms=None,
-                 labels=None, groupId=None, inputfilters=None, json=None, channels=None,
-                 mipMapLevels=None, imagePyramid=None, **kwargs):
+                 labels=None, groupId=None, inputfilters=None, json=None,
+                 channels=None, mipMapLevels=None, imagePyramid=None,
+                 **kwargs):
         if json is not None:
             self.from_dict(json)
         else:

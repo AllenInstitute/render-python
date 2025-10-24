@@ -6,7 +6,6 @@ from .render import format_preamble, renderaccess
 from .utils import NullHandler, renderdumps, renderdump, get_json
 from .client import coordinateClient
 from .errors import RenderError
-import requests
 import json
 import numpy as np
 import logging

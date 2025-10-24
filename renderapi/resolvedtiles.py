@@ -5,7 +5,6 @@ from .utils import NullHandler, put_json, jbool, get_json
 from .render import format_preamble, renderaccess
 from .errors import RenderError
 import logging
-import requests
 
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())

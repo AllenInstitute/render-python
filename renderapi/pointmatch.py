@@ -2,7 +2,6 @@
 '''
 Point Match APIs
 '''
-import requests
 import logging
 from .render import format_baseurl, renderaccess
 from .utils import NullHandler, get_json, put_json, rest_delete
