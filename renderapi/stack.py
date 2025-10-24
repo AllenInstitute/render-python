@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import logging
 from time import strftime
-import requests
 from .errors import RenderError
 from .utils import jbool, NullHandler, post_json, put_json, rest_delete
 from .render import (format_baseurl, format_preamble,
@@ -515,7 +514,6 @@ def clone_stack(inputstack, outputstack, skipTransforms=False, toProject=None,
     requests.session.response
         server response
     """
-    session = requests.session() if session is None else session
     sv = StackVersion(**kwargs)
     newstack_project = project
     qparams = {}
