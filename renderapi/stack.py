@@ -96,7 +96,7 @@ class StackVersion:
 
 @renderaccess
 def set_stack_metadata(stack, sv, host=None, port=None, owner=None,
-                       project=None, session=requests.session(),
+                       project=None, session=None,
                        render=None, **kwargs):
     """sets the stack metadata for a stack
 
@@ -126,7 +126,7 @@ def set_stack_metadata(stack, sv, host=None, port=None, owner=None,
 
 @renderaccess
 def get_full_stack_metadata(stack, host=None, port=None, owner=None,
-                            project=None, session=requests.session(),
+                            project=None, session=None,
                             render=None, **kwargs):
     """get stack metadata for stack
 
@@ -193,7 +193,7 @@ def get_stack_metadata(*args, **kwargs):
 @renderaccess
 def set_stack_state(stack, state='LOADING', host=None, port=None,
                     owner=None, project=None,
-                    session=requests.session(), render=None, **kwargs):
+                    session=None, render=None, **kwargs):
     """
     set state of selected stack.
 
@@ -237,7 +237,7 @@ def set_stack_state(stack, state='LOADING', host=None, port=None,
 
 @renderaccess
 def likelyUniqueId(host=None, port=None,
-                   session=requests.session(), render=None, **kwargs):
+                   session=None, render=None, **kwargs):
     """return hex-code nearly-unique id from render server
 
     :func:`renderapi.render.renderaccess` decorated function
@@ -292,7 +292,7 @@ def make_stack_params(host, port, owner, project, stack):
 
 @renderaccess
 def delete_stack(stack, host=None, port=None, owner=None,
-                 project=None, session=requests.session(),
+                 project=None, session=None,
                  render=None, **kwargs):
     """deletes a stack from render server
 
@@ -321,7 +321,7 @@ def delete_stack(stack, host=None, port=None, owner=None,
 
 @renderaccess
 def delete_section(stack, z, host=None, port=None, owner=None,
-                   project=None, session=requests.session(),
+                   project=None, session=None,
                    render=None, **kwargs):
     """removes a single z from a stack
 
@@ -352,7 +352,7 @@ def delete_section(stack, z, host=None, port=None, owner=None,
 
 @renderaccess
 def delete_tile(stack, tileId, host=None, port=None, owner=None,
-                project=None, session=requests.session(),
+                project=None, session=None,
                 render=None, **kwargs):
     """
     removes a tile from a stack
@@ -388,7 +388,7 @@ def create_stack(stack, cycleNumber=None, cycleStepNumber=None,
                  stackResolutionX=None, stackResolutionY=None,
                  stackResolutionZ=None, force_resolution=True,
                  host=None, port=None, owner=None, project=None,
-                 session=requests.session(), render=None, **kwargs):
+                 session=None, render=None, **kwargs):
     """creates a new stack
 
     :func:`renderapi.render.renderaccess` decorated function
@@ -448,7 +448,7 @@ def create_stack(stack, cycleNumber=None, cycleStepNumber=None,
 @renderaccess
 def rename_stack(stack, to_stack, to_project=None, to_owner=None,
                  host=None, port=None, owner=None, project=None,
-                 session=requests.session(), render=None, **kwargs):
+                 session=None, render=None, **kwargs):
     """
      :func:`renderapi.render.renderaccess` decorated function
 
@@ -541,7 +541,7 @@ def clone_stack(inputstack, outputstack, skipTransforms=False, toProject=None,
 
 @renderaccess
 def get_z_values_for_stack(stack, project=None, host=None, port=None,
-                           owner=None, session=requests.session(),
+                           owner=None, session=None,
                            render=None, **kwargs):
     """get a list of z values for which there are tiles in the stack
 
@@ -575,7 +575,7 @@ def get_z_values_for_stack(stack, project=None, host=None, port=None,
 # @renderaccess
 # def put_resolved_tilespecs(stack, json_dict, host=None, port=None,
 #                            owner=None, project=None,
-#                            session=requests.session(),
+#                            session=None,
 #                            render=None, **kwargs):
 #     request_url = format_preamble(
 #         host, port, owner, project, stack) + "/resolvedTiles"
@@ -585,7 +585,7 @@ def get_z_values_for_stack(stack, project=None, host=None, port=None,
 
 @renderaccess
 def get_bounds_from_z(stack, z, host=None, port=None, owner=None,
-                      project=None, session=requests.session(),
+                      project=None, session=None,
                       render=None, **kwargs):
     """get a bounds dictionary for a specific z
 
@@ -620,7 +620,7 @@ def get_bounds_from_z(stack, z, host=None, port=None, owner=None,
 
 @renderaccess
 def get_stack_bounds(stack, host=None, port=None, owner=None, project=None,
-                     session=requests.session(), render=None, **kwargs):
+                     session=None, render=None, **kwargs):
     """get bounds of a whole stack
 
     :func:`renderapi.render.renderaccess` decorated function
@@ -651,7 +651,7 @@ def get_stack_bounds(stack, host=None, port=None, owner=None, project=None,
 
 @renderaccess
 def get_tilebounds_for_z(stack, z, host=None, port=None, owner=None,
-                         project=None, session=requests.session(),
+                         project=None, session=None,
                          render=None, **kwargs):
     """returns the bounds for each tile associated with a particular z value
 
@@ -686,7 +686,7 @@ def get_tilebounds_for_z(stack, z, host=None, port=None, owner=None,
 
 @renderaccess
 def get_sectionId_for_z(stack, z, host=None, port=None, owner=None,
-                        project=None, session=requests.session(),
+                        project=None, session=None,
                         render=None, **kwargs):
     """returns the sectionId associated with a particular z value
 
@@ -726,7 +726,7 @@ def get_sectionId_for_z(stack, z, host=None, port=None, owner=None,
 
 @renderaccess
 def get_stack_sectionData(stack, host=None, port=None, owner=None,
-                          project=None, session=requests.session(),
+                          project=None, session=None,
                           render=None, **kwargs):
     """returns information about the sectionIds of each slice in stack
 
@@ -766,7 +766,7 @@ def get_stack_sectionData(stack, host=None, port=None, owner=None,
 
 @renderaccess
 def get_section_z_value(stack, sectionId, host=None, port=None,
-                        owner=None, project=None, session=requests.session(),
+                        owner=None, project=None, session=None,
                         render=None, **kwargs):
     """get the z value for a specific sectionId (string)
 
@@ -799,7 +799,7 @@ def get_section_z_value(stack, sectionId, host=None, port=None,
 
 @renderaccess
 def get_stack_tileIds(stack, host=None, port=None, owner=None, project=None,
-                      session=requests.session(), render=None, **kwargs):
+                      session=None, render=None, **kwargs):
     """get tileIds for a stack
 
     :func:`renderapi.render.renderaccess` decorated function

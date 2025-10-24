@@ -36,7 +36,7 @@ def get_bb_renderparams(stack, z, x, y, width, height, scale=1.0,
                         binaryMask=None, filter=None, filterListName=None,
                         convertToGray=None, excludeMask=None,
                         host=None, port=None, owner=None,
-                        project=None, session=requests.session(),
+                        project=None, session=None,
                         render=None, **kwargs):
 
     request_url = format_preamble(
@@ -63,7 +63,7 @@ def get_bb_image(stack, z, x, y, width, height, scale=1.0,
                  minIntensity=None, maxIntensity=None, binaryMask=None,
                  filter=None, maxTileSpecsToRender=None,
                  host=None, port=None, owner=None, project=None,
-                 img_format=None, session=requests.session(),
+                 img_format=None, session=None,
                  render=None, **kwargs):
     """render image from a bounding box defined in xy and return numpy array:
 
@@ -150,7 +150,7 @@ def get_tile_renderparams(
         filter=None, filterListName=None, excludeMask=None, convertToGray=None,
         binaryMask=None, host=None, port=None, owner=None,
         project=None, img_format=None,
-        session=requests.session(), render=None, **kwargs):
+        session=None, render=None, **kwargs):
     request_url = format_preamble(
         host, port, owner, project, stack) + \
         "/tile/%s/render-parameters" % (
@@ -182,7 +182,7 @@ def get_tile_image_data(stack, tileId, channel=None, normalizeForMatching=True,
                         minIntensity=None, maxIntensity=None,
                         filter=None, host=None, port=None, owner=None,
                         project=None, img_format=None,
-                        session=requests.session(), render=None, **kwargs):
+                        session=None, render=None, **kwargs):
     """render image from a tile with all transforms and return numpy array
 
     :func:`renderapi.render.renderaccess` decorated function
@@ -273,7 +273,7 @@ def get_section_renderparams(stack, z, binaryMask=None, channel=None,
                              filterListName=None, minIntensity=None,
                              maxIntensity=None, scale=None,
                              host=None, port=None, owner=None, project=None,
-                             session=requests.session(),
+                             session=None,
                              render=None, **kwargs):
     request_url = format_preamble(
         host, port, owner, project, stack) + "/z/{}/render-parameters".format(
@@ -299,7 +299,7 @@ def get_section_image(stack, z, scale=1.0, channel=None,
                       filter=False,
                       maxTileSpecsToRender=None, img_format=None,
                       host=None, port=None, owner=None, project=None,
-                      session=requests.session(),
+                      session=None,
                       render=None, **kwargs):
     """render an section of image
 
@@ -371,7 +371,7 @@ def get_section_image(stack, z, scale=1.0, channel=None,
 @renderaccess
 def get_renderparameters_image(renderparams, img_format=None,
                                host=None, port=None, owner=None,
-                               session=requests.session(),
+                               session=None,
                                render=None, **kwargs):
     try:
         image_ext = IMAGE_FORMATS[img_format]

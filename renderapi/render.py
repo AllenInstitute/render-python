@@ -379,6 +379,9 @@ def renderaccess(f, *args, **kwargs):
     You can if you wish specify any of the arguments, in which case they
     will not be filled in by the default values, but you don't have to.
 
+    The default value for session is None, which will be replaced with a newly
+    created requests.Session object.
+
     As such, the documentation omits describing the parameters which are
     natural to expect will be filled in by the renderaccess decorator.
 
@@ -400,13 +403,17 @@ def renderaccess(f, *args, **kwargs):
     render = kwargs.get('render')
     if render is not None:
         if isinstance(render, Render):
-            return f(*args, **render.make_kwargs(**kwargs))
+            kwargs = render.make_kwargs(**kwargs)
         else:
             raise ValueError(
                 'invalid Render object type {} specified!'.format(
                     type(render)))
-    else:
-        return f(*args, **kwargs)
+
+    session = kwargs.get("session")
+    if session is None:
+        kwargs["session"] = requests.Session()
+
+    return f(*args, **kwargs)
 
 
 def format_baseurl(host, port):
@@ -459,7 +466,7 @@ def format_preamble(host, port, owner, project, stack):
 
 
 @renderaccess
-def get_owners(host=None, port=None, session=requests.session(),
+def get_owners(host=None, port=None, session=None,
                render=None, **kwargs):
     """return list of owners across all Projects and Stacks for a render server
 
@@ -488,7 +495,7 @@ def get_owners(host=None, port=None, session=requests.session(),
 
 @renderaccess
 def get_stack_metadata_by_owner(owner=None, host=None, port=None,
-                                session=requests.session(),
+                                session=None,
                                 render=None, **kwargs):
     """return metadata for all stacks belonging to particular
         owner on render server
@@ -517,7 +524,7 @@ def get_stack_metadata_by_owner(owner=None, host=None, port=None,
 
 @renderaccess
 def get_projects_by_owner(owner=None, host=None, port=None,
-                          session=requests.session(), render=None, **kwargs):
+                          session=None, render=None, **kwargs):
     """return list of projects belonging to a single owner for render stack
 
     :func:`renderaccess` decorated function
@@ -545,7 +552,7 @@ def get_projects_by_owner(owner=None, host=None, port=None,
 
 @renderaccess
 def get_stacks_by_owner_project(owner=None, project=None, host=None,
-                                port=None, session=requests.session(),
+                                port=None, session=None,
                                 render=None, **kwargs):
     """return list of stacks belonging to an owner's project on render server
 
