@@ -16,10 +16,15 @@ def test_render_client():
     r = renderapi.render.connect(**args)  # noqa: F841
 
 
-def test_default_kwargs(rkwargs=rendersettings.DEFAULT_RENDER, **kwargs):
+def test_default_kwargs(rkwargs=rendersettings.DEFAULT_RENDER, keys_to_ignore=("session",), **kwargs):
+    keys_to_ignore = set() if keys_to_ignore is None else set(keys_to_ignore)
     r = renderapi.connect(**dict(rkwargs, **kwargs))
     new_r = renderapi.connect(**dict(r.DEFAULT_KWARGS, **kwargs))
-    assert(new_r.DEFAULT_KWARGS == r.DEFAULT_KWARGS == rkwargs)
+    assert(
+        {k: v for k, v in new_r.DEFAULT_KWARGS.items() if k not in keys_to_ignore} ==
+        {k: v for k, v in r.DEFAULT_KWARGS.items() if k not in keys_to_ignore} ==
+        {k: v for k, v in rkwargs.items() if k not in keys_to_ignore}
+    )
 
 
 def test_default_kwargs_client():
@@ -31,8 +36,9 @@ def test_environment_variables(
         rkwargs=rendersettings.DEFAULT_RENDER,
         renvkwargs=rendersettings.DEFAULT_RENDER_ENVIRONMENT_VARIABLES,
         **kwargs):
-    def valstostring(d):
-        return {k: str(v) for k, v in d.items()}
+    def valstostring(d, keys_to_ignore=None):
+        keys_to_ignore = set() if keys_to_ignore is None else set(keys_to_ignore)
+        return {k: str(v) for k, v in d.items() if k not in keys_to_ignore}
     old_env = os.environ.copy()
     os.environ.update(valstostring(renvkwargs))
 
@@ -43,9 +49,9 @@ def test_environment_variables(
     os.environ.update(old_env)
 
     kwarg_render = renderapi.connect(**dict(valstostring(rkwargs), **kwargs))
-    assert(valstostring(kwarg_render.DEFAULT_KWARGS) ==
-           valstostring(env_render.DEFAULT_KWARGS) ==
-           valstostring(rkwargs))
+    assert(valstostring(kwarg_render.DEFAULT_KWARGS, keys_to_ignore=("session",)) ==
+           valstostring(env_render.DEFAULT_KWARGS, keys_to_ignore=("session",)) ==
+           valstostring(rkwargs, keys_to_ignore=("session",)))
 
 
 def test_environment_variables_client():
