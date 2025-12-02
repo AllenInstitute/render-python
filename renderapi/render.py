@@ -30,16 +30,27 @@ class Render(object):
         render project to which make_kwargs will default
     DEFAULT_CLIENT_SCRIPTS : str
         render client scripts path to which make_kwargs will default
+    session : requests.sessions.Session
+        session object to which make_kwargs will default
+    create_session : bool
+        create a new session for this instance of render if no session was
+        provided, allowing the same session to be reused for requests and
+        increasing performance, defaults to True
 
     """
 
     def __init__(self, host=None, port=None, owner=None, project=None,
-                 client_scripts=None, **kwargs):
+                 client_scripts=None, session=None, create_session=True,
+                 **kwargs):
         self.DEFAULT_HOST = host
         self.DEFAULT_PORT = port
         self.DEFAULT_PROJECT = project
         self.DEFAULT_OWNER = owner
         self.DEFAULT_CLIENT_SCRIPTS = client_scripts
+        if create_session and session is None:
+            self.session = requests.Session()
+        else:
+            self.session = session
 
         logger.debug('Render object created with '
                      'host={h}, port={p}, project={pr}, '
@@ -52,7 +63,8 @@ class Render(object):
     def DEFAULT_KWARGS(self):
         """"kwargs to which the render object falls back.  Depends on:
         self.DEFAULT_HOST, self.DEFAULT_OWNER, self.DEFAULT_PORT,
-        self.DEFAULT_PROJECT, self.DEFAULT_CLIENT_SCRIPTS
+        self.DEFAULT_PROJECT, self.DEFAULT_CLIENT_SCRIPTS,
+        self.session
 
         Returns
         -------
@@ -62,7 +74,7 @@ class Render(object):
         return self.make_kwargs()
 
     def make_kwargs(self, host=None, port=None, owner=None, project=None,
-                    client_scripts=None, **kwargs):
+                    client_scripts=None, session=None, **kwargs):
         """make kwargs using this render object's defaults and any
         designated kwargs passed in
 
@@ -78,6 +90,8 @@ class Render(object):
             render webservice project
         client_scripts : str or None
             render java client script location
+        session : requests.sessions.Session
+            http session to use
         **kwargs
             all other keyword arguments passed through
 
@@ -85,7 +99,8 @@ class Render(object):
         -------
         dict
             keyword arguments with missing
-            host,port,owner,project,client_scripts filled in with defaults
+            host,port,owner,project,client_scripts,session filled in with
+            defaults
         """
         processed_kwargs = {
             'host': self.DEFAULT_HOST if host is None else host,
@@ -93,7 +108,9 @@ class Render(object):
             'owner': self.DEFAULT_OWNER if owner is None else owner,
             'project': self.DEFAULT_PROJECT if project is None else project,
             'client_scripts': (self.DEFAULT_CLIENT_SCRIPTS if client_scripts
-                               is None else client_scripts)}
+                               is None else client_scripts),
+            'session': self.session if session is None else session,
+        }
         processed_kwargs.update(kwargs)
         return processed_kwargs
 
@@ -144,6 +161,12 @@ class RenderClient(Render):
         render project to which make_kwargs will default
     DEFAULT_CLIENT_SCRIPTS : str
         render client scripts path to which make_kwargs will default
+    session : requests.sessions.Session
+        session object to which make_kwargs will default
+    create_session : bool
+        create a new session for this instance of render if no session was
+        provided, allowing the same session to be reused for requests and
+        increasing performance, defaults to True
     client_script : str
         location of wrapper script for java client with input same as Render
         java client's run_ws_client.sh
@@ -220,7 +243,7 @@ class RenderClient(Render):
         -------
         dict
             keyword arguments with missing
-            host,port,owner,project,client_scripts,client_script,memGB
+            host,port,owner,project,client_scripts,session,client_script,memGB
             filled in with defaults
         """
         # hack to get dictionary defaults to work
@@ -235,7 +258,8 @@ class RenderClient(Render):
 
 def connect(host=None, port=None, owner=None, project=None,
             client_scripts=None, client_script=None, memGB=None,
-            force_http=True, validate_client=True, web_only=False, **kwargs):
+            force_http=True, validate_client=True, web_only=False,
+            session=None, **kwargs):
     """helper function to create a :class:`Render` instance, or
     :class:`RenderClient` if sufficent parameters are provided.
     Will default to using environment variables if not specified in call,
@@ -277,6 +301,8 @@ def connect(host=None, port=None, owner=None, project=None,
     web_only : bool
         whether to check environment variables/prompt user
         for client_scripts directory if not in arguments
+    session : requests.sessions.Session
+        http session to use
 
     Returns
     -------
@@ -361,23 +387,27 @@ def connect(host=None, port=None, owner=None, project=None,
                             host=host, port=port,
                             owner=owner, project=project,
                             client_scripts=client_scripts,
-                            validate_client=validate_client)
+                            validate_client=validate_client,
+                            session=session)
     except ClientScriptError as e:
         logger.info(e)
         logger.warning(
             'Could not initiate render Client -- falling back to web')
         return Render(host=host, port=port, owner=owner, project=project,
-                      client_scripts=client_scripts)
+                      client_scripts=client_scripts, session=session)
 
 
 @decorator
 def renderaccess(f, *args, **kwargs):
-    """Decorator allowing functions asking for host, port, owner, project
-    to default to a connection defined by a :class:`Render` object
-    using its :func:`RenderClient.make_kwargs` method.
+    """Decorator allowing functions asking for host, port, owner, project,
+    and/or session to default to a connection defined by a :class:`Render`
+    object using its :func:`RenderClient.make_kwargs` method.
 
     You can if you wish specify any of the arguments, in which case they
     will not be filled in by the default values, but you don't have to.
+
+    The default value for session is None, which will be replaced with a newly
+    created requests.Session object.
 
     As such, the documentation omits describing the parameters which are
     natural to expect will be filled in by the renderaccess decorator.
@@ -400,13 +430,17 @@ def renderaccess(f, *args, **kwargs):
     render = kwargs.get('render')
     if render is not None:
         if isinstance(render, Render):
-            return f(*args, **render.make_kwargs(**kwargs))
+            kwargs = render.make_kwargs(**kwargs)
         else:
             raise ValueError(
                 'invalid Render object type {} specified!'.format(
                     type(render)))
-    else:
-        return f(*args, **kwargs)
+
+    session = kwargs.get("session")
+    if session is None:
+        kwargs["session"] = requests.Session()
+
+    return f(*args, **kwargs)
 
 
 def format_baseurl(host, port):
@@ -459,7 +493,7 @@ def format_preamble(host, port, owner, project, stack):
 
 
 @renderaccess
-def get_owners(host=None, port=None, session=requests.session(),
+def get_owners(host=None, port=None, session=None,
                render=None, **kwargs):
     """return list of owners across all Projects and Stacks for a render server
 
@@ -471,7 +505,7 @@ def get_owners(host=None, port=None, session=requests.session(),
         render host (defaults to host from render)
     port : int
         render port (default to port from render)
-    session : requests.Session
+    session : requests.sessions.Session
         requests session
     render : RenderClient
         RenderClient connection object
@@ -488,7 +522,7 @@ def get_owners(host=None, port=None, session=requests.session(),
 
 @renderaccess
 def get_stack_metadata_by_owner(owner=None, host=None, port=None,
-                                session=requests.session(),
+                                session=None,
                                 render=None, **kwargs):
     """return metadata for all stacks belonging to particular
         owner on render server
@@ -517,7 +551,7 @@ def get_stack_metadata_by_owner(owner=None, host=None, port=None,
 
 @renderaccess
 def get_projects_by_owner(owner=None, host=None, port=None,
-                          session=requests.session(), render=None, **kwargs):
+                          session=None, render=None, **kwargs):
     """return list of projects belonging to a single owner for render stack
 
     :func:`renderaccess` decorated function
@@ -545,7 +579,7 @@ def get_projects_by_owner(owner=None, host=None, port=None,
 
 @renderaccess
 def get_stacks_by_owner_project(owner=None, project=None, host=None,
-                                port=None, session=requests.session(),
+                                port=None, session=None,
                                 render=None, **kwargs):
     """return list of stacks belonging to an owner's project on render server
 

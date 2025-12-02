@@ -2,6 +2,7 @@ import os
 import pytest
 import renderapi
 import rendersettings
+import requests
 
 args = {
     'host': 'renderhost',
@@ -17,6 +18,7 @@ def test_render_client():
 
 
 def test_default_kwargs(rkwargs=rendersettings.DEFAULT_RENDER, **kwargs):
+    rkwargs = dict(rkwargs, session=requests.Session())
     r = renderapi.connect(**dict(rkwargs, **kwargs))
     new_r = renderapi.connect(**dict(r.DEFAULT_KWARGS, **kwargs))
     assert(new_r.DEFAULT_KWARGS == r.DEFAULT_KWARGS == rkwargs)
@@ -36,7 +38,8 @@ def test_environment_variables(
     old_env = os.environ.copy()
     os.environ.update(valstostring(renvkwargs))
 
-    env_render = renderapi.connect(**kwargs)
+    rkwargs = dict(rkwargs, session=requests.Session())
+    env_render = renderapi.connect(session=rkwargs["session"], **kwargs)
 
     # restore environment
     os.environ.clear()

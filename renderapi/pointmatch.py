@@ -2,7 +2,6 @@
 '''
 Point Match APIs
 '''
-import requests
 import logging
 from .render import format_baseurl, renderaccess
 from .utils import NullHandler, get_json, put_json, rest_delete
@@ -90,7 +89,7 @@ def swap_matchpair(match, copy=True):
 
 @renderaccess
 def get_matchcollection_owners(host=None, port=None,
-                               session=requests.session(),
+                               session=None,
                                render=None, **kwargs):
 
     """get all the matchCollection owners
@@ -121,7 +120,7 @@ def get_matchcollection_owners(host=None, port=None,
 
 @renderaccess
 def get_matchcollections(owner=None, host=None, port=None,
-                         session=requests.session(), render=None, **kwargs):
+                         session=None, render=None, **kwargs):
     """get all the matchCollections owned by owner
 
     :func:`renderapi.render.renderaccess` decorated function
@@ -153,7 +152,7 @@ def get_matchcollections(owner=None, host=None, port=None,
 
 @renderaccess
 def get_match_groupIds(matchCollection, owner=None, host=None,
-                       port=None, session=requests.session(),
+                       port=None, session=None,
                        render=None, **kwargs):
     """get all the groupIds in a matchCollection
 
@@ -190,7 +189,7 @@ def get_match_groupIds(matchCollection, owner=None, host=None,
 def get_matches_outside_group(matchCollection, groupId, mergeCollections=None,
                               stream=True,
                               owner=None, host=None,
-                              port=None, session=requests.session(),
+                              port=None, session=None,
                               render=None, **kwargs):
     """get all the matches outside a groupId in a matchCollection
     returns all matches where pGroupId == groupId and qGroupId != groupId
@@ -237,7 +236,7 @@ def get_matches_outside_group(matchCollection, groupId, mergeCollections=None,
 def get_matches_within_group(matchCollection, groupId, mergeCollections=None,
                              stream=True,
                              owner=None, host=None, port=None,
-                             session=requests.session(),
+                             session=None,
                              render=None, **kwargs):
     """get all the matches within a groupId in a matchCollection
     returns all matches where pGroupId == groupId and qGroupId == groupId
@@ -286,7 +285,7 @@ def get_matches_from_group_to_group(matchCollection, pgroup, qgroup,
                                     mergeCollections=None, stream=True,
                                     render=None, owner=None, host=None,
                                     port=None,
-                                    session=requests.session(), **kwargs):
+                                    session=None, **kwargs):
     """get all the matches between two specific groups
     returns all matches where pgroup == pGroupId and qgroup == qGroupId
     OR pgroup == qGroupId and qgroup == pGroupId
@@ -360,7 +359,7 @@ def get_matches_from_tile_to_tile(matchCollection, pgroup, pid,
                                   qgroup, qid, mergeCollections=None,
                                   render=None, owner=None,
                                   host=None, port=None,
-                                  session=requests.session(), **kwargs):
+                                  session=None, **kwargs):
     """get all the matches between two specific tiles
     returns all matches where
     pgroup == pGroupId and pid=pId and qgroup == qGroupId and qid == qId
@@ -415,7 +414,7 @@ def get_matches_with_group(matchCollection, pgroup, mergeCollections=None,
                            stream=True,
                            render=None, owner=None,
                            host=None, port=None,
-                           session=requests.session(), **kwargs):
+                           session=None, **kwargs):
     """get all the matches from a specific groups
     returns all matches where pgroup == pGroupId
 
@@ -461,7 +460,7 @@ def get_matches_with_group(matchCollection, pgroup, mergeCollections=None,
 def get_match_groupIds_from_only(matchCollection, mergeCollections=None,
                                  render=None, owner=None,
                                  host=None, port=None,
-                                 session=requests.session(), **kwargs):
+                                 session=None, **kwargs):
     """get all the source pGroupIds in a matchCollection
 
     :func:`renderapi.render.renderaccess` decorated function
@@ -499,7 +498,7 @@ def get_match_groupIds_from_only(matchCollection, mergeCollections=None,
 def get_match_groupIds_to_only(matchCollection, mergeCollections=None,
                                render=None, owner=None,
                                host=None, port=None,
-                               session=requests.session(), **kwargs):
+                               session=None, **kwargs):
     """get all the destination qGroupIds in a matchCollection
 
     :func:`renderapi.render.renderaccess` decorated function
@@ -538,7 +537,7 @@ def get_match_groupIds_to_only(matchCollection, mergeCollections=None,
 def get_matches_involving_tile(matchCollection, groupId, id,
                                mergeCollections=None, stream=True,
                                owner=None, host=None, port=None,
-                               session=requests.session(), **kwargs):
+                               session=None, **kwargs):
     """get all the matches involving a specific tile
      returns all matches where groupId == pGroupId and id == pId
      OR groupId == qGroupId and id == qId
@@ -586,7 +585,7 @@ def get_matches_involving_tile(matchCollection, groupId, id,
 @renderaccess
 def delete_point_matches_between_groups(matchCollection, pGroupId, qGroupId,
                                         render=None, owner=None, host=None,
-                                        port=None, session=requests.session(),
+                                        port=None, session=None,
                                         **kwargs):
     """delete all the matches between two specific groups
     deletes all matches where (pgroup == pGroupId and qgroup == qGroupId)
@@ -631,7 +630,7 @@ def delete_point_matches_between_groups(matchCollection, pGroupId, qGroupId,
 
 @renderaccess
 def import_matches(matchCollection, data, owner=None, host=None, port=None,
-                   session=requests.session(), render=None, **kwargs):
+                   session=None, render=None, **kwargs):
     """import matches into render database
 
     :func:`renderapi.render.renderaccess` decorated function
@@ -664,7 +663,7 @@ def import_matches(matchCollection, data, owner=None, host=None, port=None,
 
 @renderaccess
 def delete_collection(matchCollection, owner=None, host=None, port=None,
-                      session=requests.session(), render=None, **kwargs):
+                      session=None, render=None, **kwargs):
     """delete match collection from render database
 
     :func:`renderapi.render.renderaccess` decorated function

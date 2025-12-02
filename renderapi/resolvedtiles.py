@@ -5,7 +5,6 @@ from .utils import NullHandler, put_json, jbool, get_json
 from .render import format_preamble, renderaccess
 from .errors import RenderError
 import logging
-import requests
 
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -83,7 +82,7 @@ def combine_resolvedtiles(rts_l):
 def put_tilespecs(stack, resolved_tiles=None, deriveData=True,
                   tilespecs=None, shared_transforms=None,
                   host=None, port=None, owner=None, project=None,
-                  session=requests.session(), render=None, **kwargs):
+                  session=None, render=None, **kwargs):
     """upload resolved tiles to the server
 
     :func:`renderapi.render.renderaccess` decorated function
@@ -125,7 +124,7 @@ def put_tilespecs(stack, resolved_tiles=None, deriveData=True,
 @renderaccess
 def get_resolved_tiles_from_z(stack, z, host=None, port=None,
                               owner=None, project=None,
-                              session=requests.session(),
+                              session=None,
                               render=None, **kwargs):
     """Get a set of ResolvedTiles from a specific z value.
     Returns a tuple of tilespecs and referenced transforms.
