@@ -6,7 +6,6 @@ from .render import format_preamble, renderaccess
 from .utils import NullHandler, renderdumps, renderdump, get_json
 from .client import coordinateClient
 from .errors import RenderError
-import requests
 import json
 import numpy as np
 import logging
@@ -20,7 +19,7 @@ logger.addHandler(NullHandler())
 @renderaccess
 def world_to_local_coordinates(stack, z, x, y, host=None,
                                port=None, owner=None, project=None,
-                               session=requests.session(),
+                               session=None,
                                render=None, **kwargs):
     """maps an world x,y,z coordinate in stack to a local coordinate
     Parameters
@@ -64,7 +63,7 @@ def world_to_local_coordinates(stack, z, x, y, host=None,
 @renderaccess
 def local_to_world_coordinates(stack, tileId, x, y,
                                host=None, port=None, owner=None, project=None,
-                               session=requests.session(),
+                               session=None,
                                render=None, **kwargs):
     """convert coordinate from local to world with webservice request
 
@@ -110,7 +109,7 @@ def local_to_world_coordinates(stack, tileId, x, y,
 def world_to_local_coordinates_batch(stack, d, z, host=None,
                                      port=None, owner=None, project=None,
                                      execute_local=False,
-                                     session=requests.session(),
+                                     session=None,
                                      render=None, **kwargs):
 
     """convert coordinate parameters from world to local
@@ -174,7 +173,7 @@ def world_to_local_coordinates_batch(stack, d, z, host=None,
 @renderaccess
 def local_to_world_coordinates_batch(stack, d, z, host=None,
                                      port=None, owner=None, project=None,
-                                     session=requests.session(),
+                                     session=None,
                                      render=None, **kwargs):
     """convert coordinate parameters from local to world
 
@@ -302,7 +301,7 @@ def unpackage_world_to_local_point_match_from_json(json_answer, tileId):
 # def old_world_to_local_coordinates_array(stack, dataarray, tileId, z=0,
 #                                          host=None, port=None,
 #                                          owner=None, project=None,
-#                                          session=requests.session(),
+#                                          session=None,
 #                                          render=None, **kwargs):
 #     ''''''
 
@@ -359,7 +358,7 @@ def world_to_local_coordinates_array(stack, dataarray, tileId, z,
                                      owner=None, project=None,
                                      client_script=None,
                                      doClientSide=False, number_of_threads=20,
-                                     session=requests.session(), **kwargs):
+                                     session=None, **kwargs):
     """map world to local coordinates using numpy array
 
     Parameters
@@ -403,7 +402,7 @@ def world_to_local_coordinates_array(stack, dataarray, tileId, z,
 # def old_local_to_world_coordinates_array(stack, dataarray, tileId, z=0,
 #                                          host=None, port=None,
 #                                          owner=None, project=None,
-#                                          session=requests.session(),
+#                                          session=None,
 #                                          render=None, **kwargs):
 #     ''''''
 #     request_url = format_preamble(
@@ -439,7 +438,7 @@ def local_to_world_coordinates_array(stack, dataarray, tileId, z,
                                      owner=None, project=None,
                                      client_script=None,
                                      doClientSide=False, number_of_threads=20,
-                                     session=requests.session(), **kwargs):
+                                     session=None, **kwargs):
     """map local to world coordinates using numpy array
 
     Parameters

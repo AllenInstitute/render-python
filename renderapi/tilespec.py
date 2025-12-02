@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import logging
-import requests
 import numpy as np
 from .render import format_preamble, renderaccess
 from .utils import NullHandler, get_json
@@ -68,8 +67,9 @@ class TileSpec:
     def __init__(self, tileId=None, z=None, width=None, height=None,
                  imageUrl=None, maskUrl=None,
                  minint=0, maxint=65535, layout=None, tforms=None,
-                 labels=None, groupId=None, inputfilters=None, json=None, channels=None,
-                 mipMapLevels=None, imagePyramid=None, **kwargs):
+                 labels=None, groupId=None, inputfilters=None, json=None,
+                 channels=None, mipMapLevels=None, imagePyramid=None,
+                 **kwargs):
         if json is not None:
             self.from_dict(json)
         else:
@@ -259,7 +259,7 @@ class TileSpec:
 @renderaccess
 def get_tile_spec_renderparameters(stack, tile, host=None, port=None,
                                    owner=None, project=None,
-                                   session=requests.session(),
+                                   session=None,
                                    render=None, **kwargs):
     """renderapi call to get the render parameters of a specific tileId
 
@@ -293,7 +293,7 @@ def get_tile_spec_renderparameters(stack, tile, host=None, port=None,
 
 @renderaccess
 def get_tile_spec(stack, tile, host=None, port=None, owner=None,
-                  project=None, session=requests.session(),
+                  project=None, session=None,
                   render=None, **kwargs):
     """renderapi call to get a specific tilespec by tileId
     note that this will return a tilespec with resolved transform references
@@ -328,7 +328,7 @@ def get_tile_spec(stack, tile, host=None, port=None, owner=None,
 
 @renderaccess
 def get_tile_spec_raw(stack, tile, host=None, port=None, owner=None,
-                      project=None, session=requests.session(),
+                      project=None, session=None,
                       render=None, **kwargs):
     """renderapi call to get a specific tilespec by tileId
     note that this will return a tilespec without resolved transform references
@@ -362,7 +362,7 @@ def get_tile_spec_raw(stack, tile, host=None, port=None, owner=None,
 def get_tile_specs_from_minmax_box(stack, z, xmin, xmax, ymin, ymax,
                                    scale=1.0, host=None,
                                    port=None, owner=None, project=None,
-                                   session=requests.session(),
+                                   session=None,
                                    render=None, **kwargs):
     """renderapi call to get all tilespec that exist within a 2d bounding box
     specified with min and max x,y values
@@ -409,7 +409,7 @@ def get_tile_specs_from_minmax_box(stack, z, xmin, xmax, ymin, ymax,
 @renderaccess
 def get_tile_specs_from_box(stack, z, x, y, width, height,
                             scale=1.0, host=None, port=None, owner=None,
-                            project=None, session=requests.session(),
+                            project=None, session=None,
                             render=None, **kwargs):
     """renderapi call to get all tilespec that exist within a 2d bounding box
     specified with min x,y values and width, height
@@ -455,7 +455,7 @@ def get_tile_specs_from_box(stack, z, x, y, width, height,
 
 @renderaccess
 def get_tile_specs_from_z(stack, z, host=None, port=None,
-                          owner=None, project=None, session=requests.session(),
+                          owner=None, project=None, session=None,
                           render=None, **kwargs):
     """Get all TileSpecs in a specific z values. Returns referenced transforms.
 
@@ -492,7 +492,7 @@ def get_tile_specs_from_z(stack, z, host=None, port=None,
 @renderaccess
 def get_tile_specs_from_stack(stack, host=None, port=None,
                               owner=None, project=None,
-                              session=requests.session(),
+                              session=None,
                               render=None, **kwargs):
     """get flat list of tilespecs for stack using i for sl in l for i in sl
 

@@ -16,3 +16,4 @@ htmlcov/
 .vscode
 .idea/
 *.iml
+.pixi/
