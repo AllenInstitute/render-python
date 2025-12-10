@@ -1,3 +1,4 @@
+# publish to pypi on github release (tagged as vX.Y.Z)
 name: release_publish
 on:
   # workflow_dispatch:
@@ -11,8 +12,15 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v2
 
-      - name: Build
-        run: python setup.py sdist bdist_wheel
+      - name: Pixi setup
+        uses: prefix-dev/setup-pixi@v0.8.3
+        with:
+          pixi-version: v0.41.4
+          cache: false
+          run-install: false
+
+      - name: Build with pixi env
+        run: pixi run pypi-build
 
       - name: Publish to Pypi
         uses: pypa/gh-action-pypi-publish@release/v1
