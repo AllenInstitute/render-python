@@ -12,7 +12,7 @@ authors = [
 maintainers = [
   {name = "Russel Torres"}
 ]
-requires-python = ">3.8,<3.12"
+requires-python = ">3.8,<3.14"
 dynamic = ["version"]
 dependencies = [
     "requests",
@@ -76,11 +76,20 @@ render-python = { path = ".", editable = true }
 numpy = "*"
 scipy = "*"
 
+[tool.pixi.feature.py312.dependencies]
+python = "3.12.*"
+[tool.pixi.feature.py313.dependencies]
+python = "3.13.*"
+
+
+
 [tool.pixi.environments]
 test = ["test"]
 conda = ["pixi-base"]
 conda-test = ["pixi-base", "test"]
 build = ["pypi-build"]
+test312 = ["py312", "test"]
+test313 = ["py313", "test"]
 
 [tool.coverage.run]
 omit = ["integration_tests/*", "test/*"]
