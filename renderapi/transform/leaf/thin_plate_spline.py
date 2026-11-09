@@ -13,6 +13,311 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
 
+def _legacy_fit_tps(A, B, computeAffine=True):
+    """function to fit this transform given the corresponding sets of points A & B
+
+    Parameters
+    ----------
+    A : numpy.array
+        a Nx2 matrix of source points
+    B : numpy.array
+        a Nx2 matrix of destination points
+    computeAffine: bool
+        include affine TPS terms
+
+    Returns
+    -------
+    dMatrix : numpy.array
+        ndims x nLm
+    aMatrix : numpy.array
+        ndims x ndims, affine matrix
+    bVector : numpy.array
+        ndims x 1, translation vector
+    """
+    # build displacements
+    ndims = B.shape[1]
+    nLm = B.shape[0]
+    y = (B - A).flatten()
+
+    # compute K
+    # tempting to matricize this, but, nLm x nLm can get big
+    # settle for vectorize
+    kMatrix = np.zeros((ndims * nLm, ndims * nLm))
+    for i in range(nLm):
+        r = np.linalg.norm(A[i, :] - A, axis=1)
+        nrm = np.zeros_like(r)
+        ind = np.argwhere(r > 1e-8)
+        nrm[ind] = r[ind] * r[ind] * np.log(r[ind])
+        kMatrix[i * ndims, 0::2] = nrm
+        kMatrix[(i * ndims + 1)::2, 1::2] = nrm
+
+    # compute L
+    lMatrix = kMatrix
+    if computeAffine:
+        pMatrix = np.tile(np.eye(ndims), (nLm, ndims + 1))
+        for d in range(ndims):
+            pMatrix[0::2, d*ndims] = A[:, d]
+            pMatrix[1::2, d*ndims + 1] = A[:, d]
+        lMatrix = np.zeros(
+                (ndims * (nLm + ndims + 1), ndims * (nLm + ndims + 1)))
+        lMatrix[
+                0: pMatrix.shape[0],
+                kMatrix.shape[1]: kMatrix.shape[1] + pMatrix.shape[1]] = \
+            pMatrix
+        pMatrix = np.transpose(pMatrix)
+        lMatrix[
+                kMatrix.shape[0]: kMatrix.shape[0] + pMatrix.shape[0],
+                0: pMatrix.shape[1]] = pMatrix
+        lMatrix[0: ndims * nLm, 0: ndims * nLm] = kMatrix
+        y = np.append(y, np.zeros(ndims * (ndims + 1)))
+
+    wMatrix = np.linalg.solve(lMatrix, y)
+
+    dMatrix = np.reshape(wMatrix[0: ndims * nLm], (ndims, nLm), order='F')
+    aMatrix = None
+    bVector = None
+    if computeAffine:
+        aMatrix = np.reshape(
+                wMatrix[ndims * nLm: ndims * nLm + ndims * ndims],
+                (ndims, ndims),
+                order='F')
+        bVector = wMatrix[ndims * nLm + ndims * ndims:]
+
+    return dMatrix, aMatrix, bVector
+
+
+def _fill_tps_kernel(K, A, block_size=512, eps=1e-8):
+    n = A.shape[0]
+    eps2 = eps * eps
+
+    for i0 in range(0, n, block_size):
+        i1 = min(i0 + block_size, n)
+        Ai = A[i0:i1]
+
+        for j0 in range(i0, n, block_size):
+            j1 = min(j0 + block_size, n)
+
+            d2 = scipy.spatial.distance.cdist(
+                Ai, A[j0:j1], metric="sqeuclidean"
+            )
+            d2[d2 <= eps2] = 0.0
+
+            scipy.special.xlogy(d2, d2, out=d2)
+            d2 *= 0.5
+
+            K[i0:i1, j0:j1] = d2
+
+            if i0 != j0:
+                K[j0:j1, i0:i1] = d2.T
+
+
+def _reconstruct_normalized_tps_fit(
+        W, C, An,
+        center, scale):
+    # Normalized evaluation:
+    #   f(x) =
+    #       sum_i W_i U(||(x - A_i) / scale||)
+    #       + ((x - center) / scale) @ Cxy
+    #       + C0
+    #
+    # Legacy evaluation:
+    #   f(x) =
+    #       sum_i Wlegacy_i U(||x - A_i||)
+    #       + x @ Clegacy
+    #       + blegacy
+
+    scale2 = scale * scale
+
+    W_legacy = W / scale2
+
+    Cxy = C[:2]
+    C0 = C[2]
+
+    Cxy_legacy = Cxy / scale
+
+    # center correction
+    b_legacy = C0 - (center / scale) @ Cxy
+
+    # kernel scaling introduces a constant:
+    #   U(r / s) = U(r) / s² - log(s) r² / s²
+    #
+    # Because TPS weights satisfy:
+    #   sum(W_i) = 0
+    #   sum(W_i * A_i) = 0
+    #
+    # r² term becomes constant; add to translation
+    kernel_constant = (
+        -np.log(scale)
+        * np.sum(
+            W * np.sum(An * An, axis=1)[:, None],
+            axis=0,
+        )
+    )
+
+    b_legacy += kernel_constant
+
+    dMatrix = W_legacy.T
+    aMatrix = Cxy_legacy.T
+    bVector = b_legacy.copy()
+
+    return dMatrix, aMatrix, bVector
+
+
+
+def _fit_tps(
+        A, B,
+        computeAffine=True,
+        legacy_output=True,
+        regularization=0.0,
+        block_size=512):
+    """
+    Fit 2d thin-plate spline using corresponding points A and B.
+
+    Parameters
+    ----------
+    A : numpy.array
+        a Nx2 matrix of source points
+    B : numpy.array
+        a Nx2 matrix of destination points
+    computeAffine: bool
+        include affine TPS terms
+    legacy_output : bool
+        If True, convert coefficients back to the original coordinate
+        convention so existing transform/evaluation code can use them
+        unchanged
+        If False, coefficients operate on normalized coordinates and the
+        normalization parameters are also returned.
+    regularization : float
+        diagonal TPS regularization
+    block_size : int
+         block size used to construct kernel
+    Returns
+    -------
+    if legacy_output=True:
+        dMatrix : numpy.array
+            ndims x nLm
+        aMatrix : numpy.array
+            ndims x ndims, affine matrix
+        bVector : numpy.array
+            ndims x 1, translation vector
+
+    if legacy_output=False:
+        dMatrix : numpy.array
+            ndims x nLm
+        aMatrix : numpy.array
+            ndims x ndims, affine matrix
+        bVector : numpy.array
+            ndims x 1, translation vector
+        center: numpy.ndarray
+            center used for normalization
+        scale: numpy.ndarray
+            scale used for normalization
+    """
+    n = A.shape[0]
+    displacement = B - A
+
+    # Normalize source coordinates to improve conditioning.
+    center = A.mean(axis=0)
+
+    Ac = A - center
+    scale = np.sqrt(np.mean(np.sum(Ac * Ac, axis=1)))
+
+    if not np.isfinite(scale) or scale <= np.finfo(np.float64).eps:
+        raise EstimationError("Degenerate source control-point coordinates")
+
+    An = Ac / scale
+
+    if not computeAffine and legacy_output:
+        K = np.empty((n, n), dtype=np.float64)
+        _fill_tps_kernel(
+            K,
+            A,
+            block_size=block_size,
+        )
+
+        if regularization:
+            K.flat[::n + 1] += regularization
+
+        W = scipy.linalg.solve(
+            K,
+            displacement.copy(),
+            assume_a="sym",
+            overwrite_a=True,
+            overwrite_b=True,
+            check_finite=False,
+        )
+
+        return W.T, None, None
+
+    if not computeAffine and not legacy_output:
+        K = np.empty((n, n), dtype=np.float64)
+        _fill_tps_kernel(K, An, block_size=block_size)
+
+        if regularization:
+            K.flat[::n + 1] += regularization
+
+        W = scipy.linalg.solve(
+            K,
+            displacement.copy(),
+            assume_a="sym",
+            check_finite=False,
+            overwrite_a=True,
+            overwrite_b=True,
+        )
+
+        return W.T, None, None, center, scale
+
+    # [ K   P ] [ W ] = [ displacement ]
+    # [ P^T 0 ] [ C ]   [      0       ]
+    L = np.zeros((n + 3, n + 3), dtype=np.float64)
+
+    _fill_tps_kernel(
+        L[:n, :n],
+        An,
+        block_size=block_size,
+    )
+
+    if regularization:
+        idx = np.arange(n)
+        L[idx, idx] += regularization
+
+    # Normalized affine coordinates.
+    L[:n, n] = An[:, 0]
+    L[:n, n + 1] = An[:, 1]
+    L[:n, n + 2] = 1.0
+
+    L[n:, :n] = L[:n, n:].T
+
+    rhs = np.zeros((n + 3, 2), dtype=np.float64)
+    rhs[:n] = displacement
+
+    coefficients = scipy.linalg.solve(
+        L,
+        rhs,
+        assume_a="sym",
+        overwrite_a=True,
+        overwrite_b=True,
+        check_finite=False,
+    )
+    W = coefficients[:n]
+    C = coefficients[n:]
+
+    if not legacy_output:
+        dMatrix = W.T
+        aMatrix = C[:2].T
+        bVector = C[2].copy()
+
+        return (
+            dMatrix,
+            aMatrix,
+            bVector,
+            center,
+            scale,
+        )
+
+    return _reconstruct_normalized_tps_fit(W, C, An, center, scale)
+
+
 class ThinPlateSplineTransform(Transform):
     """
     render-python class that can hold a dataString for
@@ -222,7 +527,7 @@ class ThinPlateSplineTransform(Transform):
         return newpts
 
     @staticmethod
-    def fit(A, B, computeAffine=True):
+    def fit(A, B, computeAffine=True, use_legacy=False):
         """function to fit this transform given the corresponding sets of points A & B
 
         Parameters
@@ -241,62 +546,25 @@ class ThinPlateSplineTransform(Transform):
         bVector : numpy.array
             ndims x 1, translation vector
         """
+        A = np.ascontiguousarray(A, dtype=np.float64)
+        B = np.ascontiguousarray(B, dtype=np.float64)
 
-        if not all([A.shape[0] == B.shape[0], A.shape[1] == B.shape[1] == 2]):
+        if (
+            A.ndim != 2
+            or B.ndim != 2
+            or A.shape != B.shape
+            or A.shape[1] != 2
+        ):
             raise EstimationError(
-                'shape mismatch! A shape: {}, B shape {}'.format(
-                    A.shape, B.shape))
+                f"shape mismatch! A shape: {A.shape}, B shape: {B.shape}"
+            )
+        if not np.isfinite(A).all() or not np.isfinite(B).all():
+            raise EstimationError("A and B must contain finite values")
 
-        # build displacements
-        ndims = B.shape[1]
-        nLm = B.shape[0]
-        y = (B - A).flatten()
+        if use_legacy:
+            return _legacy_fit_tps(A, B, computeAffine=computeAffine)
+        return _fit_tps(A, B, computeAffine=computeAffine)
 
-        # compute K
-        # tempting to matricize this, but, nLm x nLm can get big
-        # settle for vectorize
-        kMatrix = np.zeros((ndims * nLm, ndims * nLm))
-        for i in range(nLm):
-            r = np.linalg.norm(A[i, :] - A, axis=1)
-            nrm = np.zeros_like(r)
-            ind = np.argwhere(r > 1e-8)
-            nrm[ind] = r[ind] * r[ind] * np.log(r[ind])
-            kMatrix[i * ndims, 0::2] = nrm
-            kMatrix[(i * ndims + 1)::2, 1::2] = nrm
-
-        # compute L
-        lMatrix = kMatrix
-        if computeAffine:
-            pMatrix = np.tile(np.eye(ndims), (nLm, ndims + 1))
-            for d in range(ndims):
-                pMatrix[0::2, d*ndims] = A[:, d]
-                pMatrix[1::2, d*ndims + 1] = A[:, d]
-            lMatrix = np.zeros(
-                    (ndims * (nLm + ndims + 1), ndims * (nLm + ndims + 1)))
-            lMatrix[
-                    0: pMatrix.shape[0],
-                    kMatrix.shape[1]: kMatrix.shape[1] + pMatrix.shape[1]] = \
-                pMatrix
-            pMatrix = np.transpose(pMatrix)
-            lMatrix[
-                    kMatrix.shape[0]: kMatrix.shape[0] + pMatrix.shape[0],
-                    0: pMatrix.shape[1]] = pMatrix
-            lMatrix[0: ndims * nLm, 0: ndims * nLm] = kMatrix
-            y = np.append(y, np.zeros(ndims * (ndims + 1)))
-
-        wMatrix = np.linalg.solve(lMatrix, y)
-
-        dMatrix = np.reshape(wMatrix[0: ndims * nLm], (ndims, nLm), order='F')
-        aMatrix = None
-        bVector = None
-        if computeAffine:
-            aMatrix = np.reshape(
-                    wMatrix[ndims * nLm: ndims * nLm + ndims * ndims],
-                    (ndims, ndims),
-                    order='F')
-            bVector = wMatrix[ndims * nLm + ndims * ndims:]
-
-        return dMatrix, aMatrix, bVector
 
     def estimate(self, A, B, computeAffine=True):
         """method for setting this transformation with the best fit
