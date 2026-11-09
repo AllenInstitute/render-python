@@ -13,6 +13,75 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
 
+def _tps_kernel_from_sqdist(d2, out=None, eps=None):
+    """Convert squared distances to U(r) = r^2 log(r)
+
+    Parameters
+    ----------
+    d2 : numpy.ndarray
+        squared euclidean distances
+    out : numpy.ndarray, optional
+        output array; may be the same array as d2
+
+    Returns
+    -------
+    numpy.ndarray
+        TPS radial basis values
+    """
+    if out is None:
+        out = np.array(d2, dtype=np.float64, copy=True)
+    elif out is not d2:
+        np.copyto(out, d2)
+
+    if eps is not None:
+        eps2 = eps * eps
+        out[out <= eps2] = 0.0
+
+    scipy.special.xlogy(out, out, out=out)
+    out *= 0.5
+
+    return out
+
+
+def _tps_kernel(x, y, out=None, eps=None):
+    """Compute the TPS kernel between two Nx2/Mx2 point arrays
+
+    Parameters
+    ----------
+    x : (N, 2) ndarray
+    y : (M, 2) ndarray
+    out : (N, M) ndarray, optional
+        output array, buffer
+
+    Returns
+    -------
+    (N, M) ndarray
+        K[i, j] = U(||x[i] - y[j]||).
+    """
+    x = np.asarray(x, dtype=np.float64)
+    y = np.asarray(y, dtype=np.float64)
+
+    if out is None:
+        out = scipy.spatial.distance.cdist(
+            x,
+            y,
+            metric="sqeuclidean",
+        )
+    else:
+        scipy.spatial.distance.cdist(
+            x,
+            y,
+            metric="sqeuclidean",
+            out=out,
+        )
+
+    return _tps_kernel_from_sqdist(
+        out,
+        out=out,
+        eps=eps
+    )
+
+
 def _legacy_fit_tps(A, B, computeAffine=True):
     """function to fit this transform given the corresponding sets of points A & B
 
@@ -86,29 +155,45 @@ def _legacy_fit_tps(A, B, computeAffine=True):
     return dMatrix, aMatrix, bVector
 
 
-def _fill_tps_kernel(K, A, block_size=512, eps=1e-8):
-    n = A.shape[0]
-    eps2 = eps * eps
+@staticmethod
+def _fill_tps_kernel(
+        K,
+        points,
+        block_size=512,
+        eps=None):
+
+    points = np.asarray(points, dtype=np.float64)
+    n = points.shape[0]
+
+    block_size = min(block_size, n)
+
+    # 1d buffer lets every partial block be reshaped C-contiguously
+    work = np.empty(
+        block_size * block_size,
+        dtype=np.float64,
+    )
 
     for i0 in range(0, n, block_size):
         i1 = min(i0 + block_size, n)
-        Ai = A[i0:i1]
+        ni = i1 - i0
 
         for j0 in range(i0, n, block_size):
             j1 = min(j0 + block_size, n)
+            nj = j1 - j0
 
-            d2 = scipy.spatial.distance.cdist(
-                Ai, A[j0:j1], metric="sqeuclidean"
+            block = work[:ni * nj].reshape(ni, nj)
+
+            _tps_kernel(
+                points[i0:i1],
+                points[j0:j1],
+                out=block,
+                eps=eps,
             )
-            d2[d2 <= eps2] = 0.0
 
-            scipy.special.xlogy(d2, d2, out=d2)
-            d2 *= 0.5
-
-            K[i0:i1, j0:j1] = d2
+            K[i0:i1, j0:j1] = block
 
             if i0 != j0:
-                K[j0:j1, i0:i1] = d2.T
+                K[j0:j1, i0:i1] = block.T
 
 
 def _reconstruct_normalized_tps_fit(
@@ -446,15 +531,11 @@ class ThinPlateSplineTransform(Transform):
 
             kernel = buffer[:n]
 
-            scipy.spatial.distance.cdist(
-                points[i0:i1],
-                src,
-                metric="sqeuclidean",
-                out=kernel,
-            )
-
-            scipy.special.xlogy(kernel, kernel, out=kernel)
-            kernel *= 0.5
+            _tps_kernel(
+                        points[i0:i1],
+                        src,
+                        out=kernel,
+                    )
 
             result[i0:i1] = kernel @ weights
 
