@@ -3,6 +3,7 @@ from renderapi.errors import RenderError, EstimationError
 from renderapi.utils import encodeBase64, decodeBase64
 from .transform import Transform
 import scipy.spatial
+import scipy.special
 import logging
 import sys
 __all__ = ['ThinPlateSplineTransform']
@@ -90,25 +91,69 @@ class ThinPlateSplineTransform(Transform):
         """
         return self.apply(points)
 
-    def apply(self, points):
-        if not hasattr(self, 'dMtxDat'):
+    def apply(self, points, block_size=128):
+        points = np.asarray(points)
+
+        if not hasattr(self, "dMtxDat"):
             return points
 
-        result = points + self.computeDeformationContribution(points)
+        result = self.computeDeformationContribution(
+            points,
+            block_size=block_size,
+        )
+
+        result += points
+
         if self.aMtx is not None:
-            result += self.aMtx.dot(points.transpose()).transpose()
+            result += points @ self.aMtx.T
+
         if self.bVec is not None:
             result += self.bVec
 
         return result
 
-    def computeDeformationContribution(self, points):
-        disp = scipy.spatial.distance.cdist(
-                points,
-                self.srcPts.transpose(),
-                metric='sqeuclidean')
-        disp *= np.ma.log(np.sqrt(disp)).filled(0.0)
-        return disp.dot(self.dMtxDat.transpose())
+    def computeDeformationContribution(self, points, block_size=128):
+        points = np.asarray(points, dtype=np.float64)
+
+        src = np.ascontiguousarray(
+            self.srcPts.T,
+            dtype=np.float64,
+        )
+        weights = np.ascontiguousarray(
+            self.dMtxDat.T,
+            dtype=np.float64,
+        )
+
+        n_points = points.shape[0]
+        n_control = src.shape[0]
+
+        result = np.empty((n_points, 2), dtype=np.float64)
+
+        # Reused Mblock x Ncontrol kernel buffer.
+        buffer = np.empty(
+            (min(block_size, n_points), n_control),
+            dtype=np.float64,
+        )
+
+        for i0 in range(0, n_points, block_size):
+            i1 = min(i0 + block_size, n_points)
+            n = i1 - i0
+
+            kernel = buffer[:n]
+
+            scipy.spatial.distance.cdist(
+                points[i0:i1],
+                src,
+                metric="sqeuclidean",
+                out=kernel,
+            )
+
+            scipy.special.xlogy(kernel, kernel, out=kernel)
+            kernel *= 0.5
+
+            result[i0:i1] = kernel @ weights
+
+        return result
 
     def gradient_descent(
             self,
