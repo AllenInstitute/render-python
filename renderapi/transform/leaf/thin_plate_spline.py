@@ -541,6 +541,235 @@ class ThinPlateSplineTransform(Transform):
 
         return result
 
+    def _inverse_newton_step(
+            self,
+            current,
+            target,
+            src,
+            weights,
+            linear,
+            translation,
+            damping=1.0,
+            block_size=64):
+        """vectorized newton iteration step for evaluating inverse TPS
+
+        Parameters
+        ----------
+        current : (N, 2) ndarray
+            Current estimate of inverse coordinates. Modified in-place.
+        target : (N, 2) ndarray
+            Desired transformed coordinates.
+        src : (M, 2) ndarray
+            TPS source control points.
+        weights : (M, 2) ndarray
+            TPS nonlinear weights.
+        linear : (2, 2) ndarray
+            Identity + TPS affine matrix.
+        translation : (2,) ndarray
+            TPS translation.
+        damping : float
+            Newton step multiplier.
+        block_size : int
+            Number of query points processed at once.
+
+        Returns
+        -------
+        float
+            Maximum squared update magnitude.
+        """
+        max_step2 = 0.0
+
+        for i0 in range(0, current.shape[0], block_size):
+            i1 = min(i0 + block_size, current.shape[0])
+
+            p = current[i0:i1]
+            t = target[i0:i1]
+
+            dx = p[:, 0, None] - src[None, :, 0]
+            dy = p[:, 1, None] - src[None, :, 1]
+
+            r2 = dx * dx
+            r2 += dy * dy
+
+            # log(r^2), with log(0) -> 0
+            log_r2 = np.empty_like(r2)
+            log_r2.fill(0.0)
+            np.log(
+                r2,
+                out=log_r2,
+                where=r2 > 0.0,
+            )
+
+            # TPS kernel:
+            #
+            # U(r) = r^2 log(r)
+            r2 *= log_r2
+            r2 *= 0.5
+
+            # evaluate transform
+            f = p @ linear.T
+            f += translation
+            f += r2 @ weights
+
+            # reuse f for residual
+            f -= t
+
+            rx = f[:, 0]
+            ry = f[:, 1]
+
+            # TPS derivative:
+            #     dU/dx = dx * (log(r^2) + 1)
+            #     dU/dy = dy * (log(r^2) + 1)
+            log_r2 += 1.0
+            dx *= log_r2
+            dy *= log_r2
+
+            jx = dx @ weights
+            jy = dy @ weights
+
+            j00 = linear[0, 0] + jx[:, 0]
+            j10 = linear[1, 0] + jx[:, 1]
+
+            j01 = linear[0, 1] + jy[:, 0]
+            j11 = linear[1, 1] + jy[:, 1]
+
+            # vectorized inverse of Jacobian
+            det = j00 * j11 - j01 * j10
+
+            det_scale = (
+                np.abs(j00 * j11)
+                + np.abs(j01 * j10)
+                + 1.0
+            )
+
+            good = np.abs(det) > 1e-12 * det_scale
+
+            # nearly singular local Jacobian becomes fixed-point residual
+            sx = rx.copy()
+            sy = ry.copy()
+
+            sx[good] = (
+                j11[good] * rx[good]
+                - j01[good] * ry[good]
+            ) / det[good]
+
+            sy[good] = (
+                -j10[good] * rx[good]
+                + j00[good] * ry[good]
+            ) / det[good]
+
+            sx *= damping
+            sy *= damping
+
+            p[:, 0] -= sx
+            p[:, 1] -= sy
+
+            step2 = sx * sx + sy * sy
+            max_step2 = max(
+                max_step2,
+                float(step2.max()),
+            )
+        return max_step2
+
+    @staticmethod
+    def _newton_block_size(
+            n_points,
+            n_control,
+            target_bytes=8 * 1024**2,
+            max_block=128,
+            min_block=16):
+        """helper method to determine newton iteration block size"""
+        bytes_per_row = 4 * n_control * np.dtype(np.float64).itemsize
+
+        block_size = max(
+            min_block,
+            min(
+                max_block,
+                n_points,
+                target_bytes // bytes_per_row,
+            ),
+        )
+
+        # Cache-friendly multiple where possible.
+        if block_size >= 32:
+            block_size = (block_size // 16) * 16
+
+        return max(min_block, block_size)
+
+    def _inverse_newton(
+            self,
+            points,
+            precision=0.0001,
+            max_iters=100,
+            damping=1.0,
+            block_size=None):
+        """approximate TPS inversion with newton iteration"""
+        target = np.ascontiguousarray(
+            points,
+            dtype=np.float64,
+        )
+
+        src = np.ascontiguousarray(
+            self.srcPts.T,
+            dtype=np.float64,
+        )
+
+        weights = np.ascontiguousarray(
+            self.dMtxDat.T,
+            dtype=np.float64,
+        )
+
+        linear = np.eye(2, dtype=np.float64)
+
+        if self.aMtx is not None:
+            linear += self.aMtx
+
+        translation = (
+            np.zeros(2, dtype=np.float64)
+            if self.bVec is None
+            else np.asarray(self.bVec, dtype=np.float64)
+        )
+
+        # Start with the inverse of the affine component.
+        try:
+            current = np.linalg.solve(
+                linear,
+                (target - translation).T,
+            ).T
+
+            current = np.ascontiguousarray(current)
+
+        except np.linalg.LinAlgError:
+            current = target.copy()
+
+        if block_size is None:
+            block_size = self._newton_block_size(
+                target.shape[0],
+                src.shape[0],
+            )
+
+        precision2 = precision * precision
+
+        for _ in range(max_iters):
+            step2 = self._inverse_newton_step(
+                current,
+                target,
+                src,
+                weights,
+                linear,
+                translation,
+                damping=damping,
+                block_size=block_size,
+            )
+
+            if step2 <= precision2:
+                return current
+
+        raise EstimationError(
+            "Newton inversion of ThinPlateSplineTransform "
+            f"reached maximum iterations: {max_iters}"
+        )
+
     def gradient_descent(
             self,
             pts,
@@ -592,7 +821,9 @@ class ThinPlateSplineTransform(Transform):
             points,
             gamma=1.0,
             precision=0.0001,
-            max_iters=1000):
+            max_iters=1000,
+            method="fixed"
+        ):
         """transform a set of points through the inverse of this transformation
         Parameters
         ----------
@@ -604,17 +835,31 @@ class ThinPlateSplineTransform(Transform):
             criteria for stopping for differences between steps
         max_iters : int
             limit for iterations, error if reached
+        method: str
+            convergence method for inversion: "newton" for newton iteration or "fixed" for gradient descent
         Returns
         -------
         numpy.array
             a Nx2 array of x,y points after inverse transformation
         """
-        newpts = self.gradient_descent(
+        if method == "newton":
+            return self._inverse_newton(
+                points,
+                precision=precision,
+                max_iters=min(max_iters, 100),
+            )
+
+        if method == "fixed":
+            return self.gradient_descent(
                 points,
                 gamma=gamma,
                 precision=precision,
-                max_iters=max_iters)
-        return newpts
+                max_iters=max_iters,
+            )
+
+        raise ValueError(
+            f"unknown inverse method: {method}"
+        )
 
     @staticmethod
     def fit(A, B, computeAffine=True, use_legacy=False):
