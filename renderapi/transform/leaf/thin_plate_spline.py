@@ -547,7 +547,7 @@ class ThinPlateSplineTransform(Transform):
             gamma=1.0,
             precision=0.0001,
             max_iters=1000):
-        """based on https://en.wikipedia.org/wiki/Gradient_descent#Python
+        """fixed-point approximation of inverse tps
         Parameters
         ----------
         pts : numpy array
@@ -563,20 +563,29 @@ class ThinPlateSplineTransform(Transform):
         cur_pts : numpy array
             a Nx2 array of x,y points, estimated inverse of pt
         """
-        cur_pts = np.copy(pts)
-        prev_pts = np.copy(pts)
-        step_size = 1
-        iters = 0
-        while (step_size > precision) & (iters < max_iters):
-            prev_pts[:, :] = cur_pts[:, :]
-            cur_pts -= gamma*(self.apply(prev_pts) - pts)
-            step_size = np.linalg.norm(cur_pts - prev_pts, axis=1).max()
-            iters += 1
-        if iters == max_iters:
-            raise EstimationError(
-                    'gradient descent for inversion of ThinPlateSpline '
-                    'reached maximum iterations: %d' % max_iters)
-        return cur_pts
+        pts = np.asarray(pts, dtype=np.float64)
+        cur_pts = pts.copy()
+
+        precision2 = precision * precision
+        gamma2 = gamma * gamma
+
+        for _ in range(max_iters):
+            residual = self.apply(cur_pts) - pts
+
+            cur_pts -= gamma * residual
+
+            step2 = gamma2 * np.max(
+                np.einsum("ij,ij->i", residual, residual)
+            )
+
+            if step2 <= precision2:
+                return cur_pts
+
+        raise EstimationError(
+            "gradient descent for inversion of ThinPlateSpline "
+            f"reached maximum iterations: {max_iters}"
+        )
+
 
     def inverse_tform(
             self,
