@@ -19,15 +19,15 @@ ch.setFormatter(formatter)
 root.addHandler(ch)
 
 
-@pytest.fixture(scope='module')
-def render():
-    render_test_parameters = {
-        'host': render_host,
-        'port': render_port,
-        'owner': 'test',
-        'project': 'test_project',
-        'client_scripts': client_script_location}
-    return renderapi.render.connect(**render_test_parameters)
+# @pytest.fixture(scope='module')
+# def render():
+#     render_test_parameters = {
+#         'host': render_host,
+#         'port': render_port,
+#         'owner': 'test',
+#         'project': 'test_project',
+#         'client_scripts': client_script_location}
+#     return renderapi.render.connect(**render_test_parameters)
 
 
 @pytest.fixture
@@ -66,6 +66,7 @@ def render_example_tilespec_and_transforms():
     return (tilespecs, tforms)
 
 
+@pytest.mark.render_service
 def test_stack_creation_deletion(render):
     test_stack = 'test_stack1'
     r = render.run(renderapi.stack.create_stack,
@@ -93,11 +94,13 @@ def test_stack_creation_deletion(render):
     assert (r.status_code != 400)
 
 
+@pytest.mark.render_service
 def test_failed_metadata(render):
     with pytest.raises(renderapi.errors.RenderError):
         render.run(renderapi.stack.get_stack_metadata, 'NOTASTACKNAME')
 
 
+@pytest.mark.render_service
 def test_set_stack_metadata(render):
     test_stack = 'test_stack2'
     r = render.run(renderapi.stack.create_stack,
@@ -117,6 +120,8 @@ def test_set_stack_metadata(render):
     assert sv.stackResolutionZ == 4.0
 
 
+@pytest.mark.render_service
+@pytest.mark.java_client
 def test_simple_import(render, simpletilespec, tmpdir):
     # open a temporary file
     tfile = tmpdir.join('testfile.json')
@@ -139,6 +144,8 @@ def test_simple_import(render, simpletilespec, tmpdir):
     render.run(renderapi.stack.delete_stack, 'test_insert')
 
 
+@pytest.mark.render_service
+@pytest.mark.java_client
 def test_simple_import_with_transforms(
         render, render_example_tilespec_and_transforms, tmpdir):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
@@ -169,10 +176,11 @@ def test_simple_import_with_transforms(
     render.run(renderapi.stack.delete_stack, 'test_insert_tform')
 
 
+@pytest.mark.render_service
 def test_import_tilespecs(render, simpletilespec):
     stack = 'test_insert2'
     render.run(renderapi.stack.create_stack, stack, force_resolution=True)
-    render.run(renderapi.client.import_tilespecs, stack, [simpletilespec])
+    render.run(renderapi.resolvedtiles.put_tilespecs, stack, tilespecs=[simpletilespec])
     response = render.run(renderapi.stack.set_stack_state, stack, 'COMPLETE')
     assert response.status_code == 201
     ts_out = render.run(renderapi.tilespec.get_tile_spec,
@@ -180,7 +188,8 @@ def test_import_tilespecs(render, simpletilespec):
     assert ts_out.z == simpletilespec.z
     render.run(renderapi.stack.delete_stack, stack)
 
-
+@pytest.mark.render_service
+@pytest.mark.java_client
 def test_remove_section(render, simpletilespec, tmpdir):
     # open a temporary file
     tfile = tmpdir.join('testfile.json')
@@ -215,8 +224,8 @@ def teststack(request, render, render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     stack = 'test_insert3'
     r = render.run(renderapi.stack.create_stack, stack, force_resolution=True)
-    render.run(renderapi.client.import_tilespecs, stack, tilespecs,
-               sharedTransforms=tforms)
+    render.run(renderapi.resolvedtiles.put_tilespecs, stack, tilespecs=tilespecs,
+               shared_transforms=tforms)
     r = render.run(  # noqa: F841
         renderapi.stack.set_stack_state, stack, 'COMPLETE')
     yield stack
@@ -227,11 +236,12 @@ def teststack_loading(request, render, render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     stack = 'test_insert_loading'
     r = render.run(renderapi.stack.create_stack, stack, force_resolution=True)
-    render.run(renderapi.client.import_tilespecs, stack, tilespecs,
-               sharedTransforms=tforms)
+    render.run(renderapi.resolvedtiles.put_tilespecs, stack, tilespecs=tilespecs,
+               shared_transforms=tforms)
     yield stack
     render.run(renderapi.stack.delete_stack, stack)
 
+@pytest.mark.render_service
 def test_stack_bounds(render, teststack):
     # check the stack bounds
     stack_bounds = render.run(renderapi.stack.get_stack_bounds, teststack)
@@ -242,6 +252,7 @@ def test_stack_bounds(render, teststack):
         assert np.abs(stack_bounds[key]-expected_bounds[key]) < 1.0
 
 
+@pytest.mark.render_service
 def test_z_bounds(render, teststack, render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     # check a single z stack bounds
@@ -254,6 +265,7 @@ def test_z_bounds(render, teststack, render_example_tilespec_and_transforms):
         assert np.abs(zbounds[key]-expected_bounds[key]) < 1.0
 
 
+@pytest.mark.render_service
 def test_get_section_z(render, teststack):
     # check getting section Z
     z = render.run(renderapi.stack.get_section_z_value,
@@ -261,6 +273,7 @@ def test_get_section_z(render, teststack):
     assert z == 3407
 
 
+@pytest.mark.render_service
 def test_clone_stack(render, teststack):
     stack2 = 'cloned_stack'
     zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
@@ -270,6 +283,7 @@ def test_clone_stack(render, teststack):
     assert zvalues == zvalues2
 
 
+@pytest.mark.render_service
 def test_clone_stack_subset(render, teststack):
     stack2 = 'cloned_stack_subset'
     zvalues = renderapi.stack.get_z_values_for_stack(teststack, render=render)
@@ -280,24 +294,29 @@ def test_clone_stack_subset(render, teststack):
     assert zvalues[0:1] == zvalues2
 
 
+@pytest.mark.render_service
 def test_get_stack_sectionData(render, teststack):
     sectionData = renderapi.stack.get_stack_sectionData(
         teststack, render=render)
     assert len(sectionData) == 2
 
 
+@pytest.mark.render_service
 def test_get_z_values(render, teststack):
     # check get z values
     zvalues = render.run(renderapi.stack.get_z_values_for_stack, teststack)
     assert zvalues == [3407.0, 3408.0]
 
 
+@pytest.mark.render_service
 def test_uniq_value(render):
     # check likelyUniqueId
     uniq = render.run(renderapi.stack.likelyUniqueId)
     assert len(uniq) >= len('58ceebb7a7b11b0001dc4e32')
 
 
+@pytest.mark.render_service
+@pytest.mark.shared_data
 def test_bb_image(render, teststack, **kwargs):
     formats = renderapi.image.IMAGE_FORMATS.keys()
     zvalues = render.run(renderapi.stack.get_z_values_for_stack, teststack)
@@ -318,12 +337,16 @@ def test_bb_image(render, teststack, **kwargs):
             assert data.shape[2] >= 3
 
 
+@pytest.mark.render_service
+@pytest.mark.shared_data
 def test_bb_image_options(render, teststack):
     test_bb_image(render, teststack, filter=True,
                   binaryMask=True, maxTileSpecsToRender=20, minIntensity=0,
                   maxIntensity=255)
 
 
+@pytest.mark.render_service
+@pytest.mark.shared_data
 def test_bb_renderparams(render, teststack):
     zvalues = render.run(renderapi.stack.get_z_values_for_stack, teststack)
     z = zvalues[0]
@@ -343,6 +366,8 @@ def test_bb_renderparams(render, teststack):
     assert len(rp['tileSpecs'])
 
 
+@pytest.mark.render_service
+@pytest.mark.shared_data
 def test_tile_image(render, teststack, render_example_tilespec_and_transforms,
                     **kwargs):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
@@ -358,6 +383,8 @@ def test_tile_image(render, teststack, render_example_tilespec_and_transforms,
     assert data.shape[1] >= np.floor(tilespecs[0].width * testscale)
 
 
+@pytest.mark.render_service
+@pytest.mark.shared_data
 def test_tile_image_options(render, teststack,
                             render_example_tilespec_and_transforms):
     testscale = 0.5
@@ -366,6 +393,7 @@ def test_tile_image_options(render, teststack,
         scale=testscale, filter=True, normalizeForMatching=False)
 
 
+@pytest.mark.render_service
 def test_tile_renderparams(render, teststack):
     zvalues = render.run(renderapi.stack.get_z_values_for_stack, teststack)
     z = zvalues[0]
@@ -383,6 +411,8 @@ def test_tile_renderparams(render, teststack):
     assert rp['width'] - 1 == int(ts.maxX - ts.minX)
 
 
+@pytest.mark.render_service
+@pytest.mark.shared_data
 def test_section_image(render, teststack, **kwargs):
     zvalues = render.run(renderapi.stack.get_z_values_for_stack, teststack)
     z = zvalues[0]
@@ -399,11 +429,14 @@ def test_section_image(render, teststack, **kwargs):
     assert data.shape[2] >= 3
 
 
+@pytest.mark.render_service
+@pytest.mark.shared_data
 def test_section_image_options(render, teststack):
     test_section_image(render, teststack, filter=True,
                        maxTileSpecsToRender=50)
 
 
+@pytest.mark.render_service
 def test_section_renderparams(render, teststack):
     zvalues = render.run(renderapi.stack.get_z_values_for_stack, teststack)
     z = zvalues[0]
@@ -417,12 +450,14 @@ def test_section_renderparams(render, teststack):
     assert rp['scale'] == scalefactor
 
 
+@pytest.mark.render_service
 def fail_image_get(render, teststack, render_example_tilespec_and_transforms):
     with pytest.raises(KeyError):
         render.run(renderapi.image.get_tile_image_data, teststack,
                    'test', img_format='JUNK')
 
 
+@pytest.mark.render_service
 def test_get_tilespecs_from_z(render, teststack,
                               render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
@@ -432,6 +467,7 @@ def test_get_tilespecs_from_z(render, teststack,
     assert len(tiles) == len(tsz)
 
 
+@pytest.mark.render_service
 def test_get_tilespec_raw(
         render, teststack, render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
@@ -440,6 +476,7 @@ def test_get_tilespec_raw(
     assert ts.to_dict() == tilespecs[0].to_dict()
 
 
+@pytest.mark.render_service
 def test_get_tile_specs_from_minmax_box(
         render, teststack, render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
@@ -452,6 +489,7 @@ def test_get_tile_specs_from_minmax_box(
     assert len(ts) == len(tsz)
 
 
+@pytest.mark.render_service
 def test_get_tile_specs_from_box(render, teststack,
                                  render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
@@ -467,6 +505,7 @@ def test_get_tile_specs_from_box(render, teststack,
     assert len(ts) == len(tsz)
 
 
+@pytest.mark.render_service
 def test_get_tile_specs_from_stack(render, teststack,
                                    render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
@@ -474,6 +513,7 @@ def test_get_tile_specs_from_stack(render, teststack,
     assert len(ts) == len(tilespecs)
 
 
+@pytest.mark.render_service
 def test_get_sectionId_for_z(render, teststack, teststack_loading,
                              render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
@@ -485,6 +525,7 @@ def test_get_sectionId_for_z(render, teststack, teststack_loading,
     assert (sectionId == tilespecs[0].layout.sectionId)
 
 
+@pytest.mark.render_service
 def test_get_resolvedtiles_from_z(render, teststack,
                                   render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
@@ -497,6 +538,7 @@ def test_get_resolvedtiles_from_z(render, teststack,
     assert (len(matching_ts.tforms) == len(tsz[0].tforms))
 
 
+@pytest.mark.render_service
 def test_put_resolved_tiles_scratch(
         render, render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
@@ -511,6 +553,7 @@ def test_put_resolved_tiles_scratch(
     assert(len(tilespecs_out) == len(resolved_tilespecs.tilespecs))
 
 
+@pytest.mark.render_service
 def test_put_tilespecs_and_tforms(
         render, render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
@@ -524,33 +567,39 @@ def test_put_tilespecs_and_tforms(
     assert(len(tilespecs_out) == len(tilespecs))
 
 
+@pytest.mark.render_service
 def test_put_tilespecs_fail(render):
     with pytest.raises(renderapi.errors.RenderError):
         r = renderapi.resolvedtiles.put_tilespecs(  # noqa: F841
             'fail_stack', render=render)
 
 
+@pytest.mark.render_service
 def test_bad_delete(render):
     with pytest.raises(renderapi.errors.RenderError):
         renderapi.stack.delete_section('not_a_stack', 0.0, render=render)
 
 
+@pytest.mark.render_service
 def test_bad_get(render):
     with pytest.raises(renderapi.errors.RenderError):
         renderapi.stack.get_stack_metadata('not_a_stack', render=render)
 
 
+@pytest.mark.render_service
 def test_bad_post(render):
     with pytest.raises(renderapi.errors.RenderError):
         renderapi.stack.create_stack('not_a___stack', render=render)
 
 
+@pytest.mark.render_service
 def test_bad_put(render):
     with pytest.raises(renderapi.errors.RenderError):
         renderapi.stack.clone_stack(
             'not_a_stack', 'not_getting_here', render=render)
 
 
+@pytest.mark.render_service
 def test_rename_stack(render):
     from_stack = 'from'
     from_owner = 'from_owner'
@@ -559,6 +608,10 @@ def test_rename_stack(render):
     to_owner = 'to_owner'
     to_project = 'to_project'
 
+    renderapi.stack.delete_stack(
+        to_stack, owner=to_owner,
+        project=to_project,
+        render=render)
     renderapi.stack.create_stack(from_stack, owner=from_owner,
                                  project=from_project, render=render)
     renderapi.stack.rename_stack(from_stack, to_stack, to_owner=to_owner,

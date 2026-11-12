@@ -25,15 +25,15 @@ ch.setFormatter(formatter)
 root.addHandler(ch)
 
 
-@pytest.fixture(scope='module')
-def render():
-    render_test_parameters = {
-        'host': render_host,
-        'port': render_port,
-        'owner': 'test',
-        'project': 'test_project',
-        'client_scripts': client_script_location}
-    return renderapi.render.connect(**render_test_parameters)
+# @pytest.fixture(scope='module')
+# def render():
+#     render_test_parameters = {
+#         'host': render_host,
+#         'port': render_port,
+#         'owner': 'test',
+#         'project': 'test_project',
+#         'client_scripts': client_script_location}
+#     return renderapi.render.connect(**render_test_parameters)
 
 
 @pytest.fixture(scope='module')
@@ -67,6 +67,8 @@ def validate_stack_import(render, stack, tilespecs):
     assert len(ts) == len(tilespecs)
 
 
+@pytest.mark.render_service
+@pytest.mark.java_client
 @pytest.mark.parametrize('call_mode', (
     'call', 'check_call', 'check_output'))
 def test_import_jsonfiles_validate_client(
@@ -83,6 +85,8 @@ def test_import_jsonfiles_validate_client(
     renderapi.stack.delete_stack(stack, render=render)
 
 
+@pytest.mark.render_service
+@pytest.mark.java_client
 @pytest.mark.parametrize('call_mode', ('check_call', 'check_output'))
 def test_failed_jsonfiles_validate_client(
         render, render_example_tilespec_and_transforms, call_mode):
@@ -94,6 +98,8 @@ def test_failed_jsonfiles_validate_client(
             subprocess_mode=call_mode)
 
 
+@pytest.mark.render_service
+@pytest.mark.java_client
 @pytest.mark.parametrize('use_rest,stack',
                          [(True, 'test_import_jsonfiles_parallel'),
                           (False, 'test_import_jsonfiles_parallel_rest')])
@@ -112,7 +118,8 @@ def test_import_jsonfiles_parallel(
     renderapi.stack.delete_stack(stack, render=render)
 
 
-def test_bbox_transformed(render, render_example_tilespec_and_transforms):
+# FIXME this does not require integration
+def test_bbox_transformed(render_example_tilespec_and_transforms):
     (tilespecs, tforms) = render_example_tilespec_and_transforms
     ts = tilespecs[0]
     xy = ts.bbox_transformed(ndiv_inner=0, tf_limit=0)
@@ -129,6 +136,8 @@ def square(x):
 # this test was added in order to validate that multiple WithPools would work
 # pathos was breaking when we did this before.  Should now be not relevant,
 # but who ever deletes a test if you don't have to.
+@pytest.mark.render_service
+@pytest.mark.java_client
 def test_import_jsonfiles_parallel_multiple(
         render, render_example_tilespec_and_transforms,
         poolsize=test_pool_size):
@@ -142,6 +151,8 @@ def test_import_jsonfiles_parallel_multiple(
             use_rest=False, poolsize=poolsize)
 
 
+@pytest.mark.render_service
+@pytest.mark.java_client
 def test_import_tilespecs_parallel(render,
                                    render_example_tilespec_and_transforms,
                                    stack='test_import_tilespecs_parallel',
@@ -154,6 +165,8 @@ def test_import_tilespecs_parallel(render,
     validate_stack_import(render, stack, tilespecs)
 
 
+@pytest.mark.render_service
+@pytest.mark.java_client
 def test_import_jsonfiles(render, render_example_tilespec_and_transforms,
                           stack='test_import_jsonfiles'):
     renderapi.stack.create_stack(stack, render=render)
@@ -175,6 +188,7 @@ def teststack(render, render_example_tilespec_and_transforms):
     yield stack
     renderapi.stack.delete_stack(stack, render=render)
 
+
 @pytest.fixture(scope="module")
 def teststack2(render, render_example_tilespec_and_transforms):
     #copy of teststack for the purpose of testing pointmatchClient with two stacks
@@ -185,6 +199,8 @@ def teststack2(render, render_example_tilespec_and_transforms):
     renderapi.stack.delete_stack(stack, render=render)
 
 
+@pytest.mark.render_service
+@pytest.mark.java_client
 def test_tile_pair_client(render, teststack, **kwargs):
     zvalues = np.array(renderapi.stack.get_z_values_for_stack(
         teststack, render=render))
@@ -211,6 +227,8 @@ def test_tile_pair_client(render, teststack, **kwargs):
     assert len(multitpfiles) == len(multitpfiles_tmp) == len(tilepairjson["neighborPairs"]) // 2
 
 
+@pytest.mark.render_service
+@pytest.mark.java_client
 @pytest.mark.parametrize("bounds,raises", [
     ({}, True),
     ({'maxX': 1000, 'minX': 2000, 'minY': 1000, 'maxY': 2000}, True),
@@ -259,6 +277,8 @@ def test_renderSectionClient(render, teststack, bounds, raises, scale=.05):
                       )
 
 
+@pytest.mark.render_service
+@pytest.mark.java_client
 def test_importTransformChangesClient(render, teststack):
     deststack = 'test_stack_TCC'
 
@@ -281,6 +301,8 @@ def test_importTransformChangesClient(render, teststack):
     renderapi.stack.delete_stack(deststack, render=render)
 
 
+@pytest.mark.render_service
+@pytest.mark.java_client
 def test_transformSectionClient(render, teststack,
                                 render_example_tilespec_and_transforms):
     deststack = 'test_stack_TSC'
@@ -304,6 +326,8 @@ def test_transformSectionClient(render, teststack,
     renderapi.stack.delete_stack(deststack, render=render)
 
 
+@pytest.mark.render_service
+@pytest.mark.java_client
 def test_point_match_client(teststack, render, tmpdir):
     collection = 'test_client_collection'
     zvalues = np.array(renderapi.stack.get_z_values_for_stack(
@@ -326,6 +350,8 @@ def test_point_match_client(teststack, render, tmpdir):
     assert(len(pms) > 0)
 
 
+@pytest.mark.render_service
+@pytest.mark.java_client
 def test_point_match_client_2args(teststack, teststack2, render, tmpdir):
     collection = 'test_client_collection'
     zvalues = np.array(renderapi.stack.get_z_values_for_stack(
@@ -348,6 +374,7 @@ def test_point_match_client_2args(teststack, teststack2, render, tmpdir):
     assert(len(pms) > 0)
 
 
+@pytest.mark.java_client
 def test_call_run_ws_client_renderclient(render, teststack):
     # class for this test should be something relatively lightweight....
     test_class = 'org.janelia.render.client.ValidateTilesClient'
@@ -359,6 +386,8 @@ def test_call_run_ws_client_renderclient(render, teststack):
         test_class, add_args=args, subprocess_mode='call', renderclient=render)
 
 
+@pytest.mark.render_service
+@pytest.mark.java_client
 @pytest.mark.parametrize("stackbase,poolclass", [
     ("ThreadPooltest", WithThreadPool),
     ("DummyMapPoolTest", WithDummyMapPool),
@@ -423,6 +452,8 @@ def tile_tilespec():
         yield imgf.name, ts
 
 
+@pytest.mark.render_service
+@pytest.mark.java_client
 def test_ARGBrenderclient(render, tile_tilespec):
     tile, tspec = tile_tilespec
     arr = renderapi.client.render_tilespec(tspec, memGB='512M', render=render)
@@ -432,6 +463,7 @@ def test_ARGBrenderclient(render, tile_tilespec):
         assert np.all(arr[:, :, 0] == tilearr)
 
 
+@pytest.mark.java_client
 def testRendererClient(render, renderedimg_renderparams):
     renderedarr, renderparams = renderedimg_renderparams
     arr = renderapi.client.render_renderparameters(renderparams, render=render)

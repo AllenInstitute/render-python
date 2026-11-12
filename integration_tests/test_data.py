@@ -9,12 +9,11 @@ def render_json_template(env, template_file, **kwargs):
     return d
 
 
-example_dir = os.environ.get('RENDER_EXAMPLE_DATA',
-                             '/var/www/render/examples/')
-renderapp_example_dir = os.environ.get('RENDERAPP_EXAMPLE_DATA', example_dir)
-
 test_files_dir = os.path.join(os.path.dirname(__file__), 'test_files')
-example_env = Environment(loader=FileSystemLoader(test_files_dir))
+
+example_dir = os.environ.get('RENDER_EXAMPLE_DATA',
+                             test_files_dir)
+renderapp_example_dir = os.environ.get('RENDERAPP_EXAMPLE_DATA', example_dir)
 
 render_host = os.environ.get('RENDER_HOST', 'renderservice')
 render_port = os.environ.get('RENDER_PORT', 8080)
@@ -37,6 +36,8 @@ tform_file = os.path.join(
 test_pool_size = os.environ.get('RENDER_PYTHON_TEST_POOL_SIZE', 3)
 
 multi_channel_dir = os.path.join(renderapp_example_dir, 'multichannel-test')
+multi_channel_config_dir = os.path.join(test_files_dir, "multichannel-test")
+example_env = Environment(loader=FileSystemLoader(multi_channel_config_dir))
 
 test_2_channels_d = render_json_template(
     example_env,

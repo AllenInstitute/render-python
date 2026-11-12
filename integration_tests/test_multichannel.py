@@ -15,12 +15,12 @@ formatter = logging.Formatter(
 ch.setFormatter(formatter)
 root.addHandler(ch)
 
-render_params['project'] = 'multi_channel_test'
+# render_params['project'] = 'multi_channel_test'
 
 
-@pytest.fixture(scope='module')
-def render():
-    return renderapi.connect(**render_params)
+# @pytest.fixture(scope='module')
+# def render():
+#     return renderapi.connect(**render_params)
 
 
 @pytest.fixture(scope='module')
@@ -29,7 +29,7 @@ def multichannel_test_stack(render):
     tilespecs = [renderapi.tilespec.TileSpec(json=d)
                  for d in test_2_channels_d]
     renderapi.stack.create_stack(stack, render=render)
-    renderapi.client.import_tilespecs(stack, tilespecs, render=render)
+    renderapi.resolvedtiles.put_tilespecs(stack, tilespecs=tilespecs, render=render)
     renderapi.stack.set_stack_state(stack, 'COMPLETE', render=render)
     return stack
 
@@ -42,7 +42,7 @@ def multichannel_test_stack_channelflip(render):
     for tilespec in tilespecs:
         tilespec.channels.reverse()
     renderapi.stack.create_stack(stack, render=render)
-    renderapi.client.import_tilespecs(stack, tilespecs, render=render)
+    renderapi.resolvedtiles.put_tilespecs(stack, tilespecs=tilespecs, render=render)
     renderapi.stack.set_stack_state(stack, 'COMPLETE', render=render)
     return stack
 
@@ -55,6 +55,8 @@ def test_pm_collection(render):
     return collection
 
 
+@pytest.mark.render_service
+@pytest.mark.shared_data
 def test_section_image_channels(render, multichannel_test_stack):
     section_image = renderapi.image.get_section_image(multichannel_test_stack,
                                                       1.0, channel='DAPI',
@@ -62,6 +64,8 @@ def test_section_image_channels(render, multichannel_test_stack):
     print(section_image.shape)
 
 
+@pytest.mark.render_service
+@pytest.mark.shared_data
 def test_section_image_same_channel_different_channel_order(render, multichannel_test_stack, multichannel_test_stack_channelflip):
     section_image = renderapi.image.get_section_image(multichannel_test_stack,
                                                       1.0, channel='DAPI',
@@ -72,6 +76,8 @@ def test_section_image_same_channel_different_channel_order(render, multichannel
     assert(np.array_equal(section_image, section_image2))
 
 
+@pytest.mark.render_service
+@pytest.mark.shared_data
 def test_section_image_different_channel_order(render, multichannel_test_stack, multichannel_test_stack_channelflip):
     section_image = renderapi.image.get_section_image(multichannel_test_stack,
                                                       1.0,
@@ -82,6 +88,8 @@ def test_section_image_different_channel_order(render, multichannel_test_stack, 
     assert(not np.array_equal(section_image, section_image2))
 
 
+@pytest.mark.render_service
+@pytest.mark.java_client
 def test_multichannel_pointmatches(render, multichannel_test_stack):
     collection = 'test_multichannel_pointmatch_same_channel'
     sift_options = renderapi.client.SiftPointMatchOptions(renderScale=0.5)
@@ -108,7 +116,7 @@ def test_multichannel_pointmatches(render, multichannel_test_stack):
                     stackChannels='DAPI',
                     stack2Channels='TdTomato',
                     sift_options=sift_options,
-                    render=render)            
-    with pytest.raises(renderapi.errors.RenderError):      
+                    render=render)
+    with pytest.raises(renderapi.errors.RenderError):
         pms2 = renderapi.pointmatch.get_matches_involving_tile(
             collection2, collection2, '100000001003000', render=render)

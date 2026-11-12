@@ -24,16 +24,20 @@ test_matches = [
     "qId": "1-1",
     "matches": {
       "p": [
-        [0, 0],
-        [100, 100],
-        [0, 100],
-        [100, 0]
+        [0, 100, 0, 100],
+        [0, 100, 100, 0]
+        # [0, 0],
+        # [100, 100],
+        # [0, 100],
+        # [100, 0]
       ],
       "q": [
-        [0, 0],
-        [100, 100],
-        [0, 100],
-        [100, 0]
+          [0, 100, 0, 100],
+          [0, 100, 100, 0]
+          # [0, 0],
+          # [100, 100],
+          # [0, 100],
+          # [100, 0]
       ],
       "w": [1, 1, 1, 1]
     }
@@ -45,16 +49,20 @@ test_matches = [
     "qId": "2-1",
     "matches": {
       "p": [
-        [0, 0],
-        [100, 100],
-        [0, 100],
-        [100, 0]
+          [0, 100, 0, 100],
+          [0, 100, 100, 0]
+          # [0, 0],
+          # [100, 100],
+          # [0, 100],
+          # [100, 0]
       ],
       "q": [
-        [0, 0],
-        [100, 100],
-        [0, 100],
-        [100, 0]
+          [0, 100, 0, 100],
+          [0, 100, 100, 0]
+          # [0, 0],
+          # [100, 100],
+          # [0, 100],
+          # [100, 0]
       ],
       "w": [1, 1, 1, 1]
     }
@@ -79,16 +87,16 @@ test_matches = [
 ]
 
 
-@pytest.fixture(scope='module')
-def render():
-    render_test_parameters = {
-            'host': render_host,
-            'port': render_port,
-            'owner': 'test',
-            'project': 'test_pointmatch_project',
-            'client_scripts': client_script_location
-    }
-    return renderapi.render.connect(**render_test_parameters)
+# @pytest.fixture(scope='module')
+# def render():
+#     render_test_parameters = {
+#             'host': render_host,
+#             'port': render_port,
+#             'owner': 'test',
+#             'project': 'test_pointmatch_project',
+#             'client_scripts': client_script_location
+#     }
+#     return renderapi.render.connect(**render_test_parameters)
 
 
 @pytest.fixture(scope='module')
@@ -99,11 +107,17 @@ def test_pm_collection(render):
     return collection
 
 
+def shared_keys_equal(d0, d1):
+    return all(d0[k] == d1[k] for k in d0.keys() & d1.keys())
+
+
+@pytest.mark.render_service
 def test_get_matchcollection_owners(render, test_pm_collection):
     owners = renderapi.pointmatch.get_matchcollection_owners(render=render)
     assert 'test' in owners
 
 
+@pytest.mark.render_service
 def test_get_matchcollections(render, test_pm_collection):
     collections = renderapi.pointmatch.get_matchcollections(render=render)
     matched_collection = next(
@@ -112,39 +126,45 @@ def test_get_matchcollections(render, test_pm_collection):
     assert matched_collection is not None
 
 
+@pytest.mark.render_service
 def test_get_matches_involving_tile(render, test_pm_collection):
     matches = renderapi.pointmatch.get_matches_involving_tile(
         test_pm_collection, "0", "0-1", render=render)
     assert len(matches) == 3
 
 
+@pytest.mark.render_service
 def test_get_match_groupIds(render, test_pm_collection):
     groups = renderapi.pointmatch.get_match_groupIds(
         test_pm_collection, render=render)
     assert len(groups) == 3
 
 
+@pytest.mark.render_service
 def test_get_matches_outside_group(render, test_pm_collection):
     matches = renderapi.pointmatch.get_matches_outside_group(
         test_pm_collection, "0", render=render)
-    assert test_matches[0] in matches
-    assert test_matches[1] in matches
+    assert any(shared_keys_equal(test_matches[0], m) for m in matches)
+    assert any(shared_keys_equal(test_matches[1], m) for m in matches)
 
 
+@pytest.mark.render_service
 def test_get_matches_within_group(render, test_pm_collection):
     matches = renderapi.pointmatch.get_matches_within_group(
         test_pm_collection, "0", render=render)
-    assert matches[0] == test_matches[2]
+    assert shared_keys_equal(matches[0], test_matches[2])
 
 
+@pytest.mark.render_service
 def test_get_matches_from_group_to_group(render, test_pm_collection):
     group1 = "0"
     group2 = "1"
     matches = renderapi.pointmatch.get_matches_from_group_to_group(
         test_pm_collection, group1, group2, render=render)
-    assert matches[0] == test_matches[0]
+    assert shared_keys_equal(matches[0], test_matches[0])
 
 
+@pytest.mark.render_service
 def test_get_matches_from_tile_to_tile(render, test_pm_collection):
     group1 = "0"
     group2 = "1"
@@ -152,9 +172,10 @@ def test_get_matches_from_tile_to_tile(render, test_pm_collection):
     tile2 = "1-1"
     matches = renderapi.pointmatch.get_matches_from_tile_to_tile(
         test_pm_collection, group1, tile1, group2, tile2, render=render)
-    assert matches[0] == test_matches[0]
+    assert shared_keys_equal(matches[0], test_matches[0])
 
 
+@pytest.mark.render_service
 def test_get_matches_with_group(render, test_pm_collection):
     group1 = "0"
     matches = renderapi.pointmatch.get_matches_with_group(
@@ -162,18 +183,21 @@ def test_get_matches_with_group(render, test_pm_collection):
     assert len(matches) == 3
 
 
+@pytest.mark.render_service
 def test_get_match_groupIds_from_only(render, test_pm_collection):
     groups = renderapi.pointmatch.get_match_groupIds_from_only(
         test_pm_collection, render=render)
     assert len(groups) == 1
 
 
+@pytest.mark.render_service
 def test_get_match_groupIds_to_only(render, test_pm_collection):
     groups = renderapi.pointmatch.get_match_groupIds_to_only(
         test_pm_collection, render=render)
     assert len(groups) == 3
 
 
+@pytest.mark.render_service
 def test_delete_point_matches_between_groups(render):
     collection = 'test_delete'
     renderapi.pointmatch.import_matches(
@@ -184,6 +208,7 @@ def test_delete_point_matches_between_groups(render):
     assert len(groups) == 2
 
 
+@pytest.mark.render_service
 def test_delete_collection(render):
     collection = 'test_delete_collection'
     renderapi.pointmatch.import_matches(

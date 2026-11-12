@@ -35,7 +35,7 @@ test = [
     # "pytest>4.6,<5.0",
     "pytest",
     "pytest-cov>=2.2.1",
-    "pytest-pep8>=1.0.6",
+    # "pytest-pep8>=1.0.6",
     "pytest-xdist>=1.14",
     "flake8>=3.0.4",
     "pylint>=1.5.4",
@@ -58,6 +58,14 @@ packages = [
 
 [tool.setuptools_scm]
 version_file = "renderapi/_version.py"
+
+[tool.pytest.ini_options]
+testpaths = ["test", "integration_tests"]
+markers = [
+    "render_service: requires a running Render web service",
+    "java_client: executes the external Render Java client",
+    "shared_data: requires data accessible to both client and service",
+]
 
 # some downgrades from pixi's expectations
 [tool.pixi.system-requirements]
@@ -95,6 +103,42 @@ test313 = ["py313", "test"]
 omit = ["integration_tests/*", "test/*"]
 
 [tool.pixi.feature.test.tasks]
+test-unit = """
+pytest -m 'not render_service and not java_client'
+--cov --cov-report=xml
+--junitxml=test-reports/test.xml
+"""
+
+test-service = """
+pytest -m 'not java_client'
+--cov --cov-report=xml
+--junitxml=test-reports/test.xml
+"""
+
+test-service-local = """
+pytest -m 'not java_client and not shared_data'
+--cov --cov-report=xml
+--junitxml=test-reports/test.xml
+"""
+
+test-java = """
+pytest --java-client
+--cov --cov-report=xml
+--junitxml=test-reports/test.xml
+"""
+
+test-java-local = """
+pytest -m 'not shared_data' --java-client
+--cov --cov-report=xml
+--junitxml=test-reports/test.xml
+"""
+
+test-all = """
+pytest --java-client
+--cov --cov-report=xml
+--junitxml=test-reports/test.xml
+"""
+
 test = "pytest  --cov --cov-report=xml --junitxml=test-reports/test.xml"
 
 [tool.pixi.feature.pypi-build.tasks]
