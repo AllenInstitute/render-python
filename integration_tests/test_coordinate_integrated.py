@@ -20,16 +20,16 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 
-@pytest.fixture(scope='module')
-def render():
-    render_test_parameters = {
-            'host': render_host,
-            'port': render_port,
-            'owner': 'test_coordinate',
-            'project': 'test_coordinate_project',
-            'client_scripts': client_script_location
-    }
-    return renderapi.render.connect(**render_test_parameters)
+# @pytest.fixture(scope='module')
+# def render():
+#     render_test_parameters = {
+#             'host': render_host,
+#             'port': render_port,
+#             'owner': 'test_coordinate',
+#             'project': 'test_coordinate_project',
+#             'client_scripts': client_script_location
+#     }
+#     return renderapi.render.connect(**render_test_parameters)
 
 
 @pytest.fixture(scope='module')
@@ -55,8 +55,8 @@ def teststack_tilespec(render):
     stack = 'test_coordinate_stack'
     render.run(renderapi.stack.create_stack, stack, force_resolution=True)
     render.run(
-        renderapi.client.import_tilespecs, stack, tilespecs,
-        sharedTransforms=tforms)
+        renderapi.resolvedtiles.put_tilespecs, stack, tilespecs=tilespecs,
+        shared_transforms=tforms)
     render.run(renderapi.stack.set_stack_state, stack, 'COMPLETE')
     yield (stack, tilespecs[0])
     render.run(renderapi.stack.delete_stack, stack)
@@ -90,6 +90,7 @@ def world_corners_json(render, teststack_tilespec):
     return world_corners
 
 
+@pytest.mark.render_service
 def test_world_to_local_coordinates(render, teststack_tilespec):
     (stack, ts) = teststack_tilespec
     local = render.run(renderapi.coordinate.world_to_local_coordinates,
@@ -101,6 +102,7 @@ def test_world_to_local_coordinates(render, teststack_tilespec):
         assert(len(tile['local']) >= 2)
 
 
+@pytest.mark.render_service
 def test_local_to_world_coordinates(render, teststack_tilespec):
     (stack, ts) = teststack_tilespec
     world = render.run(renderapi.coordinate.local_to_world_coordinates,
@@ -111,6 +113,7 @@ def test_local_to_world_coordinates(render, teststack_tilespec):
     assert(len(world['world']) >= 2)
 
 
+@pytest.mark.render_service
 def test_world_to_local_coordinates_batch(render, teststack_tilespec,
                                           world_corners_json):
     (stack, ts) = teststack_tilespec
@@ -123,6 +126,7 @@ def test_world_to_local_coordinates_batch(render, teststack_tilespec,
             assert('error' not in tile.keys())
 
 
+@pytest.mark.render_service
 def test_local_to_world_coordinates_batch(render, teststack_tilespec,
                                           local_corners_json):
     (stack, ts) = teststack_tilespec
@@ -133,6 +137,7 @@ def test_local_to_world_coordinates_batch(render, teststack_tilespec,
         assert('error' not in ans.keys())
 
 
+@pytest.mark.render_service
 def test_world_to_local_coordinates_array(render, teststack_tilespec):
     (stack, ts) = teststack_tilespec
     local_corners = np.array([[10, 10], [ts.width-10, 10],
@@ -146,6 +151,7 @@ def test_world_to_local_coordinates_array(render, teststack_tilespec):
         assert(np.sum(np.abs(pt-ptafter)) < .1)
 
 
+@pytest.mark.render_service
 def test_local_to_world_coordinates_array(render, teststack_tilespec):
     (stack, ts) = teststack_tilespec
     local_corners = np.array([[10, 10], [ts.width-10, 10],
@@ -156,6 +162,8 @@ def test_local_to_world_coordinates_array(render, teststack_tilespec):
     assert(world_corners.shape[0] == local_corners.shape[0])
 
 
+@pytest.mark.render_service
+@pytest.mark.java_client
 def test_world_to_local_coordinates_clientside(render, teststack_tilespec):
     (stack, ts) = teststack_tilespec
     local_corners = np.array([[10, 10], [ts.width-10, 10],
@@ -171,6 +179,8 @@ def test_world_to_local_coordinates_clientside(render, teststack_tilespec):
         assert(np.sum(np.abs(pt-ptafter)) < .1)
 
 
+@pytest.mark.render_service
+@pytest.mark.java_client
 def test_local_to_world_coordinates_clientside(render, teststack_tilespec):
     (stack, ts) = teststack_tilespec
     local_corners = np.array([[10, 10], [ts.width-10, 10],
