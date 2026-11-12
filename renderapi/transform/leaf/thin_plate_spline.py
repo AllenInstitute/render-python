@@ -1,13 +1,17 @@
-import numpy as np
-from renderapi.errors import RenderError, EstimationError
-from renderapi.utils import encodeBase64, decodeBase64
-from .transform import Transform
-import scipy.spatial
-import scipy.special
+#!/usr/bin/env python
 import logging
 import sys
-__all__ = ['ThinPlateSplineTransform']
 
+import numpy as np
+import scipy.spatial
+import scipy.special
+
+from renderapi.errors import RenderError, EstimationError
+from renderapi.utils import encodeBase64, decodeBase64
+from renderapi.transform.leaf.transform import Transform
+
+
+__all__ = ['ThinPlateSplineTransform']
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler(sys.stdout))
