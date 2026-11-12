@@ -804,7 +804,8 @@ def affine_property_function(sx, sy, cx, cy, theta, pt):
     return M, testpt, rnd_tf
 
 
-def test_thinplatespline_inverse():
+@pytest.mark.parametrize("inversion_method", ["fixed", "newton"])
+def test_thinplatespline_inverse(inversion_method):
     j = json.load(open(rendersettings.TEST_THINPLATESPLINE_FILE, 'r'))
     t = renderapi.transform.ThinPlateSplineTransform(
             dataString=j['dataString'])
@@ -813,14 +814,19 @@ def test_thinplatespline_inverse():
     xt, yt = np.meshgrid(x, x)
     src_pts = np.transpose(
             np.vstack((xt.flatten(), yt.flatten())))
-    src_inv_est = t.inverse_tform(t.tform(src_pts))
+    src_inv_est = t.inverse_tform(
+        t.tform(src_pts),
+        method=inversion_method
+    )
     assert (src_inv_est.shape == src_pts.shape)
     for i in range(src_pts.shape[0]):
         assert(np.linalg.norm(src_pts[i, :] - src_inv_est[i, :]) < 0.1)
     with pytest.raises(renderapi.errors.EstimationError):
         src_inv_est = t.inverse_tform(
                 t.tform(src_pts),
-                max_iters=5)
+                max_iters=2,
+                method=inversion_method
+        )
 
 
 def test_thinplatespline():

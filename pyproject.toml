@@ -35,7 +35,7 @@ test = [
     # "pytest>4.6,<5.0",
     "pytest",
     "pytest-cov>=2.2.1",
-    "pytest-pep8>=1.0.6",
+    # "pytest-pep8>=1.0.6",
     "pytest-xdist>=1.14",
     "flake8>=3.0.4",
     "pylint>=1.5.4",
